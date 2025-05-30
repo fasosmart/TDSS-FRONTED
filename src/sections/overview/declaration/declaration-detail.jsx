@@ -131,12 +131,14 @@ export function DeclarationDetails({ declaration, employees }) {
       <DeclarationToolbar
         declaration={declaration}
         currentStatus={currentStatus || ''}
-        onChangeStatus={(e) => setCurrentStatus(e.target.value)}
+        onChangeStatus={(e) => {
+        const value = typeof e === 'string' ? e : e.target.value;
+        setCurrentStatus(value);
+          }}
         statusOptions={statusOptions}
         employees={employees}
-
-
       />
+
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: { xs: 1, md: 2 } }}>
         {declaration?.status === 'UNSUBMITTED' && (
           <Button

@@ -56,7 +56,7 @@ export function DeclarationTableRow({
 
   const popover = usePopover();
 
-  const profil = user?.companie[0]?.type_code?.toLowerCase().trim();
+  const profil = user?.companies[0]?.type_name?.toLowerCase().trim();
 
   // Handler pour le rejet, après validation du motif
   const handleConfirmRejet = () => {
@@ -207,8 +207,8 @@ export function DeclarationTableRow({
             </MenuItem>
           )}
 
-          {user?.type_name === 'Aguipee' &&
-            profil === 'AGUIPEE' &&
+          {user?.type_name === 'Aguipe' &&
+            profil === 'aguipe' &&
             !['VALIDATED', 'BILLED', 'REJECTED', 'UNSUBMITTED'].includes(row.status) && (
               <MenuItem
                 key="validate"
@@ -222,8 +222,8 @@ export function DeclarationTableRow({
               </MenuItem>
             )}
 
-          {user?.type_name === 'Aguipee' &&
-            user?.profile === 'AGUIPEE' &&
+          {user?.type_name === 'Aguipe' &&
+            user?.profile === 'aguipe' &&
             !['REJECTED', 'BILLED', 'VALIDATED', 'UNSUBMITTED'].includes(row.status) && (
               <MenuItem
                 key="reject"

@@ -5,7 +5,7 @@ import { ClientCreateView } from 'src/sections/administration/client/view';
 
 // ----------------------------------------------------------------------
 
-export const metadata = { title: `New Bank | Dashboard - ${CONFIG.appName}` };
+export const metadata = { title: `New Structure | Dashboard - ${CONFIG.appName}` };
 
 export default function Page() {
     return <ClientCreateView />;

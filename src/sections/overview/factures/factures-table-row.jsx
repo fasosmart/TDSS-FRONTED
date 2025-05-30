@@ -75,7 +75,7 @@ export function FactureTableRow({
 
   const popover = usePopover();
   const payeurForm = useBoolean();
- const profil = user?.companie[0]?.type_code?.toLowerCase().trim();
+ const profil = user?.companies[0]?.type_code?.toLowerCase().trim();
 
   return (
     <>

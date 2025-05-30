@@ -1,5 +1,7 @@
 
-//  const BASE_URL = 'http://127.0.0.1:8000'; // Adresse de votre backend
+
+//  const BASE_URL = 'http://192.168.1.101:8000/api'; // Adresse de votre backend
+
  const BASE_URL = 'https://test.tdss.com.gn/api'; // Adresse de votre backend
 
 const API = {
@@ -61,7 +63,7 @@ const API = {
   deleteFonction: (slug) => `${BASE_URL}/jobs/${slug}/`, // Supprimer une fonction
   editFonction: (slug) => `${BASE_URL}/jobs/${slug}/`, // modifier une fonction
   listCategories: () => `${BASE_URL}/jobs/agent/job-categories/`,
-  listFonctionAgent: () => `${BASE_URL}/jobs/agent/jobs`, // Liste des fonctions des agents
+  listFonctionAgent: () => `${BASE_URL}/jobs/agent/jobs-list/`, // Liste des fonctions des agents
   
 
   CreateBank: () => `${BASE_URL}/bank/create`,

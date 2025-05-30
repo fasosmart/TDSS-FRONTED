@@ -58,12 +58,12 @@ export function useNavData () {
   {
     subheader: "Vue d'ensemble",
     items: [
-      ...(type === 'admin' || type === 'caissier' || type === 'comptable' || type === 'agent' || type === 'superviseur'
+      ...(type === 'admin' || type === 'caissier' || type === 'comptable' || type === 'agent' || type === 'aguipe'
         ? [
             { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
           ]
         : []),
-      ...(type === 'comptable' || type === 'agent' || type === 'superviseur' || type === 'admin'
+      ...(type === 'comptable' || type === 'agent' || type === 'aguipe' || type === 'admin'
         ? [
             {
               title: 'Déclarations',

@@ -31,9 +31,10 @@ const NewPayeurSchema = z.object({
   payer_address: z.string().min(1, { message: 'L’adresse est obligatoire' }),
   payment_document: z
     .any()
-    .refine(file => file instanceof File && file.type === 'application/pdf', {
-      message: 'Le fichier doit être un PDF'
-    }),
+    // .refine(file => file instanceof File && file.type === 'application/pdf', {
+    //   message: 'Le fichier doit être un PDF'
+    // })
+    ,
   payment_devise: z.string().min(1, { message: 'La devise est requise' }),
   payment_payment_method: z.string().min(1, { message: 'Le mode de paiement est requis' }),
   payment_comment: z.string().optional()

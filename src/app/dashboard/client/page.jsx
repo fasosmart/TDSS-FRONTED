@@ -5,7 +5,7 @@ import { ClientListView } from 'src/sections/administration/client/view';
 
 // ----------------------------------------------------------------------
 
-export const metadata = { title: `Profil | Dashboard - ${CONFIG.appName}` };
+export const metadata = { title: `Structure | Dashboard - ${CONFIG.appName}` };
 
 export default function Page() {
   return <ClientListView />;

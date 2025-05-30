@@ -14,11 +14,11 @@ export function ClientCreateView() {
     return (
         <DashboardContent>
             <CustomBreadcrumbs
-                heading="Ajouter Un nouveau profil"
+                heading="Ajouter Une nouvelle structure"
                 links={[
                     { name: 'Dashboard', href: paths.dashboard.root },
-                    { name: 'Profil', href: paths.dashboard.client.root },
-                    { name: 'Nouveau' },
+                    { name: 'Structures', href: paths.dashboard.client.root },
+                    { name: 'Nouvelle' },
                 ]}
                 sx={{ mb: { xs: 3, md: 5 } }}
             />

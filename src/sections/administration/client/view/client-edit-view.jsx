@@ -36,11 +36,11 @@ export function ClientEditView({ slug }) {
     return (
         <DashboardContent>
             <CustomBreadcrumbs
-                heading="Modifier Profil"
+                heading="Modification des informations de la structure"
                 links={[
                     { name: 'Dashboard', href: paths.dashboard.root },
-                    { name: 'Profils', href: paths.dashboard.client.root },
-                    { name: 'Modifier' },
+                    { name: 'Structures', href: paths.dashboard.client.root },
+                    { name: 'Modifier' ` ${profil?.name}` },	
                 ]}
                 sx={{ mb: { xs: 3, md: 5 } }}
             >

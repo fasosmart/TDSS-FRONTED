@@ -112,7 +112,15 @@ export function ClientNewEditForm({ currentClient }) {
     useEffect(() => {
         getRegions().then(data => setRegions(data));
         getProfileTypes().then(data => setTypes(data));
-        getUserTypes().then(data => setRoles(data));
+       getUserTypes().then(data => {
+    // On filtre pour ne garder que le rôle "admin"
+        const adminRole = data.find(role => role.name.toLowerCase() === "admin");
+        
+        if (adminRole) {
+        setRoles([adminRole]); // On ne garde que l'admin dans le tableau des rôles
+        // setValue("user_type", adminRole.slug); // On préremplit le champ avec le slug d'admin
+        }
+    });
     }, []);
 
     const getModifiedFields = (originalData, newData) => {

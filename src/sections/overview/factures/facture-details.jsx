@@ -10,7 +10,7 @@ import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { fCurrency , fGNF , fEuro } from 'src/utils/format-number';
 import { fDate } from 'src/utils/format-time';
@@ -35,11 +35,11 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
 }));
 
 
-export function FactureDetails({ facture }) {
-  // const [currentStatus, setCurrentStatus] = useState(facture?.status);
+export function FactureDetails({ facture, user }) {
+  const [currentStatus, setCurrentStatus] = useState('');
   const [devise, setDevise] = useState('GNF');
 
-  const currentStatus = facture?.status;
+  // const currentStatus = facture?.status;
 
   const popover = usePopover();
 
@@ -168,13 +168,23 @@ const afficherMontant = (montant) => {
     }
   }
  
-
+useEffect(() => {
+    if (facture?.status) {
+      setCurrentStatus(facture?.status);
+    }
+  }, [facture?.status]);
 
   return (
     <>
       <FactureToolbar
         facture={facture}
+        user={user}
         currentStatus={currentStatus || ''}
+        onChangeStatus={(e) => {
+          const value = typeof e === 'string' ? e : e.target.value;
+          setCurrentStatus(value);
+        }
+      }
         devise={devise}
       />
       <Card sx={{ pt: 5, px: 5 }}>

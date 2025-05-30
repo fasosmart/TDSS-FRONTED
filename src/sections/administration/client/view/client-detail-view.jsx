@@ -103,10 +103,10 @@ export function ClientDetailsView({ slug }) {
         <DashboardContent>
             <Box sx={{ mb: { xs: 3, md: 5 } }}>
                 <CustomBreadcrumbs
-                    heading="Profil"
+                    heading="Détails de la structure"
                     links={[
                         { name: 'Dashboard', href: paths.dashboard.root },
-                        { name: 'Profil', href: paths.dashboard.client.root },
+                        { name: 'Structure', href: paths.dashboard.client.root },
                         { name: profil?.name },
                     ]}
                 />

@@ -63,7 +63,7 @@ export const getDeclarations = () => fetchAndCache('declarations', API.listDecla
 export const getEntreprises = () => fetchAndCache('entreprises', API.listEntreprises , 'results');
 
 export const getBanks = () => fetchAndCache('banks', API.listProfiles);
-export const getProfils = () => fetchAndCache('profils', API.listProfiles , 'results');
+export const getProfils = () => fetchAndCache('profils', API.listActiveProfile , 'results');
 export const getUserTypes = () => fetchAndCache('userTypes', API.listUserTypes, 'results');
 export const getJob = () => fetchAndCache('job', API.listFonctions, 'results');
 export const getJobCategories = () => fetchAndCache('job_categories', API.listJobCategory, 'results');
