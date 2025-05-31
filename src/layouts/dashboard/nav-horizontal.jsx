@@ -25,6 +25,7 @@ export function NavHorizontal({ data, layoutQuery, sx, ...other }) {
 
       <Box
         sx={{
+          marginBottom: 10,
           px: 1.5,
           height: 'var(--layout-nav-horizontal-height)',
           backgroundColor: 'var(--layout-nav-horizontal-bg)',

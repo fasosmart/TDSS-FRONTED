@@ -91,11 +91,13 @@ export function DashboardLayout({ sx, children, header, data }) {
               </Alert>
             ),
             bottomArea: isNavHorizontal ? (
+              <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', pb: 10 }}>
               <NavHorizontal
                 data={navData}
                 layoutQuery={layoutQuery}
                 cssVars={navColorVars.section}
               />
+              </Box>
             ) : null,
             leftArea: (
               <>

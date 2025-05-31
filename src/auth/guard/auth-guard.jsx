@@ -52,7 +52,7 @@ export function AuthGuard({ children }) {
         supabase: paths.auth.supabase.signIn,
       }[method];
 
-      const href = `${signInPath}?${createQueryString('returnTo', pathname)}`;
+      const href = `${signInPath}`;
 
       router.replace(href);
       return;
