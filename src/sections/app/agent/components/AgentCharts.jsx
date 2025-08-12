@@ -10,6 +10,7 @@ import { useTheme } from '@mui/material/styles';
 import { Iconify } from 'src/components/iconify';
 import { Chart } from 'src/components/chart';
 import CircularProgress from '@mui/material/CircularProgress';
+import PropTypes from 'prop-types';
 
 // ----------------------------------------------------------------------
 
@@ -140,12 +141,25 @@ export function AgentPermitCategoryChart() {
 
 // ----------------------------------------------------------------------
 
-export function AgentDeclarationChart({ chartData = [], loading = false, error = '' }) {
-  const [selectedYear, setSelectedYear] = useState('');
+export function AgentDeclarationChart({ 
+  chartData = [], 
+  loading = false, 
+  error = '',
+  onYearChange,
+  selectedYear: propSelectedYear
+}) {
+  const [selectedYear, setSelectedYear] = useState(propSelectedYear || '');
   const [availableYears, setAvailableYears] = useState([]);
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
-  const currentYear = new Date().getFullYear(); // Obtenir l'année courante (2025)
+  const currentYear = new Date().getFullYear();
+
+  // Mettre à jour l'état local si la prop selectedYear change
+  useEffect(() => {
+    if (propSelectedYear && propSelectedYear !== selectedYear) {
+      setSelectedYear(propSelectedYear);
+    }
+  }, [propSelectedYear]);
 
   // Définir les 5 dernières années comme années disponibles
   useEffect(() => {
@@ -158,9 +172,14 @@ export function AgentDeclarationChart({ chartData = [], loading = false, error =
     
     // Si aucune année n'est sélectionnée, utiliser l'année courante
     if (!selectedYear) {
-      setSelectedYear(currentYear.toString());
+      const yearToSet = currentYear.toString();
+      setSelectedYear(yearToSet);
+      // Appeler onYearChange si fourni
+      if (onYearChange) {
+        onYearChange(yearToSet);
+      }
     }
-  }, [currentYear, selectedYear]);
+  }, [currentYear, selectedYear, onYearChange]);
 
   // Préparer les données pour le graphique
   const chartSeries = useMemo(() => {
@@ -187,10 +206,13 @@ export function AgentDeclarationChart({ chartData = [], loading = false, error =
   }, [chartData, loading]);
 
   const handleYearChange = (event) => {
-    setSelectedYear(event.target.value);
+    const newYear = event.target.value;
+    setSelectedYear(newYear);
     
-    // Ici, vous pourriez ajouter un appel à une fonction pour charger les données de l'année sélectionnée
-    // Par exemple: onYearChange(event.target.value);
+    // Appeler la fonction parente pour notifier du changement d'année
+    if (onYearChange) {
+      onYearChange(newYear);
+    }
   };
 
   const chartOptions = {
@@ -282,3 +304,24 @@ export function AgentDeclarationChart({ chartData = [], loading = false, error =
     </Card>
   );
 }
+
+AgentDeclarationChart.propTypes = {
+  chartData: PropTypes.arrayOf(
+    PropTypes.shape({
+      month: PropTypes.string,
+      value: PropTypes.number,
+    })
+  ),
+  loading: PropTypes.bool,
+  error: PropTypes.string,
+  onYearChange: PropTypes.func,
+  selectedYear: PropTypes.string,
+};
+
+AgentDeclarationChart.defaultProps = {
+  chartData: [],
+  loading: false,
+  error: '',
+  onYearChange: undefined,
+  selectedYear: undefined,
+};

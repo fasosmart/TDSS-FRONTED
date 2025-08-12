@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { paths } from 'src/routes/paths';
 import {
   Box,
   Table,
@@ -99,6 +100,17 @@ const FilteredTable = ({ declaration, printMode = false }) => {
     setPage(0);
   };
 
+ const handleViewDetailsEmploye = (employee) => {
+    const employeeSlug = employee?.employee_slug || employee?.slug;
+
+    if (!employeeSlug) {
+      console.error("Aucun slug d'employé trouvé pour cet employé");
+      toast.error("Impossible d'accéder aux détails de l'employé");
+      return;
+    }
+
+    router.push(paths.dashboard.employee.details(employeeSlug));
+  };
   useEffect(() => {
     const fetchDeclarations = async () => {
       setLoading(true);
@@ -395,20 +407,26 @@ const FilteredTable = ({ declaration, printMode = false }) => {
               // ?.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((row) => (
                 <React.Fragment key={`${row?.id}-${row?.slug}`}>
-                  <TableRow hover selected={isSelected(row?.slug)}>
-                    <TableCell padding="checkbox">
+                  <TableRow hover selected={isSelected(row?.slug)} onClick={() =>handleViewDetailsEmploye(row)} style={{ cursor: 'pointer' }}>
+                    <TableCell padding="checkbox" >
                       {declaration?.status === 'unsubmitted' && (
                         <Checkbox
                           color="primary"
                           checked={isSelected(row.slug)}
-                          onChange={(event) => handleSelectRow(event, row?.slug)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleSelectRow(event, row?.slug);
+                          }}
                         />
                       )}
                     </TableCell>
                     <TableCell>{row?.passport_number}</TableCell>
                     <TableCell>
                       <ListItemText
-                        onClick={() => openQuickEdit(row)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openQuickEdit(row);
+                        }}
                         style={{ cursor: 'pointer' }}
                         primary={row.last}
                         secondary={row.first}

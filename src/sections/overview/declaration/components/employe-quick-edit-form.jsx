@@ -73,6 +73,14 @@ export function EmployeeQuickEditForm({ currentEmployee, open, onClose, onUpdate
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
+    // Vérifier si on a déjà le cache en session
+    const cached = sessionStorage.getItem('fonctions');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      setOptions(parsed); // Affiche directement les données en cache
+      setLoading(false);
+      return; // Pas besoin d'appeler le serveur
+    }
 
     async function fetchAllFonctions() {
       try {
@@ -143,10 +151,7 @@ export function EmployeeQuickEditForm({ currentEmployee, open, onClose, onUpdate
       });
 
       // Ne pas définir manuellement le Content-Type pour laisser le navigateur gérer les délimitations
-      const response = await axios.patch(
-        API.UpdateEmploye(dec_slug, currentEmployee?.slug),
-        formData
-      );
+      const response = await axios.put(API.UpdateEmploye(dec_slug, currentEmployee?.slug), data);
 
       if (response) {
         toast.success('Mise à jour réussie !');

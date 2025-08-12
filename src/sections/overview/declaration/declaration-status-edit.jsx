@@ -14,7 +14,7 @@ import API from 'src/utils/api';
 
 // ----------------------------------------------------------------------
 
-export function DeclarationEditStatusDate({ type }) {
+export function DeclarationEditStatusDate({ type  }) {
   const { watch, setValue, control } = useFormContext();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,9 @@ export function DeclarationEditStatusDate({ type }) {
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [open, setOpen] = useState(false);
 
-  const user = useMockedUser();
+  const {user} = useMockedUser();
+  const company = user?.companies[0]?.type_code.toLowerCase().trim();
+
 
   const values = watch();
 
@@ -49,8 +51,13 @@ export function DeclarationEditStatusDate({ type }) {
           label: company.name,
           slug: company.slug,
         }));
-
+        if (company === 'entreprise') {
+          const userCompany = initialCompanies[0];
+          setValue('company', userCompany.value);
+          setSelectedCompany(userCompany);
+        } else {
         setCompanies(initialCompanies);
+        }
       } catch (error) {
         console.error('Erreur lors du chargement initial des entreprises:', error);
       } finally {
@@ -62,7 +69,7 @@ export function DeclarationEditStatusDate({ type }) {
     return () => {
       isMounted = false; // Nettoyage pour éviter les fuites de mémoire
     };
-  }, []);
+  }, [company, setValue]);
 
   // Handler pour la sélection d'une entreprise
   const handleCompanyChange = (event, newValue) => {
@@ -84,7 +91,7 @@ export function DeclarationEditStatusDate({ type }) {
       direction={{ xs: 'column', sm: 'row' }}
       sx={{ p: 3, bgcolor: 'background.neutral' }}
     >
-      {/* {user.type_code === 'ENTREPRISE' && */}
+      {company !== 'entreprise' ? (
       <Controller
         name="company"
         control={control}
@@ -136,7 +143,16 @@ export function DeclarationEditStatusDate({ type }) {
           />
         )}
       />
-      {/* } */}
+      ) : (
+        <Field.Text
+          name="company"
+          label="Entreprise *"
+          value= {selectedCompany?.label || ''}
+          InputLabelProps={{ shrink: true }}
+          disabled
+        />
+      )
+      } 
 
       <Field.Select
         disabled

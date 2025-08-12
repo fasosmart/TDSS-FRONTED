@@ -9,6 +9,7 @@ import PhoneNumberInput from 'react-phone-number-input/input';
 import { Iconify } from '../iconify';
 import { CountryListPopover } from './list';
 import { getCountryCode } from './utils';
+import { parsePhoneNumber } from 'react-phone-number-input';
 
 // ----------------------------------------------------------------------
 
@@ -28,7 +29,7 @@ export const PhoneInput = forwardRef(
     },
     ref
   ) => {
-    const defaultCountryCode = getCountryCode(value, inputCountryCode);
+    const defaultCountryCode = getCountryCode(value, inputCountryCode ?? 'GN');
 
     const [searchCountry, setSearchCountry] = useState('');
 
@@ -36,11 +37,23 @@ export const PhoneInput = forwardRef(
 
     const hasLabel = !!label;
 
-    const cleanValue = value?.replace(/[\s-]+/g, '');
+  function toE164(rawValue, countryCode = 'GN') {
+  try {
+    const phone = parsePhoneNumber(rawValue, countryCode);
+    return phone ? phone.number : undefined; // format E.164
+  } catch {
+    return undefined;
+  }
+}
+
+    // const cleanValue = value?.replace(/[\s-]+/g, '');
+    const cleanValue = toE164(value, selectedCountry);
 
     const handleClear = useCallback(() => {
       onChange('');
     }, [onChange]);
+
+  
 
     return (
       <Box

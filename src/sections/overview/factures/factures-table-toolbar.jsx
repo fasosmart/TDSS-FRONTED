@@ -6,21 +6,39 @@ import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Paper from '@mui/material/Paper';
+import Chip from '@mui/material/Chip';
+import Box from '@mui/material/Box';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { useCallback, useState } from 'react';
+
+import { useCallback , useState , useRef } from 'react';
+
 
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
 import { Iconify } from 'src/components/iconify';
+import { set } from 'nprogress';
 
 // ----------------------------------------------------------------------
 
-export function FactureTableToolbar({ filters, options, dateError, onResetPage }) {
+export function FactureTableToolbar({
+   filters, 
+   options, 
+   dateError, 
+   onResetPage,
+   setSelectedFilter,
+   selectedFilter
+   }) {
+
   const popover = usePopover();
+  const [inputValue, setInputValue] = useState(''); // État pour la valeur de recherche
+  const [showOptions, setShowOptions] = useState(false); // État pour afficher les options de filtre
   const [numberInput, setNumberInput] = useState('');
   const [declarationInput, setDeclarationInput] = useState('');
-  const [companyInput, setCompanyInput] = useState('');
+
+  const inputRef = useRef(); // Référence pour la barre de recherche
+
 
   const handleNumberKeyUp = useCallback(
     (event) => {
@@ -88,6 +106,52 @@ export function FactureTableToolbar({ filters, options, dateError, onResetPage }
     [filters, onResetPage]
   );
 
+const handleFocus = (event) => {
+  setShowOptions(true);
+};
+
+const handleCloseOptions = () => {
+  setShowOptions(false);
+};
+
+const handleSelectFilter = (filterType) => {
+  onResetPage();
+  filters.setState({ number: '', declaration_number: '', company: '' }); // Réinitialise les autres filtres
+  setSelectedFilter(filterType); // Définit le filtre actif
+  setShowOptions(false); // Ferme les options
+};
+
+// Placeholder dynamique pour la barre de recherche
+const getPlaceholder = () => {
+  switch (selectedFilter) {
+    case 'declaration_number':
+      return 'Recherche par Numero de Declaration';
+    case 'number':
+      return 'Recherche par Numero de Facture';
+    case 'company':
+      return 'Rechercher par nom de l\'entreprise';
+    default:
+      return 'Recherche par Numero de Facture';
+  }
+};
+
+const handleFilterChange = useCallback(
+  (event) => {
+    if (event.key === 'Enter') {
+      onResetPage();
+      filters.setState({
+        number: '',
+        declaration_number: '',
+        company: '',
+        [selectedFilter]: inputValue, // Applique la recherche au filtre actif
+      });
+    }
+  },
+  [selectedFilter, filters, onResetPage, inputValue]
+);
+
+
+
   return (
     <>
       <Stack
@@ -151,8 +215,67 @@ export function FactureTableToolbar({ filters, options, dateError, onResetPage }
           />
         </LocalizationProvider>
 
-        <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}>
-          <TextField
+        <Stack direction='row' alignItems='center' spacing={2} flexGrow={1} sx={{ width: 1 }}>
+          <Box sx={{ position: 'relative', flexGrow: 1, width: '100%' }} ref = {inputRef}>
+            <TextField
+              fullWidth
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleFilterChange}
+              value={inputValue}
+              placeholder={getPlaceholder()}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+              onFocus={handleFocus}
+              // onBlur={handleCloseOptions}
+            />
+            {showOptions && (
+              <Paper
+                sx={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  mt: 1,
+                  zIndex: 1300,
+                  width: '100%',
+                  backgroundColor: 'background.paper',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap',
+                  gap: 1,
+                  p: 1,
+                }}
+              >
+                <Chip
+                  label="Numero de Facture"
+                  color={selectedFilter === 'number' ? 'primary' : 'default'}
+                  onClick={() => handleSelectFilter('number')}
+                />
+                <Chip
+                  label="Numero de Declaration"
+                  color={selectedFilter === 'declaration_number' ? 'primary' : 'default'}
+                  onClick={() => handleSelectFilter('declaration_number')}
+                />
+                <Chip
+                  label="Nom de l'Entreprise"
+                  color={selectedFilter === 'company' ? 'primary' : 'default'}
+                  onClick={() => handleSelectFilter('company')}
+                />
+              </Paper>
+            )}
+
+          </Box>
+
+        </Stack>
+
+        {/* <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}> */}
+          {/* <TextField
             fullWidth
             onChange={(e) => setNumberInput(e.target.value)}
             onKeyDown={handleNumberKeyUp}
@@ -167,8 +290,8 @@ export function FactureTableToolbar({ filters, options, dateError, onResetPage }
                 ),
               },
             }}
-          />
-          <TextField
+          /> */}
+          {/* <TextField
             fullWidth
             onChange={(e) => setDeclarationInput(e.target.value)}
             onKeyDown={handleNumberDecKeyUp}
@@ -199,12 +322,12 @@ export function FactureTableToolbar({ filters, options, dateError, onResetPage }
                 ),
               }
             }}
-          />
+          /> */}
 
           {/* <IconButton onClick={popover.onOpen}>
             <Iconify icon="eva:more-vertical-fill" />
           </IconButton> */}
-        </Stack>
+        {/* </Stack> */}
       </Stack>
       <CustomPopover
         open={popover.open}

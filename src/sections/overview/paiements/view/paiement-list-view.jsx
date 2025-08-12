@@ -48,9 +48,8 @@ import { PaiementTableToolbar } from '../paiement-table-toolbar';
 
 import { fCurrency, fGNF } from 'src/utils/format-number';
 
-import dayjs from 'src/utils/format-time'
+import dayjs from 'dayjs';
 
-dayjs.locale('fr'); // Set the default locale to French
 
 // ----------------------------------------------------------------------
 
@@ -80,6 +79,7 @@ export function PaiementListView() {
   const [currentTab, setCurrentTab] = useState('all');
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(true); // État pour indiquer le chargement
+  const [loader , setLoader] = useState(false); // État pour indiquer le chargement
   const [error, setError] = useState(null); // État pour gérer les erreurs
     const [pagination, setPagination] = useState({
       count: 0,
@@ -96,6 +96,7 @@ export function PaiementListView() {
    useEffect(() => {
     const fetchSummary = async () => {
       try {
+        setLoader(true);
         // --- 1) Récupérer le count global ---
         const countRes = await axios.get(API.listPaiments(), {
           params: { limit: 1 },
@@ -110,7 +111,7 @@ export function PaiementListView() {
 
         // --- 3) Somme des montants en GNF ---
         const totalAmountGnf = sumBy(allPaiements, (p) => p.amount);
-        
+        // console.log('montant total', totalAmountGnf);
 
         // --- 4) Conversion GNF → USD (taux fixe ici) ---
         const GNF_PER_USD = 9200;
@@ -122,7 +123,9 @@ export function PaiementListView() {
           totalAmountGnf,
           totalAmountUsd,
         });
-
+        setLoader(false);
+        // console.log('montant en gnf', summary.totalAmountGnf);
+        // console.log('montant en USD', summary.totalAmountUsd)
       } catch (err) {
         console.error('Erreur summary paiements', err);
         toast.error('Impossible de charger le total des paiements');
@@ -136,12 +139,12 @@ export function PaiementListView() {
 
   const filters = useSetState({
     name: '',
+    company: '',
     date_before: null,
     date_after: null,
     payment_method: [],
     facture_number: '',
     number: '',
-    company: '',
   });
 
   const dateError = fIsAfter(filters.state.date_before, filters.state.date_after);
@@ -157,14 +160,14 @@ export function PaiementListView() {
 
   const canReset =
     !!filters.state.name ||
+    !!filters.state.name ||
 
     filters?.state?.payment_method?.length > 0 ||
  
     (!!filters.state.date_before && !!filters.state.date_after) ||
 
     !!filters.state.facture_number ||
-    !!filters.state.number ||
-    !!filters.state.company;
+    !!filters.state.number;
 
   const notFound = pagination.count === 0 && canReset;
 
@@ -195,7 +198,7 @@ export function PaiementListView() {
 
   const PaymentMethods = [
     { id: 'transfer', label: 'Virement' },
-    { id: 'deposit', label: 'Dêpot' },
+    { id: 'deposit', label: 'Espèces' },
     { id: 'cheque', label: 'Chèques' },
   ]
   
@@ -226,8 +229,8 @@ export function PaiementListView() {
                     ),
           ...(filters.state.payment_method.length > 0 && { payment_method: filters.state.payment_method.join(',') }),
           ...(filters.state.facture_number && { facture_number: filters.state.facture_number }),
+          ...(filters.state.company && { company: filters.state.company}),
           ...(filters.state.number && { number: filters.state.number }),
-          ...(filters.state.company && { company: filters.state.company }),
         };
         const response = await axios.get(API.listPaiments(), {params}); // Remplacez l'URL par celle de votre backend
         setTableData(response.data.results); 
@@ -245,7 +248,13 @@ export function PaiementListView() {
     };
 
     fetchPaiements();
-  }, [table.page, table.rowsPerPage, filters.state.date_before, filters.state.date_after, filters.state.facture_number, filters.state.number, filters.state.company, JSON.stringify(filters.state.payment_method),]); // La dépendance vide signifie que cette fonction est appelée une fois au montage
+  }, [table.page, 
+    table.rowsPerPage, 
+    filters.state.date_before, 
+    filters.state.date_after, 
+    filters.state.facture_number, 
+    filters.state.company,
+    filters.state.number, JSON.stringify(filters.state.payment_method),]); // La dépendance vide signifie que cette fonction est appelée une fois au montage
 
   if (loading) {
     console.info('Loading paiement...');
@@ -274,6 +283,7 @@ export function PaiementListView() {
                 title="Nombres Total Paiements"
                 total={summary.totalCount}
                 percent={100}
+                loading={loader}
                 // chart={{
                 //   colors: [theme.vars.palette.info.main],
                 //   categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
@@ -286,6 +296,7 @@ export function PaiementListView() {
                 title="Total En Dollars"
                 percent={100}
                 total={fCurrency(summary.totalAmountUsd)}
+                loading={loader}
                 // chart={{
                 //   categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
                 //   series: [15, 18, 12, 51, 68, 11, 39, 37],
@@ -297,6 +308,7 @@ export function PaiementListView() {
                 title="Total En GNF"
                 percent={100}
                 total={fGNF(summary.totalAmountGnf)}
+                loading={loader}
                 // chart={{
                 //   colors: [theme.vars.palette.success.main],
                 //   categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
@@ -339,7 +351,7 @@ export function PaiementListView() {
             filters={filters}
             dateError={dateError}
             onResetPage={table.onResetPage}
-            options={{ payment_method: ['TRANSFER', 'CHEQUE', 'DEPOSIT'] }}
+            options={{ payment_method: PaymentMethods }}
             selectedFilter={selectedFilter}
             setSelectedFilter={setSelectedFilter}
           />
@@ -349,6 +361,7 @@ export function PaiementListView() {
               filters={filters}
               onResetPage={table.onResetPage}
               totalResults={pagination.count}
+              options={{ payment_method: PaymentMethods }}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}

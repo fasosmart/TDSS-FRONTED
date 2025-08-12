@@ -51,7 +51,7 @@ export function ComptableInvoiceButton({ declarationId, onSuccess }) {
       // Simulation d'un appel API
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      console.log('Facture générée pour la déclaration:', declarationId, 'avec les données:', formData);
+      // console.log('Facture générée pour la déclaration:', declarationId, 'avec les données:', formData);
       
       // Appeler le callback de succès si fourni
       if (onSuccess) {

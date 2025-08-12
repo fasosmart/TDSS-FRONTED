@@ -275,13 +275,16 @@ export function DeclarationToolbar({
             </Tooltip>
           )}
 
-          {type === 'aguipe' && profil === 'aguipe' && currentStatus === 'submitted' && (
-            <>
-              <Tooltip title="Valider">
-                <IconButton onClick={() => validateConfirm.onTrue()}>
-                  <Iconify icon="mdi:check-bold" />
-                </IconButton>
-              </Tooltip>
+          {((type === 'aguipe' || type === 'comptable' )&& 
+          currentStatus ==='submitted') && (
+          <>
+           <Tooltip title="Valider">
+            <IconButton onClick={() => validateConfirm.onTrue()}>
+              <Iconify icon="mdi:check-bold" />
+            </IconButton>
+          </Tooltip>
+         
+
 
               <Tooltip title="Rejeter">
                 <IconButton onClick={() => setOpenRejetDialog(true)}>

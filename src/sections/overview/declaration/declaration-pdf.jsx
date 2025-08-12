@@ -10,6 +10,8 @@ import {
   Font,
 } from '@react-pdf/renderer';
 import { fDate } from 'src/utils/format-time';
+import { pdf } from '@react-pdf/renderer';
+
 
 // Enregistrement de la police Roboto
 Font.register({
@@ -72,7 +74,7 @@ const useStyles = () =>
         statsRow: {
           flexDirection: 'row',
           justifyContent: 'space-between',
-          marginVertical: 12,
+          marginVertical: 10,
         },
         statBox: {
           flex: 1,
@@ -98,7 +100,7 @@ const useStyles = () =>
           borderColor: '#ddd',
           borderRadius: 4,
           overflow: 'hidden',
-          marginBottom: 20,  
+          marginBottom: 12,  
         },
         tableRow: {
           flexDirection: 'row',
@@ -145,6 +147,32 @@ const useStyles = () =>
       }),
     []
   );
+
+  // Fonction pour générer un PDF sous forme de bytes
+  export const generateDeclarationPDF = async (declaration, options = { download: false }) => {
+    const { download } = options;
+    const logoUrl = declaration?.company?.picture;
+    const proxyBase = 'https://api.allorigins.win/raw?url=';
+    const proxiedLogoUrl = logoUrl ? proxyBase + encodeURIComponent(logoUrl) : null;
+
+    const pdfDoc = (
+      <DeclarationPDF
+        declaration={declaration}
+        employees={declaration.employees}
+        logoUrl={proxiedLogoUrl}
+      />
+    );
+
+    const blob = await pdf(pdfDoc).toBlob();
+    
+    if (download) {
+      saveAs(blob, `declaration-${declaration.number}.pdf`);
+      return null;
+    }
+
+    const arrayBuffer = await blob.arrayBuffer();
+    return arrayBuffer;
+  };
 
 export  function DeclarationPDF({ declaration, employees, logoUrl }) {
   const styles = useStyles();
@@ -207,7 +235,7 @@ export  function DeclarationPDF({ declaration, employees, logoUrl }) {
 
         {/* Tableau */}
         <View style={styles.table}>
-          <View style={[styles.tableRow, styles.tableHeader]}>
+          <View style={[styles.tableRow, styles.tableHeader]} >
             {['N°', 'Passeport', 'Nom', 'Prénom',  'Fonction', 'Catégorie', 'Type'].map((h, i) => (
               <Text
                 key={i}
@@ -221,7 +249,7 @@ export  function DeclarationPDF({ declaration, employees, logoUrl }) {
             ))}
           </View>
           {employees?.map((emp, i) => (
-            <View key={i} style={styles.tableRow} wrap={false}>
+            <View key={i} style={styles.tableRow} wrap={false} >
               <Text style={[styles.cell, styles.firtColumn]}>{i + 1}</Text>
               <Text style={styles.cell}>{emp?.passport_number}</Text>
               <Text style={styles.cell}>{emp?.first}</Text>

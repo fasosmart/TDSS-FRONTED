@@ -15,6 +15,7 @@ export function RHFPhoneInput({ name, helperText, ...other }) {
         <PhoneInput
           {...field}
           fullWidth
+          country = 'GN'
           value={field.value}
           onChange={(newValue) => setValue(name, newValue, { shouldValidate: true })}
           error={!!error}

@@ -1,5 +1,6 @@
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useTheme } from '@mui/material/styles';
 
 import { fNumber, fPercent } from 'src/utils/format-number';
@@ -9,7 +10,7 @@ import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export function FactureAnalytic({ title, percent, total, chart = {}, sx, ...other }) {
+export function FactureAnalytic({ title, percent, total, loading, chart = {}, sx, ...other }) {
   const theme = useTheme();
 
   // Utilisation de valeurs par défaut si les propriétés `chart` sont undefined
@@ -62,7 +63,12 @@ export function FactureAnalytic({ title, percent, total, chart = {}, sx, ...othe
     >
       <Box sx={{ flexGrow: 1 }}>
         <Box sx={{ typography: 'subtitle2' }}>{title}</Box>
-        <Box sx={{ mt: 1.5, mb: 1, typography: 'h3' }}>{fNumber(total)}</Box>
+         {loading ? (
+          <CircularProgress size={32} sx={{ my: 2 }} />
+        ) : (
+         <Box sx={{ mt: 1.5, mb: 1, typography: 'h3' }}>{fNumber(total)}</Box>
+         )}
+       
         {renderTrending}
       </Box>
 

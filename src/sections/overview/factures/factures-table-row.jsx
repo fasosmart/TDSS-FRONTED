@@ -1,5 +1,8 @@
 'use client';
 
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
+
 import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
@@ -8,6 +11,7 @@ import Stack from '@mui/material/Stack';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import Checkbox from '@mui/material/Checkbox';
 import { useState } from 'react';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -40,7 +44,7 @@ export function FactureTableRow({
   selectedBanque,
 }) {
   const confirm = useBoolean();
-
+  const router = useRouter();
   const [loading, setLoading] = useState(false); // Etat pour gérer l'affichage du loader pendant le chargement des options de banque
   const [openFirstDialog, setOpenFirstDialog] = useState(false);
   const [openSecondDialog, setOpenSecondDialog] = useState(false);
@@ -73,6 +77,17 @@ export function FactureTableRow({
   const payeurForm = useBoolean();
   const profil = user?.companies[0]?.type_code?.toLowerCase().trim();
 
+  const handleViewDeclaration = (e) => {
+    e.stopPropagation(); // Empêche la propagation de l'événement de clic
+    const slug = row?.declaration?.slug || row?.declaration_slug; // Utilise le slug de la déclaration
+    if (!slug) {
+      console.error('Aucun slug de déclaration trouvé pour cette facture');
+      return;
+    }
+    // Redirige vers la page de détails de la déclaration
+    router.push(paths.dashboard.declaration.details(slug)); // Redirige vers la page de détails de la déclaration
+  };
+  // console.log('row', row);
   return (
     <>
       <TableRow
@@ -87,11 +102,15 @@ export function FactureTableRow({
         }}
       >
         <TableCell padding="checkbox">
-          {/* <Checkbox
+          <Checkbox
             checked={selected}
-            onClick={onSelectRow}
-            slotProps={{ id: `row-checkbox-${row.id}`, 'aria-label': `Row checkbox` }}
-          /> */}
+            // onClick={onSelectRow}
+             onClick={(e) => {
+              e.stopPropagation(); // Empêche le clic sur la checkbox de se propager au TableRow
+              onSelectRow(e);
+            }}
+            slotProps={{ slug: `row-checkbox-${row.slug}`, 'aria-label': `Row checkbox` }}
+          />
         </TableCell>
 
         <TableCell>
@@ -107,8 +126,16 @@ export function FactureTableRow({
           </Stack>
         </TableCell>
 
-        <TableCell>{row.declaration_number}</TableCell>
-
+        <TableCell
+          onClick={handleViewDeclaration}
+          sx={{
+            cursor: 'pointer',
+            '&:hover': { color: 'primary.main', textDecoration: 'underline' },
+          }}
+        >
+          {row.declaration_number}
+        </TableCell>
+        <TableCell>{row.client}</TableCell>
         <TableCell>
           <ListItemText
             primary={fGNF(row.amount)}
@@ -176,19 +203,20 @@ export function FactureTableRow({
             Modifier
           </MenuItem> */}
 
-          {user?.type_name === 'Caissier' && row.status === 'unpaid' && (
-            <MenuItem
-              color={payeurForm.value ? 'inherit' : 'default'}
-              onClick={() => {
-                // confirm.onTrue();
-                popover.onClose();
-                payeurForm.onTrue(); // Ouvre la boîte de dialogue de paiement
-              }}
-            >
-              <Iconify icon="mdi:credit-card" />
-              Payer
-            </MenuItem>
-          )}
+          {(user?.type_name === 'Caissier' || user?.type_name === 'Comptable') &&
+            row.status === 'unpaid' && (
+              <MenuItem
+                color={payeurForm.value ? 'inherit' : 'default'}
+                onClick={() => {
+                  // confirm.onTrue();
+                  popover.onClose();
+                  payeurForm.onTrue(); // Ouvre la boîte de dialogue de paiement
+                }}
+              >
+                <Iconify icon="mdi:credit-card" />
+                Payer
+              </MenuItem>
+            )}
         </MenuList>
       </CustomPopover>
 

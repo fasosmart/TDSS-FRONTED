@@ -6,25 +6,85 @@ import InputAdornment from '@mui/material/InputAdornment';
 
 import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
-
+import Paper from '@mui/material/Paper';
+import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { useCallback, useState } from 'react';
+import { useCallback, useState , useRef , useEffect } from 'react';
 
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
 import { Iconify } from 'src/components/iconify';
+import { select } from '@nextui-org/react';
 
 // ----------------------------------------------------------------------
 
-export function DeclarationTableToolbar({ filters, options, dateError, onResetPage }) {
+export function DeclarationTableToolbar({ 
+  filters, 
+  options, 
+  dateError, 
+  onResetPage,
+  selectedFilter,
+  setSelectedFilter,
+ }) {
   const popover = usePopover();
+  const [showOptions, setShowOptions] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const [filterBoxWidth, setFilterBoxWidth] = useState(null);
   const [titleInput, setTitleInput] = useState('');
   const [companyInput, setCompanyInput] = useState('');
   const [passportInput, setPassportInput] = useState('');
+  const inputRef = useRef();
+
+
+  const handleFocus = (event) => {
+    setShowOptions(true);
+  };  
+
+  const handleCloseOptions = () => {
+    setShowOptions(false);  
+  };
+
+const handleSelectFilter = (filterType) => {
+    onResetPage();
+    filters.setState({ title: '', number: '', company: '', passport_number: '' });
+    setSelectedFilter(filterType);
+    setShowOptions(false);
+  };
+
+  const getPlaceholder = () => {
+    switch (selectedFilter) {
+      case 'title':
+        return 'Rechercher par titre de la déclaration';
+      case 'number':
+        return 'Rechercher par numéro de la déclaration';
+      case 'company':
+        return 'Rechercher par nom de l\'entreprise';
+      case 'passport_number':
+        return 'Rechercher par numéro de passeport';
+      default:  
+        return 'Rechecher par numéro de la déclaration';
+    }
+  };
+
+const handleFilterChange = useCallback(
+    (event) => {
+      if (event.key === 'Enter') {
+        onResetPage();
+        filters.setState({
+          title: '',
+          company: '',
+          passport_number: '',
+          number: '',
+          [selectedFilter]: inputValue
+        });
+      }
+    },
+    [selectedFilter, filters, onResetPage, inputValue]
+  );
 
   const handleFilterName = useCallback(
     (event) => {
@@ -106,6 +166,12 @@ export function DeclarationTableToolbar({ filters, options, dateError, onResetPa
     [filters, onResetPage]
   );
 
+  useEffect(() => {
+      if (inputRef.current) {
+        setFilterBoxWidth(inputRef.current.offsetWidth);
+      }
+    }, [showOptions]);
+
   return (
     <>
       <Stack
@@ -172,6 +238,79 @@ export function DeclarationTableToolbar({ filters, options, dateError, onResetPa
         </LocalizationProvider>
 
         <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}>
+          <Box sx={{ position: 'relative', flexGrow: 1, width: '100%' }} ref={inputRef}>
+            <TextField
+              fullWidth 
+              value={inputValue}
+              onChange = {(e) => setInputValue(e.target.value)}
+              onFocus={handleFocus}
+              onKeyDown={handleFilterChange}
+              placeholder={getPlaceholder()}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+            {showOptions && (
+              <Paper
+                sx={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  mt: 1,
+                  zIndex: 1300,
+                  width: '100%',
+                  backgroundColor: 'background.paper',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap',
+                  gap: 1,
+                  p: 1,
+                }}
+              >
+                 <Chip
+                  label="Numéro"
+                  color={selectedFilter === 'number' ? 'primary' : 'default'}
+                  onClick={() => handleSelectFilter('number')}
+                />
+                <Chip
+                  label="Titre"
+                  color={selectedFilter === 'title' ? 'primary' : 'default'}
+                  onClick={() => handleSelectFilter('title')}
+                />
+               
+                <Chip
+                  label="Entreprise"
+                  color={selectedFilter === 'company' ? 'primary' : 'default'}
+                  onClick={() => handleSelectFilter('company')}
+                />
+                <Chip
+                  label="Numéro de passeport"
+                  color={selectedFilter === 'passport_number' ? 'primary' : 'default'}
+                  onClick={() => handleSelectFilter('passport_number')}
+                />
+                {selectedFilter !== 'number' && (
+                  <Chip
+                    label="x"
+                    size="small"
+                    onClick={() => {
+                      setSelectedFilter('number');
+                      filters.setState({ title: '', company: '', passport_number: '' });
+                      handleCloseOptions();
+                    }}
+                  />
+                )}
+              </Paper>
+            )}
+          </Box>
+        </Stack>
+
+        {/* <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}>
           <Box sx={{ position: 'relative', flexGrow: 1, width: '100%' }}>
             <TextField
               fullWidth
@@ -190,10 +329,10 @@ export function DeclarationTableToolbar({ filters, options, dateError, onResetPa
               }}
             />
           </Box>
-        </Stack>
+        </Stack> */}
 
-        <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}>
-          <TextField
+        {/* <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}> */}
+          {/* <TextField
             fullWidth
             onChange={(e) => setCompanyInput(e.target.value)}
             placeholder="Rechercher par nom de l'entreprise"
@@ -207,9 +346,9 @@ export function DeclarationTableToolbar({ filters, options, dateError, onResetPa
                 ),
               }
             }}
-          />
+          /> */}
           
-          <TextField
+          {/* <TextField
             fullWidth
             value={passportInput}
             onChange={(e) => setPassportInput(e.target.value)}
@@ -224,12 +363,12 @@ export function DeclarationTableToolbar({ filters, options, dateError, onResetPa
                 ),
               }
             }}
-          />
+          /> */}
 
           {/* <IconButton onClick={popover.onOpen}>
             <Iconify icon="eva:more-vertical-fill" />
           </IconButton> */}
-        </Stack>
+        {/* </Stack> */}
       </Stack>
       <CustomPopover
         open={popover.open}

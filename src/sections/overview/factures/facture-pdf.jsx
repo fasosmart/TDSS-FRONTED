@@ -15,7 +15,7 @@ function sanitize(text) {
     .replace(/\u2007/g, ' ');
 }
 
-export async function generateFacturePDF(facture, devise) {
+export async function generateFacturePDF(facture, devise, {download = true} = {}) {
   const arrayBuffer = await fetch(TEMPLATE_URL).then(res => {
     if (!res.ok) throw new Error(`Impossible de charger le template (${res.status})`);
     return res.arrayBuffer();
@@ -158,5 +158,8 @@ export async function generateFacturePDF(facture, devise) {
 
   // Sauvegarde et téléchargement
   const pdfBytes = await pdfDoc.save();
-  saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), `Facture_${facture.number}.pdf`);
+  if (download) {
+    saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), `Facture_${facture.number}.pdf`);
+  }
+  return pdfBytes;
 }

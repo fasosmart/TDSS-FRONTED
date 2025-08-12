@@ -26,6 +26,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { TableHeadCustom } from 'src/components/table';
 import { CustomPopover, usePopover } from 'src/components/custom-popover';
 import { Label } from 'src/components/label';
+import { useRouter } from 'next/navigation';
 
 // ----------------------------------------------------------------------
 
@@ -84,8 +85,7 @@ const DECLARATION_TABLE_HEAD = [
   { id: 'date', label: 'Date' },
   { id: 'company', label: 'Entreprise' },
   { id: 'nb_employees', label: "Nombre d'employés" },
-  { id: 'amount', label: 'Montant', align: 'right' },
-  { id: 'status', label: 'Statut' },
+  { id: 'status', label: 'Status' },
   { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
@@ -94,7 +94,7 @@ const INVOICE_TABLE_HEAD = [
   { id: 'date', label: 'Date' },
   { id: 'company', label: 'Entreprise' },
   { id: 'comment', label: 'Commentaire', align: 'right' },
-  { id: 'status', label: 'Statut' },
+  { id: 'status', label: 'Status' },
   { id: 'actions', label: 'Actions', align: 'right' },
 ];
 
@@ -105,6 +105,7 @@ export function ComptableDeclarationTable({ title, declarations, loading }) {
   const isDarkMode = theme.palette.mode === 'dark';
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -155,7 +156,8 @@ export function ComptableDeclarationTable({ title, declarations, loading }) {
             color: isDarkMode ? theme.palette.common.white : theme.palette.text.primary,
           },
         }}
-        action={
+
+        /* action={
           <Button
             size="medium"
             startIcon={<Iconify icon="mdi:file-document-plus" />}
@@ -164,7 +166,8 @@ export function ComptableDeclarationTable({ title, declarations, loading }) {
           >
             Facturer tout
           </Button>
-        }
+        } */
+
       />
       <TableContainer sx={{ overflow: 'unset' }}>
         <Scrollbar>
@@ -225,6 +228,7 @@ export function ComptableDeclarationTable({ title, declarations, loading }) {
 function DeclarationRow({ row, isDarkMode }) {
   const theme = useTheme();
   const popover = usePopover();
+  const router = useRouter();
 
   const handleGenerateInvoice = () => {
     console.log('Générer facture pour:', row.slug);
@@ -232,8 +236,23 @@ function DeclarationRow({ row, isDarkMode }) {
   };
 
   const handleViewDetails = () => {
-    console.log('Voir détails de la déclaration:', row.slug);
+    router.push(`/dashboard/declaration/${row.slug}`); // ou le chemin approprié vers la page de détails
     popover.onClose();
+  };
+
+   const statusLabels = {
+    validated: 'Validée',
+   
+  };
+
+   const getStatusColor = (status) => {
+    switch (status) {
+      case 'validated':
+        return 'success';
+      
+      default:
+        return 'default';
+    }
   };
 
   return (
@@ -261,22 +280,10 @@ function DeclarationRow({ row, isDarkMode }) {
       <TableCell sx={{ color: isDarkMode ? theme.palette.text.secondary : undefined }}>
         {row.nb_employees}
       </TableCell>
-      <TableCell
-        align="right"
-        sx={{
-          color: isDarkMode ? theme.palette.success.lighter : theme.palette.success.darker,
-          fontWeight: 600,
-        }}
-      >
-        {/* À adapter selon les données disponibles */}
-        {row.amount ? fCurrency(row.amount) : '-'}
-      </TableCell>
       <TableCell>
-        <Chip
-          label={row.status}
-          color={row.status === 'validated' ? 'success' : 'default'}
-          size="small"
-        />
+        <Label variant="soft" color={getStatusColor(row.status)}>
+          {statusLabels[row.status] || 'Inconnu'} 
+        </Label>
       </TableCell>
       <TableCell align="right">
         <IconButton
@@ -297,15 +304,49 @@ function DeclarationRow({ row, isDarkMode }) {
       <CustomPopover
         open={popover.open}
         onClose={popover.onClose}
-        arrow="right-top"
-        sx={{ width: 220 }}
+        anchorEl={popover.open ? popover.anchorEl : null}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        sx={{ '& .MuiPopover-paper': {
+      width: 220,
+      mt: 1,
+      ml: 1,
+      overflow: 'visible',
+      '&:before': {
+        content: '""',
+        display: 'block',
+        position: 'absolute',
+        top: 0,
+        right: 14,
+        width: 10,
+        height: 10,
+        bgcolor: 'background.paper',
+        transform: 'translateY(-50%) rotate(45deg)',
+        zIndex: 0,
+      }
+    } }}
       >
-        <MenuItem onClick={handleGenerateInvoice} sx={{ color: theme.palette.success.main }}>
+       {/*  <MenuItem onClick={handleGenerateInvoice} sx={{ 
+      color: 'success.main',
+      '&:hover': {
+        bgcolor: 'action.hover',
+      }
+      }}>
           <Iconify icon="mdi:file-document-plus" />
           Générer facture
-        </MenuItem>
+        </MenuItem> */}
 
-        <MenuItem onClick={handleViewDetails}>
+        <MenuItem onClick={handleViewDetails} sx={{ 
+      '&:hover': {
+        bgcolor: 'action.hover',
+      }
+    }}>
           <Iconify icon="solar:eye-bold" />
           Voir détails
         </MenuItem>

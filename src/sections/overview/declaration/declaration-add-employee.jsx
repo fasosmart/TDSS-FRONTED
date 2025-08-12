@@ -58,7 +58,6 @@ export function DeclarationAddEmployee({ declaration, open, onClose }) {
   const loadingSend = useBoolean();
   const renewalModal = useBoolean();
 
-  
   // Utilisation du schéma global pour la validation
   const methods = useForm({
     mode: 'all',
@@ -87,6 +86,15 @@ export function DeclarationAddEmployee({ declaration, open, onClose }) {
       if (declaration?.status !== 'unsubmitted') return;
 
       setLoadingOptions(true);
+      // Vérifier si on a déjà le cache en session
+      const cached = sessionStorage.getItem('fonctions');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        setAllOptions(parsed); // Affiche directement les données en cache
+        setLoadingOptions(false);
+        return; // Pas besoin d'appeler le serveur
+      }
+
       try {
         // 1) Premier appel pour obtenir le count
         const resp1 = await axios.get(API.listFonctionAgent(), {
@@ -254,33 +262,30 @@ export function DeclarationAddEmployee({ declaration, open, onClose }) {
     methods.setValue(`employees[${index}].passportExists`, false); // Réinitialiser l'état d'existence du passeport
   };
 
+  const verifyPassports = async (employees, setValue) => {
+    await Promise.all(
+      employees.map(async (emp, idx) => {
+        if (!emp.passport_number) return;
 
- const verifyPassports = async (employees, setValue) => {
-  await Promise.all(
-    employees.map(async (emp, idx) => {
-      if (!emp.passport_number) return;
-
-      try {
-        const { data } = await axios.get(API.searchPassport(emp.passport_number));
-        // S'il existe, on le note et on peut éventuellement verrouiller la ligne :
-        const exists = !!data?.passport_number;
-        setValue(`employees[${idx}].passportExists`, exists);
-        if (exists) {
-          setValue(`employees[${idx}].locked`, false);   // optionnel
+        try {
+          const { data } = await axios.get(API.searchPassport(emp.passport_number));
+          // S'il existe, on le note et on peut éventuellement verrouiller la ligne :
+          const exists = !!data?.passport_number;
+          setValue(`employees[${idx}].passportExists`, exists);
+          if (exists) {
+            setValue(`employees[${idx}].locked`, false); // optionnel
+          }
+        } catch (error) {
+          // 404 = n'existe pas → false, les autres erreurs sont loguées
+          if (error.response?.status === 404) {
+            setValue(`employees[${idx}].passportExists`, false);
+          } else {
+            console.error('Erreur de vérification passeport', error);
+          }
         }
-      } catch (error) {
-        // 404 = n'existe pas → false, les autres erreurs sont loguées
-        if (error.response?.status === 404) {
-          setValue(`employees[${idx}].passportExists`, false);
-        } else {
-          console.error('Erreur de vérification passeport', error);
-        }
-      }
-    })
-  );
-};
-
-
+      })
+    );
+  };
 
   const handleImportData = async (importedData) => {
     const mappedEmployees = importedData.map((row) => {
@@ -304,8 +309,8 @@ export function DeclarationAddEmployee({ declaration, open, onClose }) {
     });
 
     reset({ employees: mappedEmployees });
-      await new Promise((r) => setTimeout(r, 0));
-      await verifyPassports(mappedEmployees, methods.setValue);
+    await new Promise((r) => setTimeout(r, 0));
+    await verifyPassports(mappedEmployees, methods.setValue);
   };
 
   const handleCancelRenew = () => {
@@ -315,7 +320,6 @@ export function DeclarationAddEmployee({ declaration, open, onClose }) {
 
   // Fonction pour obtenir l'option correspondant à une valeur
   const getJobOption = (jobValue) => allOptions.find((option) => option.value === jobValue) || null;
-
 
   return (
     <Dialog

@@ -10,7 +10,7 @@ import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-
+import Checkbox from '@mui/material/Checkbox';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { fDate, fTime } from 'src/utils/format-time';
 
@@ -100,14 +100,14 @@ export function DeclarationTableRow({
         }}
       >
         <TableCell padding="checkbox">
-          {/* <Checkbox
+           <Checkbox
             checked={selected}
             onClick={(e) => {
               e.stopPropagation(); // Empêche le clic sur la checkbox de se propager au TableRow
               onSelectRow(e);
             }}
             slotProps={{ id: `row-checkbox-${row.id}`, 'aria-label': `Row checkbox` }}
-          /> */}
+          /> 
         </TableCell>
 
         <TableCell>
@@ -212,7 +212,7 @@ export function DeclarationTableRow({
               </MenuItem>
             )}
 
-          {user?.type_name === 'Aguipe' &&
+          {(user?.type_name === 'Aguipe' || user?.type_name === 'Comptable') &&
             profil === 'aguipe' &&
             !['validated', 'billed', 'rejected', 'unsubmitted'].includes(row.status) && (
               <MenuItem
@@ -227,7 +227,7 @@ export function DeclarationTableRow({
               </MenuItem>
             )}
 
-          {user?.type_name === 'Aguipe' &&
+          {(user?.type_name === 'Aguipe' || user?.type_name === 'Comptable') &&
             profil === 'aguipe' &&
             !['rejected', 'billed', 'validated', 'unsubmitted'].includes(row.status) && (
               <MenuItem

@@ -60,7 +60,7 @@ export default function AgentDashboardHeader({
             </Typography>
           </Box>
           
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          {/* <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             <FormControl 
               variant="outlined" 
               size="small" 
@@ -105,7 +105,7 @@ export default function AgentDashboardHeader({
                 ))}
               </Select>
             </FormControl>
-          </Stack>
+          </Stack> */}
         </Stack>
       </Box>
       

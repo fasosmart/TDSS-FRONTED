@@ -1,3 +1,5 @@
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Divider from '@mui/material/Divider';
@@ -46,6 +48,7 @@ const Logo = styled('img')({
 
 export function PaiementDetails({ payment, user }) {
   const componentRef = useRef();
+  const router = useRouter();
   const [qrUrl, setQrUrl] = useState('');
 
   const afficherMontant = (montant) => {
@@ -78,12 +81,28 @@ export function PaiementDetails({ payment, user }) {
     return `${Number(amount).toLocaleString()} GNF`;
   };
 
+   const methodsLabels = {
+    transfer: 'Virement',
+    cheque: 'Chèque',
+    deposit: 'Espèces',
+  };
+
   const formatDate = (ds) => {
     const d = new Date(ds);
     const j = String(d.getDate()).padStart(2, '0');
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const a = d.getFullYear();
     return `${j}/${m}/${a}`;
+  };
+
+  const handleViewFactureDetails = () => {
+    const factureSlug = payment?.facture_slug;
+    // console.log(factureSlug); 
+    if (!factureSlug) {
+      toast.error("Aucun slug de facture trouvé pour ce paiement");
+      return;
+    }
+    router.push(paths.dashboard.factures.details(factureSlug));
   };
 
   return (
@@ -157,12 +176,14 @@ export function PaiementDetails({ payment, user }) {
               >
                 <Typography
                   component="span"
-                  sx={{ fontWeight: 700, color: 'text.primary', fontSize: '0.85rem' }}
+                  sx={{ fontWeight: 700, cursor: 'pointer', '&:hover': { color: 'primary.main', textDecoration: 'underline' }, fontSize: '0.85rem' }}
+                  onClick={handleViewFactureDetails}
                 >
                   Facture N° :
                 </Typography>{' '}
                 {payment?.facture_number}
               </Typography>
+              {/* <Typography>Facture slug : {payment?.facture_slug}</Typography> */}
               {user?.type_name === 'Admin' && (
                 <>
                   <Typography
@@ -186,9 +207,9 @@ export function PaiementDetails({ payment, user }) {
                       component="span"
                       sx={{ fontWeight: 700, color: 'text.primary', fontSize: '0.85rem' }}
                     >
-                      Méthode :
+                      Méthode de paiement :
                     </Typography>{' '}
-                    {payment?.payment_method}
+                      {methodsLabels[payment?.payment_method]}
                   </Typography>
                 </>
               )}
@@ -228,7 +249,7 @@ export function PaiementDetails({ payment, user }) {
               )}
             </Grid>
 
-            <Grid item size={{ xs: 12 }} sx={{ mt: 2 }}>
+            <Grid item size={{ xs: 6 }} sx={{ mt: 2 }}>
               <Typography
                 variant="subtitle2"
                 sx={{ fontWeight: 500, fontSize: '0.9rem', letterSpacing: 0.25, mb: 1 }}
@@ -283,6 +304,36 @@ export function PaiementDetails({ payment, user }) {
                 </Typography> */}
               </Box>
             </Grid>
+
+             <Grid item size={{ xs: 6 }} sx={{ mt: 2 }}>
+              <Box
+                sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}
+              >
+                 <Box
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    p: 1,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  {qrUrl ? (
+                    <img
+                      src={qrUrl}
+                      alt="QR Code"
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                  ) : (
+                    <Typography variant="caption" align="center">
+                      QR Code en cours de chargement...
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+              
+            </Grid>
           </Grid>
         </Box>
 
@@ -334,38 +385,35 @@ export function PaiementDetails({ payment, user }) {
               </StyledTableRow>
             </TableBody>
           </Table>
+           <Typography
+                  variant="body2"
+                  sx={{ fontSize: '0.85rem', color: 'text.primary', mt: 1.5 }}
+                >
+                  <Typography
+                    component="span"
+                    sx={{ fontWeight: 700, color: 'text.primary', fontSize: '0.85rem' }}
+                  >
+                    Commentaire :
+                  </Typography>{' '}
+                  {payment?.comment}
+                </Typography>
         </Box>
 
         <Box sx={{ mt: 5, mb: 8 }}>
           <Grid container spacing={2}>
-            {/* Colonne Client avec QR Code */}
+            
             <Grid item size={{ xs: 6 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                <Box
-                  sx={{
-                    width: 100,
-                    height: 100,
-                    p: 1,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  {qrUrl ? (
-                    <img
-                      src={qrUrl}
-                      alt="QR Code"
-                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                    />
-                  ) : (
-                    <Typography variant="caption" align="center">
-                      QR Code en cours de chargement...
-                    </Typography>
-                  )}
-                </Box>
+              <Box 
+              sx={{
+                 display: 'flex', 
+                 flexDirection: 'column', 
+                 alignItems: 'flex-start',
+                 justifyContent: 'flex-start',
+                 }}>
+               
                 <Typography
                   variant="body2"
-                  sx={{ fontWeight: 'bold', mt: 2, textDecoration: 'underline' }}
+                  sx={{ fontWeight: 'bold',  textDecoration: 'underline' }}
                 >
                   Le Client
                 </Typography>

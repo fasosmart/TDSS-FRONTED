@@ -3,17 +3,31 @@ import { countries } from 'src/assets/data/countries';
 
 // ----------------------------------------------------------------------
 
+// export function getCountryCode(inputValue, countryCode) {
+//   if (inputValue) {
+//     const phoneNumber = parsePhoneNumber(inputValue);
+
+//     if (phoneNumber) {
+//       return phoneNumber?.country;
+//     }
+//   }
+
+//   return countryCode ?? 'GN';
+// }
+
 export function getCountryCode(inputValue, countryCode) {
   if (inputValue) {
-    const phoneNumber = parsePhoneNumber(inputValue);
-
-    if (phoneNumber) {
+    try {
+      const phoneNumber = parsePhoneNumber(inputValue, countryCode ?? 'GN');
       return phoneNumber?.country;
+    } catch {
+      return countryCode ?? 'GN';
     }
   }
 
   return countryCode ?? 'GN';
 }
+
 
 // ----------------------------------------------------------------------
 

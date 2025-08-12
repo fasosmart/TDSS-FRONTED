@@ -1,6 +1,3 @@
-
-
-
 //  const BASE_URL = 'http://192.168.1.109:8000/api'; // Adresse de votre backend
 
   const BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`;  // Adresse de votre backend
@@ -160,6 +157,7 @@ const API = {
   },
   getLastValidatedDeclarations: () => `${BASE_URL}/declarations/last-validated/`,
 
+  getEcheances: () => `${BASE_URL}/factures/echeances/`,
 };
 
 export default API;

@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
 import { alpha, useTheme } from '@mui/material/styles';
 import { Iconify } from 'src/components/iconify';
+
 // ----------------------------------------------------------------------
 
 export function ComptableWidgetSummary({
@@ -18,25 +19,72 @@ export function ComptableWidgetSummary({
   loading = false,
   sx,
   percent = 0,
-  currency = 'XOF',
+  currency = 'GNF',
   isRevenue = false,
   ...other
 }) {
   const theme = useTheme();
-  const isDarkMode = theme.palette.mode === 'dark';
 
-  const displayPercent = Number(percent) || 0;
+  // -------- Helpers ---------------------------------------------------
+
+  // Format abrégé (ex. 12,5M).  Utilisé uniquement si isCurrency === false
+  const formatLargeNumber = (num) => {
+    if (!num) return '0';
+    const value =
+      typeof num === 'string' ? parseFloat(num.replace(/[^0-9.-]+/g, '')) : num;
+
+    if (value >= 1e12) return `${(value / 1e12).toFixed(2)}T`;
+    if (value >= 1e9)  return `${(value / 1e9).toFixed(2)}B`;
+    if (value >= 1e6)  return `${(value / 1e6).toFixed(2)}M`;
+    if (value >= 1e3)  return `${(value / 1e3).toFixed(2)}K`;
+
+    return value.toString();
+  };
+
+  // Format détaillé avec séparateurs + code devise
+  const afficherMontant = (montant) => {
+    if (!montant || isNaN(montant)) return '0';
+
+    const format = (n, locale = 'fr-FR') =>
+      Number(n).toLocaleString(locale, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      });
+
+    switch (currency) {
+      case 'GNF':
+        // Pas de conversion : on affiche “12 500 000 GNF”
+        return `${format(montant, 'fr-FR')} GNF`;
+
+      case 'USD':
+        // Conversion approximative GNF → USD, puis format US “1,000.00 USD”
+        return `${format(montant / 9200, 'en-US')} USD`;
+
+      case 'EUR':
+        // Conversion approximative GNF → EUR, puis format FR “1 000,00 EUR”
+        return `${format(montant / 10000, 'fr-FR')} EUR`;
+
+      default:
+        return format(montant, 'fr-FR');
+    }
+  };
+
+  // Sélectionne le format selon les props
+  const formatValue = (value, asCurrency = false) => {
+    if (!asCurrency) {
+      return formatLargeNumber(value);
+    }
+    // Si on souhaite afficher les revenus, on applique quand même la conversion/formatage de devise
+    const rawNumber =
+      typeof value === 'string' ? parseFloat(value) : value;
+    return afficherMontant(rawNumber);
+  };
+
+  // --------------------------------------------------------------------
 
   if (loading) {
     return (
-      <Card
-        sx={{
-          height: 120,
-          p: 2,
-          ...sx,
-        }}
-        {...other}
-      >
+      <Card sx={{ height: 120, p: 2, ...sx }} {...other}>
         <Stack spacing={1}>
           <Skeleton variant="text" width="60%" height={20} />
           <Skeleton variant="text" width="40%" height={32} />
@@ -44,52 +92,6 @@ export function ComptableWidgetSummary({
       </Card>
     );
   }
-
-  // Fonction de formatage qui tient compte de la devise
-  const formatValue = (value, isCurrencyValue = false, isRevenue = false) => {
-    if (!isCurrencyValue) {
-      return formatLargeNumber(value);
-    }
-
-    // Si c'est le revenu, on applique le formatage de devise avec format court
-    if (isRevenue) {
-      // D'abord, on formate le nombre en version courte
-      const formattedNumber = formatLargeNumber(value);
-
-      // On récupère le symbole de la devise
-      const currencySymbol =
-        {
-          XOF: 'FCFA',
-          EUR: '€',
-          GNF: 'FG',
-        }[currency] || 'FG';
-
-      // On combine le nombre formaté avec le symbole de la devise
-      return `${formattedNumber} ${currencySymbol}`;
-    }
-
-    // Pour les autres montants monétaires (non-soumis à conversion)
-    return fCurrency(value, { minimumFractionDigits: 0 });
-  };
-
-  const formatLargeNumber = (num) => {
-    if (!num) return '0';
-    const value = typeof num === 'string' ? parseFloat(num.replace(/[^0-9.-]+/g, '')) : num;
-
-    if (value >= 1e12) {
-      return `${(value / 1e12).toFixed(2)}T`; // Billiards
-    }
-    if (value >= 1e9) {
-      return `${(value / 1e9).toFixed(2)}B`; // Milliards
-    }
-    if (value >= 1e6) {
-      return `${(value / 1e6).toFixed(2)}M`; // Millions
-    }
-    if (value >= 1e3) {
-      return `${(value / 1e3).toFixed(2)}K`; // Milliers
-    }
-    return `${value}`;
-  };
 
   return (
     <Card
@@ -106,7 +108,9 @@ export function ComptableWidgetSummary({
         '&:hover': {
           boxShadow: (theme) => theme.customShadows.z16,
         },
+        ...sx,
       }}
+      {...other}
     >
       <Stack direction="row" justifyContent="space-between" sx={{ flexGrow: 1 }}>
         <Stack spacing={0.5}>
@@ -114,7 +118,7 @@ export function ComptableWidgetSummary({
             {title}
           </Typography>
           <Typography variant="h4" sx={{ fontWeight: 600 }}>
-            {isCurrency ? formatValue(total, true, isRevenue) : formatValue(total)}
+            {formatValue(total, isCurrency)}
           </Typography>
         </Stack>
 
@@ -138,11 +142,13 @@ export function ComptableWidgetSummary({
 }
 
 ComptableWidgetSummary.propTypes = {
-  color: PropTypes.string,
-  icon: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
-  isCurrency: PropTypes.bool,
-  loading: PropTypes.bool,
-  sx: PropTypes.oneOfType([PropTypes.object, PropTypes.func]),
   title: PropTypes.string,
   total: PropTypes.number,
+  icon: PropTypes.oneOfType([PropTypes.element, PropTypes.string]),
+  color: PropTypes.string,
+  isCurrency: PropTypes.bool,
+  isRevenue: PropTypes.bool,
+  loading: PropTypes.bool,
+  currency: PropTypes.oneOf(['GNF', 'USD', 'EUR']),
+  sx: PropTypes.oneOfType([PropTypes.object, PropTypes.func]),
 };

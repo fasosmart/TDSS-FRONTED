@@ -1,3 +1,7 @@
+import React from 'react';
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
+
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
@@ -17,12 +21,13 @@ import { fDate, fTime } from 'src/utils/format-time';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
 import { Iconify } from 'src/components/iconify';
+import { toast } from 'sonner';
 
 // ----------------------------------------------------------------------
 
 export function PaiementTableRow({ row, selected, onViewRow, onDeleteRow }) {
   const confirm = useBoolean();
-
+  const router = useRouter();
   const popover = usePopover();
 
   const afficherMontant = (montant) => {
@@ -38,7 +43,16 @@ export function PaiementTableRow({ row, selected, onViewRow, onDeleteRow }) {
   const methodsLabels = {
     transfer: 'Virement',
     cheque: 'Chèque',
-    deposit: 'Dépôt',
+    deposit: 'Espèces',
+  };
+
+  const handleDetailsFactures = () => {
+    const factureSlug = row?.facture_slug;
+    if (!factureSlug) {
+      toast.error('Aucun slug de facture trouvé pour cette ligne');
+      return;
+    }
+    router.push(paths.dashboard.factures.details(factureSlug));
   };
 
   return (
@@ -58,7 +72,9 @@ export function PaiementTableRow({ row, selected, onViewRow, onDeleteRow }) {
             <ListItemText
               disableTypography
               primary={
-                <Typography variant="body2" noWrap>
+                <Typography variant="body2" noWrap sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main', textDecoration: 'underline' }, fontSize: '0.85rem' }}
+                  onClick={(event) => {event.stopPropagation(); handleDetailsFactures();} }
+                >
                   {row.facture_number}
                 </Typography>
               }

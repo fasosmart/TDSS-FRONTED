@@ -7,7 +7,7 @@ import { chipProps, FiltersBlock, FiltersResult } from 'src/components/filters-r
 
 // ----------------------------------------------------------------------
 
-export function PaiementTableFiltersResult({ filters, totalResults, onResetPage, sx }) {
+export function PaiementTableFiltersResult({ filters, totalResults, onResetPage, sx , options }) {
   const handleRemoveKeyword = useCallback(() => {
     onResetPage();
     filters.setState({ name: '' });
@@ -47,7 +47,12 @@ export function PaiementTableFiltersResult({ filters, totalResults, onResetPage,
     <FiltersResult totalResults={totalResults} onReset={filters.onResetState} sx={sx}>
       <FiltersBlock label="Méthode:" isShow={!!filters.state.payment_method.length}>
         {filters.state.payment_method.map((item) => (
-          <Chip {...chipProps} key={item} label={item} onDelete={() => handleRemoveService(item)} />
+          <Chip {...chipProps} 
+          key={item} 
+          label={
+            options.payment_method.find((method) => method.id === item)?.label || item
+          } 
+          onDelete={() => handleRemoveService(item)} />
         ))}
       </FiltersBlock>
 

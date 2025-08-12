@@ -39,9 +39,9 @@ export function PaiementTableToolbar({
 
   // Gestion de la sélection du filtre actif
   const handleSelectFilter = (filterType) => {
-  
+    console.log('Filter selected:', filterType); // Debug log
     onResetPage();
-    filters.setState({ facture_number: '', number: '', company: '' }); // Réinitialise les autres filtres
+    filters.setState({ facture_number: '', number: '' , company:''}); // Réinitialise les autres filtres
     setSelectedFilter(filterType); // Définit le filtre actif
     setShowOptions(false); // Ferme les options
   };
@@ -54,7 +54,7 @@ export function PaiementTableToolbar({
       case 'number':
         return 'Recherche par Numero de Paiement';
       case 'company':
-        return 'Recherche par Nom de l\'Entreprise';
+        return 'Recherche par Nom de la Société';
       default:
         return 'Recherche par Numero de Facture';
     }
@@ -98,17 +98,17 @@ export function PaiementTableToolbar({
               filters.setState({ payment_method: newValue });
             }}
             input={<OutlinedInput label="Methode Paiement" />}
-            renderValue={(selected) => selected.map((value) => value).join(', ')}
+            // renderValue={(selected) => selected.map((value) => value).join(', ')}
             inputProps={{ id: 'invoice-filter-service-select-label' }}
             sx={{ textTransform: 'capitalize' }}
           >
             {options?.payment_method?.map((option) => (
               <MenuItem key={option.id} value={option.id}>
-                <Checkbox
+                {/* <Checkbox
                   disableRipple
                   size="small"
-                  checked={filters.state.payment_method.includes(option)}
-                />
+                  checked={filters.state.payment_method.includes(option.label)}
+                /> */}
                 {option.label}
               </MenuItem>
             ))}
@@ -118,10 +118,10 @@ export function PaiementTableToolbar({
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Date debut"
-            value={filters.state.date_after}
+            value={filters.state.date_before}
             onChange={(newValue) => {
               onResetPage();
-              filters.setState({ date_after: newValue });
+              filters.setState({ date_before: newValue });
             }}
             slotProps={{ textField: { fullWidth: true } }}
             sx={{ maxWidth: { md: 180 } }}
@@ -131,10 +131,10 @@ export function PaiementTableToolbar({
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DatePicker
             label="Date fin"
-            value={filters.state.date_before}
+            value={filters.state.date_after}
             onChange={(newValue) => {
               onResetPage();
-              filters.setState({ date_before: newValue });
+              filters.setState({ date_after: newValue });
             }}
             slotProps={{
               textField: {
@@ -200,8 +200,8 @@ export function PaiementTableToolbar({
                   color={selectedFilter === 'number' ? 'primary' : 'default'}
                   onClick={() => handleSelectFilter('number')}
                 />
-                <Chip
-                  label="Nom de l'Entreprise"
+                 <Chip
+                  label="Nom de l'entreprise"
                   color={selectedFilter === 'company' ? 'primary' : 'default'}
                   onClick={() => handleSelectFilter('company')}
                 />

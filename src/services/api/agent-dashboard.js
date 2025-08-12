@@ -15,7 +15,6 @@ export const AgentDashboardService = {
     try {
       // Construire l'URL avec le paramètre year si fourni
       const url = API.agentDashboard(year);
-      console.log("Appel API avec URL ", url);
       const response = await axiosInstance.get(url);
       return response.data;
     } catch (error) {

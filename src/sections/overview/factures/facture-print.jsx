@@ -1,7 +1,9 @@
+'use client';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { saveAs } from 'file-saver';
 import { fCurrency, fGNF, fEuro } from 'src/utils/format-number';
 import { amountToWords } from 'src/utils/number-to-words';
+import { forwardRef } from 'react';
 
 
 const TEMPLATE_URL = '/pdf/facture-pdf.pdf';
@@ -15,7 +17,7 @@ function sanitize(text) {
     .replace(/\u2007/g, ' ');
 }
 
-export async function FacturePrint(facture, devise) {
+export const FacturePrint = forwardRef(async ({ facture, devise }, ref) => {
   const arrayBuffer = await fetch(TEMPLATE_URL).then(res => {
     if (!res.ok) throw new Error(`Impossible de charger le template (${res.status})`);
     return res.arrayBuffer();
@@ -157,6 +159,6 @@ export async function FacturePrint(facture, devise) {
   page.drawLine({ start: { x: 450, y: rowY + 78 }, end: { x: 450 + sW, y: rowY + 78 }, thickness: 0.5, color: black });
 
   // Sauvegarde et téléchargement
-  const pdfBytes = await pdfDoc.save();
-  saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), `Facture_${facture.number}.pdf`);
-}
+  // const pdfBytes = await pdfDoc.save();
+  // saveAs(new Blob([pdfBytes], { type: 'application/pdf' }), `Facture_${facture.number}.pdf`);
+})

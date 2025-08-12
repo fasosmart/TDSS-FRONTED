@@ -38,7 +38,10 @@ export const NewUserSchema = zod.object({
     .min(1, { message: 'Email est obligatoire!' })
     .email({ message: 'Email doit être valide!' }),
 
-  phone: schemaHelper.phoneNumber({ isValidPhoneNumber }),
+
+
+   phone: zod.string().min(1, { message: "Entrez votre numero de téléphone " }),
+
   type: zod.string().optional(),
   profile: zod
     .object({
@@ -156,7 +159,7 @@ export function UserNewEditForm({ currentUser, user }) {
           newData.append(key, modifiededData[key]);
         });
         // Appel à la route de mise à jour avec le slug
-        response = await axios.patch(API.updateUser(currentUser.slug), newData, {
+        response = await axios.put(API.updateUser(currentUser.slug), formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },

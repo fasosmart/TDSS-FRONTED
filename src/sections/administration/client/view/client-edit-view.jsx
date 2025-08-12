@@ -40,7 +40,7 @@ export function ClientEditView({ slug }) {
                 links={[
                     { name: 'Dashboard', href: paths.dashboard.root },
                     { name: 'Structures', href: paths.dashboard.client.root },
-                    { name: 'Modifier' ` ${profil?.name}` },	
+                    { name:  ` ${profil?.name}` },	
                 ]}
                 sx={{ mb: { xs: 3, md: 5 } }}
             >

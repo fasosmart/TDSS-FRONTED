@@ -33,7 +33,7 @@ export const UserQuickEditSchema = zod.object({
   // picture: schemaHelper.file({
   //   message: { required_error: 'televerser un image!' },
   // }),
-  phone: schemaHelper.phoneNumber({ isValidPhoneNumber }),
+  phone: zod.string().min(1, { message: "Entrez votre numero de téléphone " }),
 
   type: zod.string().min(1, { message: 'le type est requis!' }),
   profile: zod.string().min(1, { message: 'le profil est requis!' }),

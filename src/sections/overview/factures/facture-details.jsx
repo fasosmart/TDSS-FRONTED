@@ -1,4 +1,7 @@
-
+import React from 'react';
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
+import { toast } from 'react-toastify';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Divider from '@mui/material/Divider';
@@ -39,17 +42,17 @@ export function FactureDetails({ facture, user }) {
   const [currentStatus, setCurrentStatus] = useState('');
   const [devise, setDevise] = useState('GNF');
 
+  const router = useRouter();
   // const currentStatus = facture?.status;
 
   const popover = usePopover();
 
- 
-const afficherMontant = (montant) => {
-  if (devise === 'GNF') {
-    return fGNF(montant);
-  } else if (devise === 'USD') {
-    return fCurrency(montant / 9200); // Exemple: 1 USD = 9200 GNF
-  } else if (devise === 'EUR') {
+  const afficherMontant = (montant) => {
+    if (devise === 'GNF') {
+      return fGNF(montant);
+    } else if (devise === 'USD') {
+      return fCurrency(montant / 9200); // Exemple: 1 USD = 9200 GNF
+    } else if (devise === 'EUR') {
     return fEuro(montant / 10000); // Exemple: 1 EUR = 10000 GNF
   }
 };
@@ -175,6 +178,15 @@ useEffect(() => {
     }
   }, [facture?.status]);
 
+  const handleDetailsDeclaration = () => {
+    const declarationSlug = facture?.declaration_slug;
+    if (!declarationSlug) {
+      toast.error('Le slug de la déclaration est manquant.');
+      return;
+    }
+    router.push(paths.dashboard.declaration.details(declarationSlug));
+  }
+
   return (
     <>
       <FactureToolbar
@@ -258,7 +270,7 @@ useEffect(() => {
               Date facture :
               {fDate(facture?.created_on)}
             </Typography>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1 , cursor: 'pointer', '&:hover': { color: 'primary.main', textDecoration: 'underline' }}} onClick={handleDetailsDeclaration}>
               Declaration N :
               {facture?.declaration_number}
             </Typography>

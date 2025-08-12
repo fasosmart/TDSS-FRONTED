@@ -24,14 +24,17 @@ import { Label } from 'src/components/label';
 import { RouterLink } from 'src/routes/components';
 import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
-
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { pdf } from '@react-pdf/renderer';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useSetState } from 'src/hooks/use-set-state';
 
 import API from 'src/utils/api';
-import { fIsAfter, fIsBetween } from 'src/utils/format-time';
+import { fIsBetween } from 'src/utils/format-time';
 import { sumBy } from 'src/utils/helper';
-
+import { PDFDocument } from 'pdf-lib';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { Iconify } from 'src/components/iconify';
@@ -53,10 +56,14 @@ import { DeclarationSummary } from '../declaration-analytic';
 import { DeclarationTableFiltersResult } from '../declaration-table-filters';
 import { DeclarationTableRow } from '../declaration-table-row';
 import { DeclarationTableToolbar } from '../declaration-table-toolbar';
+import { DeclarationPDF, generateDeclarationPDF } from '../declaration-pdf';
 
 import { useMockedUser } from 'src/auth/hooks';
+
 import dayjs from 'src/utils/format-time'; // Ensure this imports the correct dayjs instance
 dayjs.locale('fr'); // Set the default locale to French
+
+
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
@@ -80,6 +87,7 @@ export function DeclarationListView() {
   const { user } = useMockedUser();
 
   const type_user = user?.type_name?.toLowerCase().trim();
+  
   // console.log('type_user:', type_user);
 
   const router = useRouter();
@@ -87,12 +95,20 @@ export function DeclarationListView() {
   const table = useTable({ defaultOrderBy: 'created_on' });
 
   const confirm = useBoolean();
+  const confirmDownload = useBoolean();
+  const downloadZip = useBoolean();
 
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(true); // État pour indiquer le chargement
+  const [loader , setLoader] = useState(false) // Etat pour indiquer les chargements sur les cards
   const [error, setError] = useState(null); // État pour gérer les erreurs
-  const [selectedFilter, setSelectedFilter] = useState('title'); // options de recherche
+  const [selectedFilter, setSelectedFilter] = useState('number'); // options de recherche
+  // const [selectedDeclarations, setSelectedDeclarations] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadZip , setIsLoadZip] = useState(false);
+
   const [count, setCount] = useState();
+  const downloadMultiplePDF = useBoolean();
 
   const [pagination, setPagination] = useState({
     count: 0,
@@ -103,7 +119,7 @@ export function DeclarationListView() {
   const [summary, setSummary] = useState({ totalCount: 0, countByStatus: {} });
 
   const filters = useSetState({
-    name: '', // mot-clé pour filtrer par numéro ou type de déclaration
+    number: '', // mot-clé pour filtrer par numéro ou type de déclaration
     fonction: [],
     title: '',
     company: '',
@@ -113,7 +129,7 @@ export function DeclarationListView() {
     ends_at: null,
   });
 
-  const dateError = fIsAfter(filters.state.starts_at, filters.state.ends_at);
+  const dateError = fIsBetween(filters.state.starts_at, filters.state.ends_at);
 
   const dataFiltered = applyFilter({
     inputData: tableData,
@@ -125,7 +141,8 @@ export function DeclarationListView() {
   const dataInPage = rowInPage(dataFiltered, table.page, table.rowsPerPage);
 
   const canReset =
-    !!filters.state.type ||
+    !!filters.state.number ||
+    // !!filters.state.type ||
     !!filters.state.title ||
     !!filters.state.company ||
     !!filters.state.passport_number ||
@@ -144,7 +161,9 @@ export function DeclarationListView() {
       .then((res) => res.data.count);
 
   useEffect(() => {
+    setLoader(true),
     Promise.all([
+      
       fetchTotalCount(),
       fetchCountByStatus('unsubmitted'),
       fetchCountByStatus('submitted'),
@@ -162,8 +181,54 @@ export function DeclarationListView() {
           rejected: rejectCount,
         },
       });
+      setLoader(false);
     });
   }, [user]);
+
+ const fetchEmployeesBySlug = async (slug) => {
+  if (!slug) return [];
+
+  try {
+    // 1. Premier appel pour avoir count et premiers résultats paginés
+    const {
+      data: { count, results }
+    } = await axios.get(API.Employe(slug));
+
+    let allEmployees = results;
+
+    // 2. Si les résultats sont paginés, on récupère tout d’un coup
+    if (count > results.length) {
+      const {
+        data: { results: fullResults }
+      } = await axios.get(API.Employe(slug), {
+        params: { limit: count, offset: 0 }
+      });
+      allEmployees = fullResults;
+    }
+
+    return allEmployees;
+  } catch (error) {
+    console.error('Erreur lors du chargement des employés :', error);
+    return [];
+  }
+};
+
+
+
+  const fetchDeclarations = async (slugs) => {
+    const responses = await Promise.all(
+      slugs.map((slug) => axios.get(API.detailsDeclaration(slug)))  
+    );
+   return Promise.all(
+    responses.map(async (res) => {
+      const declaration = res.data;
+      const employees = await fetchEmployeesBySlug(declaration.slug);
+      return { ...declaration, employees };
+    })
+  );
+};
+
+
 
   const getDeclarationLength = (status) => summary.countByStatus[status];
 
@@ -200,6 +265,7 @@ export function DeclarationListView() {
           title="Total"
           total={summary.totalCount}
           percent={100}
+          loading={loader}
           chart={{
             colors: [theme.vars.palette.info.main],
             categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
@@ -214,6 +280,7 @@ export function DeclarationListView() {
           title="Validées"
           total={getDeclarationLength('validated')}
           percent={getPercentByStatus('validated')}
+          loading={loader}
           chart={{
             colors: [theme.vars.palette.success.main],
             categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
@@ -228,6 +295,7 @@ export function DeclarationListView() {
           title="Brouillon"
           total={getDeclarationLength('unsubmitted')}
           percent={getPercentByStatus('unsubmitted')}
+          loading={loader}
           chart={{
             colors: [theme.vars.palette.warning.main],
             categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
@@ -242,6 +310,7 @@ export function DeclarationListView() {
           title="Rejetées"
           total={getDeclarationLength('rejected')}
           percent={getPercentByStatus('rejected')}
+          loading={loader}
           chart={{
             colors: [theme.vars.palette.error.main],
             categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
@@ -256,6 +325,7 @@ export function DeclarationListView() {
           title="Facturées"
           total={getDeclarationLength('billed')}
           percent={getPercentByStatus('billed')}
+          loading={loader}
           chart={{
             colors: [theme.vars.palette.primary.main],
             categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
@@ -270,6 +340,7 @@ export function DeclarationListView() {
           title="Soumises"
           total={getDeclarationLength('submitted')}
           percent={getPercentByStatus('submitted')}
+          loading={loader}
           chart={{
             colors: [theme.vars.palette.secondary.main],
             categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
@@ -341,6 +412,118 @@ export function DeclarationListView() {
       setError(errorMessage);
       console.error('Erreur réseau ou serveur:', error);
       toast.error(errorMessage);
+    }
+  };
+
+const handleDownload = async () => {
+  if (!table.selected || table.selected.length === 0) {
+    console.warn("Aucune déclaration sélectionnée.");
+    return;
+  }
+
+  setIsLoading(true); // Début du chargement
+
+  try {
+    const slugs = table.selected;
+    const declarations = await fetchDeclarations(slugs);
+
+    for (const declaration of declarations) {
+      const logoUrl = declaration?.company?.picture;
+      const proxyBase = 'https://api.allorigins.win/raw?url=';
+      const proxiedLogoUrl = logoUrl ? proxyBase + encodeURIComponent(logoUrl) : null;
+
+      const blob = await pdf(
+        <DeclarationPDF
+          declaration={declaration}
+          employees={declaration.employees}
+          logoUrl={proxiedLogoUrl}
+        />
+      ).toBlob();
+
+      saveAs(blob, `declaration-${declaration.number}.pdf`);
+    }
+  } catch (err) {
+    toast.error("Erreur lors du téléchargement :", err);
+  } finally {
+    setIsLoading(false); // Fin du chargement
+  }
+};
+  // Fonction pour télécharger plusieurs declarations PDF en un seul fichier
+  const handleDownloadMultiplePDF = async () => {
+    if (!table.selected || table.selected.length === 0) {
+      toast.warn("Aucune déclaration sélectionnée.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const slugs = table.selected;
+      const declarations = await fetchDeclarations(slugs);
+
+      // 1. Nouveau document final
+      const mergedPdf = await PDFDocument.create();
+
+      for (const declaration of declarations) {
+        // 2. Génération du PDF de cette déclaration (sous forme de bytes)
+        const singlePdfBytes = await generateDeclarationPDF(declaration, { download: false });
+
+        // 3. Charger le PDF source
+        const singlePdfDoc = await PDFDocument.load(singlePdfBytes);
+
+        // 4. Copier toutes les pages dans le document final
+        const copiedPages = await mergedPdf.copyPages(singlePdfDoc, singlePdfDoc.getPageIndices());
+        copiedPages.forEach((page) => mergedPdf.addPage(page));
+      }
+
+      // 5. Sauvegarde et téléchargement
+      const mergedPdfBytes = await mergedPdf.save();
+      saveAs(new Blob([mergedPdfBytes], { type: 'application/pdf' }), 'declarations_ensemble.pdf');
+      toast.success('Téléchargement PDF déclarations groupées terminé !');
+      table.onSelectAllRows(false, []);
+
+    } catch (error) {
+      console.error('Erreur fusion PDF :', error);
+      toast.error("Erreur lors de la génération du PDF.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  // Fonction pour télécharger plusieurs declarations en un fichier ZIP
+  const handleDownloadZip = async () => {
+    if (!table.selected || table.selected.length === 0) {
+      toast.warn("Aucune déclaration sélectionnée.");
+      return;
+    }
+
+    setIsLoadZip(true);
+
+    try {
+      const slugs = table.selected;
+      const declarations = await fetchDeclarations(slugs);
+
+      const zip = new JSZip();
+
+      for (const declaration of declarations) {
+
+      const blob = await generateDeclarationPDF(declaration, {
+          download: false, // Ne pas télécharger individuellement
+        });
+
+        const filename = `declaration-${declaration.number}.pdf`;
+        zip.file(filename, blob);
+      }
+
+      // Générer le fichier ZIP
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      saveAs(zipBlob, 'declarations.zip');
+      toast.success('Téléchargement ZIP terminé !');
+      table.onSelectAllRows(false, []);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur lors du téléchargement ZIP.");
+    } finally {
+      setIsLoadZip(false);
     }
   };
 
@@ -518,33 +701,42 @@ export function DeclarationListView() {
   );
 
   useEffect(() => {
-  // Fonction pour récupérer les données paginées en fonction des filtres et la page courante
-  const fetchDeclarations = async () => {
-    setLoading(true);
-    try {
-      const offset = table.page * table.rowsPerPage;
-      const params = {
-        limit: table.rowsPerPage,
-        offset: offset,
-        ...(filters.state.company
-          ? { company: filters.state.company }
-          : filters.state.title
-            ? { title: filters.state.title }
-            : filters.state.passport_number
-              ? { passport_number: filters.state.passport_number }
-              : {}
-        ),
-
+    // Fonction pour récupérer les données paginées en fonction des filtres et la page courante
+    const fetchDeclarations = async () => {
+      setLoading(true);
+      try {
+        const offset = table.page * table.rowsPerPage;
+        const params = {
+          limit: table.rowsPerPage,
+          offset: offset,
+          ...(filters.state.company
+            ? { company: filters.state.company }
+            : filters.state.title
+              ? { title: filters.state.title }
+              : filters.state.passport_number
+                ? { passport_number: filters.state.passport_number }
+                : filters.state.number ? { number: filters.state.number } 
+                : {} 
+          ),
           ...(filters.state.status !== 'all' ? { status: filters.state.status } : {}),
-          ...(filters.state.starts_at && filters.state.ends_at && !dateError
-            ? {
-                starts_at: dayjs(filters.state.dstarts_at).format('YYYY-MM-DD '),
-                ends_at: dayjs(filters.state.ends_at).format('YYYY-MM-DD '),
-              }
-            : {}),
         };
 
+        // Gestion des dates selon la spécification de l'API
+        if (filters.state.starts_at) {
+          // Format: YYYY-MM-DD
+          params.starts_at = dayjs(filters.state.starts_at).format('YYYY-MM-DD');
+        }
+        
+        if (filters.state.ends_at) {
+          // Format: YYYY-MM-DD
+          // On ajoute 1 jour et on soustrait 1 milliseconde pour inclure toute la journée
+          const endOfDay = dayjs(filters.state.ends_at).add(1, 'day').subtract(1, 'millisecond');
+          params.ends_at = endOfDay.format('YYYY-MM-DD');
+        }
+
+        // console.log('Fetching declarations with params:', params);
         const response = await axios.get(API.listDeclarations(), { params });
+        
         setTableData(response.data.results);
         setCount(response.data.count);
         setPagination({
@@ -553,8 +745,9 @@ export function DeclarationListView() {
           previous: response.data.previous,
         });
       } catch (err) {
+        console.error('Error fetching declarations:', err);
         setError(err.message || 'Erreur lors du chargement des données.');
-        const errormessage = err?.message || err?.details || err?.error;
+        const errormessage = err?.response?.data?.detail || err?.message || 'Une erreur est survenue';
         toast.error(errormessage);
       } finally {
         setLoading(false);
@@ -565,7 +758,17 @@ export function DeclarationListView() {
 
     fetchDeclarations();
 
-  }, [table.page, table.rowsPerPage, filters.state.company, filters.state.title, filters.state.passport_number, filters.state.status, filters.state.starts_at, filters.state.ends_at]);
+  }, [
+    table.page, 
+    table.rowsPerPage, 
+    filters.state.number,
+    filters.state.company, 
+    filters.state.title, 
+    filters.state.passport_number, 
+    filters.state.status, 
+    filters.state.starts_at, 
+    filters.state.ends_at
+  ]);
 
 
   if (loading) {
@@ -588,6 +791,10 @@ export function DeclarationListView() {
   const id = open ? 'declaration-popover' : undefined;
 
   const allowedStatuses = allowedStatus[type_user] || allowedStatus.default;
+
+  {isLoading && (
+    toast.info('Téléchargement en cours, veuillez patienter...')
+  )}
 
   return (
     <>
@@ -735,13 +942,24 @@ export function DeclarationListView() {
                       <Iconify icon="iconamoon:send-fill" />
                     </IconButton>
                   </Tooltip>
-
+                  {/* telecharger toutes les declarations en un seul fichier */}
+                  <Tooltip title="Télécharger toutes les déclarations (PDF unique)">
+                    <span>
+                      <IconButton color='primary' onClick={downloadMultiplePDF.onTrue} disabled={isLoading}>
+                        {isLoading ? <CircularProgress size={24} /> : <Iconify icon="mdi:file-download-outline" />}
+                      </IconButton>
+                    </span>
+                  </Tooltip>
                   <Tooltip title="Telecharger">
-                    <IconButton color="primary">
+                    <IconButton color="primary" onClick={confirmDownload.onTrue}>
                       <Iconify icon="eva:download-outline" />
                     </IconButton>
                   </Tooltip>
-
+                  <Tooltip title="Télécharger en ZIP">
+                    <IconButton color="primary" onClick={downloadZip.onTrue} disabled={isLoadZip}>
+                    {isLoadZip ? <CircularProgress size={24} /> :  <Iconify icon="mdi:zip-box" /> }
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title="Imprimer">
                     <IconButton color="primary">
                       <Iconify icon="solar:printer-minimalistic-bold" />
@@ -836,7 +1054,28 @@ export function DeclarationListView() {
           />
         </Card>
       </DashboardContent>
-
+      <ConfirmDialog
+        open={downloadMultiplePDF.value}
+        onClose={downloadMultiplePDF.onFalse}
+        title="Télécharger"
+        content={
+          <>
+            Etes vous sûr de vouloir télécharger  <strong> {table.selected.length} </strong> déclarations dans un seul fichier?
+          </>
+        }
+        action={
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => { 
+              handleDownloadMultiplePDF(); // Action pour "Télécharger"
+              downloadMultiplePDF.onFalse();
+            }}
+          >
+            Telecharger
+          </Button>
+        }
+      />
       <ConfirmDialog
         open={confirm.value}
         onClose={confirm.onFalse}
@@ -860,12 +1099,59 @@ export function DeclarationListView() {
           </Button>
         }
       />
+
+       <ConfirmDialog
+        open={confirmDownload.value}
+        onClose={confirmDownload.onFalse}
+        title="Télécharger"
+        content={
+          <>
+            Etes vous sûr de vouloir télécharger <strong> {table.selected.length} </strong>{' '}
+            declarations?
+          </>
+        }
+        action={
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => {
+              handleDownload();
+              confirmDownload.onFalse();
+            }}
+          >
+            Telecharger
+          </Button>
+        }
+      />
+      {/* modal confirmation telechargement zip de plusieurs declarations */}
+       <ConfirmDialog
+        open={downloadZip.value}
+        onClose={downloadZip.onFalse}
+        title="Télécharger en ZIP"
+        content={
+          <>
+            Etes vous sûr de vouloir télécharger en ZIP <strong> {table.selected.length} </strong> déclarations?
+          </>
+        }
+        action={
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => { 
+              handleDownloadZip(); // Action pour "Télécharger"
+              downloadZip.onFalse();
+            }}
+          >
+            Telecharger en ZIP
+          </Button>
+        }
+      />
     </>
   );
 }
 
 function applyFilter({ inputData, comparator, filters, dateError }) {
-  const { name, status, fonction, startDate, endDate } = filters;
+  const { name, status, fonction, starts_at, ends_at } = filters;
 
   // Tri des données
   const stabilizedThis = inputData?.map((el, index) => [el, index]);
@@ -877,7 +1163,6 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
   inputData = stabilizedThis?.map((el) => el[0]);
 
   // Filtrage par numéro de déclaration ou type de déclaration
-  // Filtrage par numéro de déclaration ou par type via le mot-clé
   if (name) {
     inputData = inputData?.filter(
       (declaration) =>
@@ -891,7 +1176,7 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
     inputData = inputData?.filter((declaration) => declaration?.status === status);
   }
 
-  // Filtrage par fonction (en s'assurant que declaration.items existe)
+  // Filtrage par fonction (en s'assurant que declaration.employees existe)
   if (fonction?.length) {
     inputData = inputData?.filter((declaration) =>
       (declaration?.employees || []).some((filterItem) => fonction?.includes(filterItem?.fonction))
@@ -900,9 +1185,9 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
 
   // Filtrage par date
   if (!dateError) {
-    if (startDate && endDate) {
+    if (starts_at && ends_at) {
       inputData = inputData?.filter((declaration) =>
-        fIsBetween(declaration?.createDate, startDate, endDate)
+        fIsBetween(declaration?.createDate, starts_at, ends_at)
       );
     }
   }

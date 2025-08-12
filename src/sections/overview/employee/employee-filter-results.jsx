@@ -18,7 +18,9 @@ export function EmployeeTableFiltersResult({ filters, onResetPage, totalResults,
 
     const handleRemoveRole = useCallback(
         (inputValue) => {
-            const newValue = filters?.state?.job.filter((item) => item !== inputValue);
+            const newValue = filters?.state?.job.filter((item) => 
+                (typeof item === 'object' ? item.slug : item) !== (typeof inputValue === 'object' ? inputValue.slug : inputValue)
+            );
 
             onResetPage();
             filters.setState({ job: newValue });
@@ -42,9 +44,14 @@ export function EmployeeTableFiltersResult({ filters, onResetPage, totalResults,
                 />
             </FiltersBlock>
 
-            <FiltersBlock label="fonction:" isShow={!!filters?.state?.job?.length}>
+            <FiltersBlock label="Fonction:" isShow={!!filters?.state?.job?.length}>
                 {filters?.state?.job?.map((item) => (
-                    <Chip {...chipProps} key={item} label={item} onDelete={() => handleRemoveRole(item)} />
+                    <Chip 
+                        {...chipProps} 
+                        key={typeof item === 'object' ? item.slug : item} 
+                        label={typeof item === 'object' ? item.name : item} 
+                        onDelete={() => handleRemoveRole(item)} 
+                    />
                 ))}
             </FiltersBlock>
 

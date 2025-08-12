@@ -39,10 +39,18 @@ export function PaiementPDF({ payment }) {
     smallText: { fontSize: 3, textAlign: 'center', marginTop: 5, maxWidth: 100, lineHeight: 1.2 },
     title: { fontSize: 14, fontWeight: 'bold', textAlign: 'center', marginVertical: 5 },
     divider: { borderBottomWidth: 1, borderColor: '#DDD', marginVertical: 5 },
+    divider1: {
+    borderBottomWidth: 1,
+    borderColor: '#DDD',
+    marginTop: 1,    // moins d’espace entre la date et la ligne
+    marginBottom: 4, // espace suffisant avant les infos client
+  },
+
     row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 2 },
     column: { flex: 1 },
     infoTable: { flexDirection: 'column' },
     infoTableRow: { flexDirection: 'row', marginBottom: 2  },
+    infoTableRowNoMargin: { flexDirection: 'row', marginBottom: 0 },
     infoLabel: { fontWeight: 'bold' },
     infoValue: { marginLeft: 5 },
     table: { marginVertical: 8, borderWidth: 1, borderColor: '#DDD' },
@@ -82,14 +90,14 @@ export function PaiementPDF({ payment }) {
       <View style={styles.divider} />
 
       {/* <View style={styles.row}> */}
-      <View style={[styles.column]}>
-      <View style={[styles.infoTableRow, { flexDirection: 'row', justifyContent: 'flex-end' }]}>
+      <View style={[styles.column, { flex: 0.5, marginBottom: 1 }]}>
+      <View style={[styles.infoTableRowNoMargin, { flexDirection: 'row', justifyContent: 'flex-end' }]}>
         <Text style={[styles.infoLabel, styles.tableCellRight, { width: 100, textAlign: 'right', marginRight: 5 }]}>
           Facture N° :
         </Text>
         <Text style={[styles.infoValue, styles.tableCellRight]}>{payment?.facture_number}</Text>
       </View>
-      <View style={[styles.infoTableRow, { flexDirection: 'row', justifyContent: 'flex-end' }]}>
+      <View style={[styles.infoTableRowNoMargin, { flexDirection: 'row', justifyContent: 'flex-end' }]}>
     <Text style={[styles.infoLabel, styles.tableCellRight, { width: 100, textAlign: 'right', marginRight: 5 }]}>
       Date :
     </Text>
@@ -101,20 +109,29 @@ export function PaiementPDF({ payment }) {
 
       <View style={styles.divider} />
 
-      <View style={styles.infoTableRow}>
-        <Text style={styles.infoLabel}>CLIENT :</Text>
-        <Text style={styles.infoValue}>{payment?.payer?.employer}</Text>
-      </View>
-          <View style={styles.infoTableRow}>
-            <Text style={styles.infoLabel}>Tél :</Text>
-            <Text style={styles.infoValue}>{payment?.payer?.phone}</Text>
-          </View>
-          <View style={styles.infoTableRow}>
-            <Text style={styles.infoLabel}>Adresse :</Text>
-            <Text style={styles.infoValue}>{payment?.payer?.address}</Text>
-          </View>
-          
-      {/* ... autres infos client ... */}
+     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 5 }}>
+  {/* Bloc gauche : infos client */}
+  <View style={{ flex: 1 }}>
+    <View style={styles.infoTableRow}>
+      <Text style={styles.infoLabel}>CLIENT :</Text>
+      <Text style={styles.infoValue}>{payment?.payer?.employer}</Text>
+    </View>
+    <View style={styles.infoTableRow}>
+      <Text style={styles.infoLabel}>Tél :</Text>
+      <Text style={styles.infoValue}>{payment?.payer?.phone}</Text>
+    </View>
+    <View style={styles.infoTableRow}>
+      <Text style={styles.infoLabel}>Adresse :</Text>
+      <Text style={styles.infoValue}>{payment?.payer?.address}</Text>
+    </View>
+  </View>
+
+  {/* Bloc droite : QR code */}
+  <View>
+    <Image src={qrUrl} style={styles.qrCode} />
+  </View>
+</View>
+
 
       <View style={styles.divider} />
 
@@ -137,10 +154,13 @@ export function PaiementPDF({ payment }) {
           <Text style={[styles.tableCell30, styles.infoLabel, styles.tableCellRight, styles.tableCellLast]}>{convertirMontant(payment.amount)}</Text>
         </View>
       </View>
+       <View style={styles.infoTableRow}>
+        <Text style={styles.infoLabel}>Commentaire :</Text>
+        <Text style={styles.infoValue}>{payment?.comment}</Text>
+      </View>
 
       <View style={styles.signatureSection}>
         <View>
-          <Image src={qrUrl} style={styles.qrCode} />
           <Text style={styles.signature}>Le Client</Text>
         </View>
         <View>

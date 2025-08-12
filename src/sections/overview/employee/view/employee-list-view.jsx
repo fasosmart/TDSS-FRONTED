@@ -129,9 +129,17 @@ export function EmployeeListView() {
               : filters.state.name
                 ? { name: filters.state.name }
                 : {}),
+          ...(filters.state.job?.length > 0 && { 
+            job: typeof filters.state.job[0] === 'object' 
+              ? filters.state.job[0].name  // Envoyer le nom de la fonction
+              : filters.state.job[0]       // Ou la valeur directe si c'est une chaîne
+          }),
         };
 
+        console.log('Paramètres de la requête:', params);
         const response = await axios.get(url, { params });
+        console.log('Réponse de l\'API:', response.data);
+        
         setTableData(response.data.results);
         setPagination({
           count: response.data.count,
@@ -139,6 +147,7 @@ export function EmployeeListView() {
           previous: response.data.previous,
         });
       } catch (err) {
+        console.error('Erreur lors du chargement des employés:', err);
         setError(err.message || 'Erreur lors du chargement des données.');
       } finally {
         setLoading(false);
@@ -150,6 +159,7 @@ export function EmployeeListView() {
     table.page,
     table.rowsPerPage,
     filters.state.name,
+    filters.state.job,
     filters.state.passport_number,
     filters.state.reference,
   ]);

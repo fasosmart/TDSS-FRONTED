@@ -48,6 +48,7 @@ import { UserTableToolbar } from '../user-table-toolbar';
 import { CircularProgress } from '@mui/material'
 
 import { getUserTypes } from 'src/utils/options';
+import { useMockedUser } from 'src/auth/hooks';
 // ----------------------------------------------------------------------
 
 const STATUS_OPTIONS = [
@@ -75,6 +76,9 @@ export function UserListView() {
 
   const confirm = useBoolean();
 
+ const { user } = useMockedUser();
+
+  const company = user?.companies[0]?.type_code?.toLowerCase().trim();
 
   const [tableData, setTableData] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -230,7 +234,9 @@ useEffect(() => {
             { name: 'Utilisateurs', href: paths.dashboard.user.list },
             { name: 'Listes des utilisateurs' },
           ]}
+          
           action={
+           company === 'tdss' && (
             <Button
               component={RouterLink}
               href={paths.dashboard.user.new}
@@ -239,7 +245,9 @@ useEffect(() => {
             >
               Nouvel Utilisateur
             </Button>
-          }
+          )
+        }
+        
           sx={{ mb: { xs: 3, md: 5 } }}
         />
 

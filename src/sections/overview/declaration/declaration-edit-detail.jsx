@@ -190,11 +190,26 @@ export function DeclarationNewEditDetails({ formData }) {
     async function fetchAllFonctions() {
       setLoadingOptions(true);
       try {
+        // Vérifier si on a déjà le cache en session
+        const cached = sessionStorage.getItem('fonctions');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          setOptions(parsed); // Affiche directement les données en cache
+          setLoadingOptions(false);
+          return; // Pas besoin d'appeler le serveur
+        }
+
         // 1) Premier appel pour count
         const resp1 = await axios.get(API.listFonctionAgent(), {
-          params: { offset: 0, limit: 1 },
+          params: { offset: 0, limit: 100 },
         });
         const total = resp1.data.count;
+
+        const initialOptions = resp1.data.results
+          .filter((f, idx, arr) => arr.findIndex((item) => item.slug === f.slug) === idx)
+          .map((f) => ({ label: f.name, value: f.slug }));
+
+        setOptions(initialOptions);
 
         // 2) Rapatrier tout
         const resp2 = await axios.get(API.listFonctionAgent(), {
@@ -207,12 +222,13 @@ export function DeclarationNewEditDetails({ formData }) {
           .filter((f, idx, arr) => arr.findIndex((item) => item.slug === f.slug) === idx)
           .map((f) => ({ label: f.name, value: f.slug }));
 
+        sessionStorage.setItem('fonctions', JSON.stringify(uniqueBySlug));
+
         setOptions(uniqueBySlug);
       } catch (err) {
         console.error(err);
       } finally {
-        if (isMounted) 
-        setLoading(false);
+        if (isMounted) setLoading(false);
         setLoadingOptions(false);
       }
     }
@@ -223,20 +239,18 @@ export function DeclarationNewEditDetails({ formData }) {
     };
   }, []);
 
-  
- 
-   const verifyPassports = async (employees, setValue) => {
+  const verifyPassports = async (employees, setValue) => {
     await Promise.all(
       employees.map(async (emp, idx) => {
         if (!emp.passport_number) return;
-  
+
         try {
           const { data } = await axios.get(API.searchPassport(emp.passport_number));
           // S'il existe, on le note et on peut éventuellement verrouiller la ligne :
           const exists = !!data?.passport_number;
           setValue(`employees[${idx}].passportExists`, exists);
           if (exists) {
-            setValue(`employees[${idx}].locked`, false);   // optionnel
+            setValue(`employees[${idx}].locked`, false); // optionnel
           }
         } catch (error) {
           // 404 = n'existe pas → false, les autres erreurs sont loguées
@@ -249,12 +263,10 @@ export function DeclarationNewEditDetails({ formData }) {
       })
     );
   };
-  
-  
-  
-    const handleImportData = async (importedData) => {
-      const mappedEmployees = importedData.map((row) => {
-       const jobSlug = (() => {
+
+  const handleImportData = async (importedData) => {
+    const mappedEmployees = importedData.map((row) => {
+      const jobSlug = (() => {
         const findByValue = options.find((opt) => opt.value === row.Fonction);
         const findByLabel = options.find((opt) => opt.label === row.Fonction);
 
@@ -265,43 +277,37 @@ export function DeclarationNewEditDetails({ formData }) {
         return findByValue?.value || findByLabel?.value || '';
       })();
 
-  
-        return {
-          passport_number: row.Numero || '',
-          phone: row.Telephone ? `+${String(row.Telephone)}` : '',
-          last: row.Nom || '',
-          first: row.Prenom || '',
-          job: jobSlug,
-          type: 'new',
-          reference: undefined,
-          passportExists: false,
-          locked: false,
-        };
-      });
-  
-      reset({ employees: mappedEmployees });
-        await new Promise((r) => setTimeout(r, 0));
-        await verifyPassports(mappedEmployees, setValue);
-    };
-  
+      return {
+        passport_number: row.Numero || '',
+        phone: row.Telephone ? `+${String(row.Telephone)}` : '',
+        last: row.Nom || '',
+        first: row.Prenom || '',
+        job: jobSlug,
+        type: 'new',
+        reference: undefined,
+        passportExists: false,
+        locked: false,
+      };
+    });
 
+    reset({ employees: mappedEmployees });
+    await new Promise((r) => setTimeout(r, 0));
+    await verifyPassports(mappedEmployees, setValue);
+  };
 
+  useEffect(() => {
+    if (formData?.length > 0 && options?.length > 0) {
+      const importedData = formData.map((row) => ({
+        Fonction: row.Fonction?.trim() || '',
+        Numero: row.Numero || '',
+        Nom: row.Nom || '',
+        Prenom: row.Prenom || '',
+        Telephone: row.Telephone || '',
+      }));
 
-
-useEffect(() => {
-  if (formData?.length > 0 && options?.length > 0) {
-    const importedData = formData.map((row) => ({
-      Fonction: row.Fonction?.trim() || '',
-      Numero: row.Numero || '',
-      Nom: row.Nom || '',
-      Prenom: row.Prenom || '',
-      Telephone: row.Telephone || '',
-    }));
-
-    handleImportData(importedData); // <-- appelle la fonction existante
-  }
-}, [formData, options]);
-
+      handleImportData(importedData); // <-- appelle la fonction existante
+    }
+  }, [formData, options]);
 
   // Fonction debounced pour vérifier le numéro du passeport en temps réel
   const checkPassportExistence = async (numero, index) => {
@@ -406,7 +412,6 @@ useEffect(() => {
 
   const getJobOption = (jobValue) => options.find((option) => option.value === jobValue) || null;
 
-
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h6" sx={{ color: 'text.disabled', mb: 3 }}>
@@ -510,10 +515,9 @@ useEffect(() => {
                 onChange={(e, option) => {
                   if (option) {
                     setValue(`employees[${index}].job`, option.value);
+                  } else {
+                    setValue(`employees[${index}].job`, '');
                   }
-                   else {
-                       setValue(`employees[${index}].job`, '');
-                       }
                 }}
                 // On surcharge renderOption pour forcer une key unique
                 renderOption={(props, option, { index }) => (

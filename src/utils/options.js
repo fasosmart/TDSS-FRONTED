@@ -56,6 +56,17 @@ const fetchAndCache = async (cacheKey, apiCall, dataPath = 'data') => {
   return pendingPromises[cacheKey];
 };
 
+// Nouvelle fonction pour la recherche dynamique d'entreprises
+export const getEntreprisesSearch = async (params = {}) => {
+  try {
+    const response = await axios.get(API.listEntreprises(params));
+    return response?.data?.results || response?.data || [];
+  } catch (error) {
+    console.error('Erreur lors de la recherche d\'entreprises:', error);
+    return [];
+  }
+};
+
 export const getRegions = () => fetchAndCache('regions', API.listRegions, 'results');
 export const getPermits = () => fetchAndCache('permits', API.listPermits, 'results');
 export const getCategories = () => fetchAndCache('categories', API.listCategories);

@@ -124,7 +124,7 @@ export function useNavData () {
             },
           ]
         : []),
-      ...(type === 'caissier' || type === 'admin' || type === 'aguipe'
+      ...(type === 'caissier' || type === 'admin' || type === 'aguipe' || type === 'comptable'
         ? [
             {
               title: 'Paiements',

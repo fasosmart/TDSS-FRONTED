@@ -80,9 +80,9 @@ export  function AgentDashboard() {
     // Charger les données du dashboard
     setLoading(prev =>({
       ...prev,
-      summary: '',
-      charts: '',
-      declarations: ''
+      summary: true,
+      charts: true,
+      declarations: true
     }));
 
     // Réinitialiser les erreurs
@@ -97,6 +97,14 @@ export  function AgentDashboard() {
       const dashboardData = await AgentDashboardService.getDashboardData(
         selectedYear // Ajouter l'année sélectionnée
       );
+
+      // Mettre à jour les données du graphique
+      const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+      const chartDataFormatted = Object.entries(dashboardData.number_declaration_of_year || {}).map(([month, value]) => ({
+        month: monthNames[parseInt(month, 10) - 1],
+        value
+      }));
+      setChartData(chartDataFormatted);
       
       // Mettre à jour les données de résumé
       setSummaryData({
@@ -110,15 +118,7 @@ export  function AgentDashboard() {
         setRecentDeclarations(dashboardData.recent_declarations);
       }
        */
-      // Transformer les données du graphique
-      const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
-      const chartDataFormatted = Object.entries(dashboardData.number_declaration_of_year || {}).map(([month, value]) => ({
-        month: monthNames[parseInt(month, 10) - 1],
-        value
-      }));
-      console.log("Donnees du graphique", chartDataFormatted);
-      setChartData(chartDataFormatted);
-      
+
       // Transformer les données des déclarations
       const declarationsFormatted = (dashboardData.declarations || []).map(declaration => ({
         id: declaration.slug,

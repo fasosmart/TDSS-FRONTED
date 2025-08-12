@@ -11,9 +11,13 @@ import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Chip from '@mui/material/Chip';
+import Autocomplete from '@mui/material/Autocomplete';
+import CircularProgress from '@mui/material/CircularProgress';
 import { useCallback, useRef, useState, useEffect } from 'react';
 
 import { Iconify } from 'src/components/iconify';
+import axios from 'src/utils/axios';
+import API from 'src/utils/api';
 
 // ----------------------------------------------------------------------
 
@@ -27,6 +31,8 @@ export function EmployeeTableToolbar({
 }) {
   const [showOptions, setShowOptions] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [jobSuggestions, setJobSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [filterBoxWidth, setFilterBoxWidth] = useState(null);
   const inputRef = useRef();
 
@@ -50,13 +56,32 @@ export function EmployeeTableToolbar({
   const getPlaceholder = () => {
     switch (selectedFilter) {
       case 'passport_number':
-        return 'Recherche par Passport Number';
+        return 'Recherche par Numéro de passeport';
       case 'reference':
         return 'Recherche par Reference';
       default:
         return 'Recherche par Nom';
     }
   };
+
+  // Charger les suggestions de fonctions
+  const fetchJobSuggestions = useCallback(async (searchTerm = '') => {
+    try {
+      setLoading(true);
+      const response = await axios.get(API.listFonctions(), {
+        params: { search: searchTerm },
+      });
+      setJobSuggestions(response.data.results || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des fonctions:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchJobSuggestions();
+  }, [fetchJobSuggestions]);
 
   const handleFilterChange = useCallback(
     (event) => {
@@ -72,6 +97,23 @@ export function EmployeeTableToolbar({
     },
     [selectedFilter, filters, onResetPage, inputValue]
   );
+
+  // Gérer la sélection d'une fonction
+  const handleJobSelect = (event, newValue) => {
+    // console.log('Fonction sélectionnée:', newValue);
+    onResetPage();
+    filters.setState({
+      ...filters.state,
+      job: newValue ? [newValue] : [],
+    });
+    // console.log('Nouvel état des filtres:', { ...filters.state, job: newValue ? [newValue] : [] });
+  };
+
+  // Gérer la recherche lors de la saisie
+  const handleJobInputChange = (event, newInputValue) => {
+    // console.log('Recherche de fonction:', newInputValue);
+    fetchJobSuggestions(newInputValue);
+  };
 
   const handleFilterName = useCallback(
     (event) => {
@@ -105,29 +147,40 @@ export function EmployeeTableToolbar({
       direction={{ xs: 'column', md: 'row' }}
       sx={{ p: 2.5, pr: { xs: 2.5, md: 1 } }}
     >
-      <FormControl sx={{ flexShrink: 0, width: { xs: 1, md: 200 } }}>
-        <InputLabel htmlFor="user-filter-role-select-label">Fonction</InputLabel>
-        <Select
-          multiple
-          value={filters.state.job}
-          onChange={handleFilterRole}
-          input={<OutlinedInput label="Fonction" />}
-          renderValue={(selected) => selected.map((value) => value).join(', ')}
-          inputProps={{ id: 'user-filter-role-select-label' }}
-          MenuProps={{ PaperProps: { sx: { maxHeight: 240 } } }}
-        >
-          {options?.roles?.map((option) => (
-            <MenuItem key={option} value={option}>
-              <Checkbox
-                disableRipple
-                size="small"
-                checked={filters?.state?.job?.includes(option)}
-              />
-              {option}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <Autocomplete
+        options={jobSuggestions}
+        getOptionLabel={(option) => option.name || ''}
+        loading={loading}
+        onChange={handleJobSelect}
+        fullWidth
+        onInputChange={handleJobInputChange}
+        value={filters.state.job?.[0] || null}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Filtrer par fonction"
+            variant="outlined"
+            fullWidth
+            placeholder="Tapez pour rechercher une fonction..."
+            InputProps={{
+              ...params.InputProps,
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Iconify icon="mdi:briefcase" />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <>
+                  {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                  {params.InputProps.endAdornment}
+                </>
+              ),
+            }}
+          />
+        )}
+        noOptionsText="Aucune fonction trouvée"
+        loadingText="Chargement..."
+      />
 
       <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}>
         <Box sx={{ position: 'relative', flexGrow: 1, width: '100%' }} ref={inputRef}>

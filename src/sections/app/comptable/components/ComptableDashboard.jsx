@@ -14,16 +14,22 @@ import {
   AlertTitle,
   IconButton,
 } from '@mui/material';
+import { Scrollbar } from 'src/components/scrollbar';
 import { useTheme, alpha } from '@mui/material/styles';
 import { useAuthContext } from 'src/auth/hooks/use-auth-context';
 import { Iconify } from 'src/components/iconify';
 import { useResponsive } from 'src/hooks/use-responsive';
 import ComptableService from 'src/services/comptableService';
 import { CurrencySelector, CURRENCIES } from 'src/components/CurrencySelector';
+import { fDate } from 'src/utils/format-time';
 
 import { ComptableDeclarationTable } from './ComptableTables';
 import { ComptableFacturationChart } from './ComptableCharts';
 import { ComptableWidgetSummary } from './ComptableWidgetSummary';
+import API from 'src/utils/api';
+import axios from 'src/utils/axios';
+import { useRouter } from 'next/navigation';
+import { fCurrency, fEuro , fGNF } from 'src/utils/format-number';
 
 // ----------------------------------------------------------------------
 
@@ -56,14 +62,7 @@ const UPCOMING_DUE_DATES = [
 
 // ----------------------------------------------------------------------
 
-// Fonction utilitaire pour formater les montants
-const formatAmount = (amount) =>
-  new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'XOF',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+
 
 export function ComptableDashboard() {
   const theme = useTheme();
@@ -74,6 +73,12 @@ export function ComptableDashboard() {
   const [chartRange, setChartRange] = useState('month');
   const [declarations, setDeclarations] = useState([]);
   const [currency, setCurrency] = useState('XOF');
+  const [echeances, setEcheances] = useState([]);
+  const [loadingEcheances, setLoadingEcheances] = useState(true);
+  const [errorEcheances, setErrorEcheances] = useState(null);
+  const [devise, setDevise] = useState('GNF');
+  const router = useRouter();
+
 
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -84,6 +89,16 @@ export function ComptableDashboard() {
     // Recharger les données pour la nouvelle année sélectionnée
     fetchInvoicesData();
   };
+
+  const afficherMontant = (montant) => {
+  if (devise === 'GNF') {
+    return fGNF(montant);
+  } else if (devise === 'USD') {
+    return fCurrency(montant / 9200); // Exemple: 1 USD = 9200 GNF
+  } else if (devise === 'EUR') {
+    return fEuro(montant / 10000); // Exemple: 1 EUR = 10000 GNF
+  }
+};
 
   // États pour les données du dashboard
   const [dashboardData, setDashboardData] = useState({
@@ -279,6 +294,59 @@ export function ComptableDashboard() {
     }
   }, []);
 
+  // Fonction pour charger les échéances
+  const fetchEcheances = async () => {
+    try {
+      setLoadingEcheances(true);
+      setErrorEcheances(null);
+      
+      // Utiliser l'instance axios configurée qui gère déjà l'authentification
+      const response = await axios.get(API.getEcheances());
+      
+      // Vérifier que la réponse contient des données valides
+      if (!response.data) {
+        throw new Error('Aucune donnée reçue du serveur');
+      }
+      
+      // S'assurer que les données sont un tableau avant d'utiliser slice
+      const echeancesData = Array.isArray(response.data) ? response.data : [];
+      setEcheances(echeancesData.slice(0, 5));
+      
+    } catch (err) {
+      console.error('Erreur lors du chargement des échéances:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        config: {
+          url: err.config?.url,
+          method: err.config?.method,
+          headers: err.config?.headers
+        }
+      });
+      
+      // Afficher un message d'erreur plus détaillé
+      const errorMessage = err.response?.data?.detail || 
+                         err.response?.data?.message || 
+                         'Impossible de charger les échéances. Veuillez réessayer.';
+      setErrorEcheances(errorMessage);
+      
+      // Si l'erreur est une erreur d'authentification (401), déconnecter l'utilisateur
+      if (err.response?.status === 401) {
+        console.error('Erreur d\'authentification - Déconnexion...');
+        // Vous pourriez vouloir rediriger vers la page de connexion ici
+        // ou déclencher une déconnexion
+      }
+      
+    } finally {
+      setLoadingEcheances(false);
+    }
+  };
+
+  // Appel au chargement du composant
+  useEffect(() => {
+    fetchEcheances();
+  }, []);
+
   // Recuper les declarations dernierement validated
   const fetchLastValidatedDeclarations = useCallback(async () => {
     try {
@@ -382,10 +450,30 @@ export function ComptableDashboard() {
           </Typography>
           <Box sx={{ flexGrow: 1 }} />
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Typography variant="body2" color="text.secondary">
-              Devise :
-            </Typography>
-            <CurrencySelector value={currency} onChange={setCurrency} />
+            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Devise
+              </Typography>
+              <Box
+                component="select"
+                value={devise}
+                onChange={(e) => setDevise(e.target.value)}
+                sx={{
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: 1,
+                  border: '1px solid #ccc',
+                  backgroundColor: '#fff',
+                  fontSize: 14,
+                  minWidth: 80,
+                }}
+              >
+                <option value="GNF">GNF</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+              </Box>
+            </Box>
+           
           </Stack>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
             <Box
@@ -481,7 +569,7 @@ export function ComptableDashboard() {
             color="primary"
             isCurrency
             loading={loading.summary}
-            currency={currency}
+            currency={devise}
             isRevenue
           />
         </Grid>
@@ -647,8 +735,9 @@ export function ComptableDashboard() {
           </Card>
         </Grid>
 
+        
         {/* Tableau des déclarations récentes */}
-        <Grid item xs={12}>
+        <Grid item xs={12} md={9}>
           <Card>
             <Box sx={{ p: 3, pb: 2 }}>
               <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -657,7 +746,7 @@ export function ComptableDashboard() {
                   size="small"
                   color="inherit"
                   endIcon={<Iconify icon="mdi:chevron-right" />}
-                  onClick={() => console.log('Voir toutes les déclarations')}
+                  onClick={() => router.push('/dashboard/declaration/list')}
                 >
                   Voir tout
                 </Button>
@@ -684,7 +773,7 @@ export function ComptableDashboard() {
         </Grid>
 
         {/* Échéances à venir */}
-        {/* <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={3}>
           <Card>
             <Box sx={{ p: 3, pb: 2 }}>
               <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -693,83 +782,67 @@ export function ComptableDashboard() {
                   size="small"
                   color="inherit"
                   endIcon={<Iconify icon="mdi:calendar-month" />}
-                  onClick={() => console.log('Ouvrir le calendrier')}
+                  onClick={fetchEcheances}
+                  disabled={loadingEcheances}
                 >
-                  Calendrier
+                  {loadingEcheances ? 'Chargement...' : 'Actualiser'}
                 </Button>
               </Stack>
             </Box>
             <Divider />
-            <Scrollbar sx={{ maxHeight: 400 }}>
+            <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
               <Stack spacing={0}>
-                {UPCOMING_DUE_DATES.map((item) => (
-                  <Box
-                    key={item.id}
-                    onClick={() => handleRowClick(item.id)}
-                    sx={{
-                      p: 2,
-                      cursor: 'pointer',
-                      '&:hover': {
-                        bgcolor: 'action.hover',
-                      },
-                    }}
-                  >
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                      <Box
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: item.status === 'overdue' ? 'error.lighter' : 'primary.lighter',
-                          color: item.status === 'overdue' ? 'error.main' : 'primary.main',
-                        }}
-                      >
-                        <Iconify
-                          icon={item.status === 'overdue' ? 'mdi:alert' : 'mdi:calendar-clock'}
-                          width={20}
-                        />
-                      </Box>
-                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                        <Typography variant="subtitle2" noWrap>
-                          {item.title}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" noWrap>
-                          Échéance: {fDate(item.dueDate, 'dd MMM yyyy')}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ textAlign: 'right' }}>
-                        <Typography variant="subtitle2">
-                          {formatAmount(item.amount)}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: item.status === 'overdue' ? 'error.main' : 'text.secondary',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'flex-end',
-                          }}
-                        >
-                          {item.status === 'overdue' ? (
-                            <>
-                              <Iconify icon="mdi:alert" width={12} sx={{ mr: 0.5 }} />
-                              En retard ({Math.abs(item.daysLeft)}j)
-                            </>
-                          ) : (
-                            `Dans ${item.daysLeft}j`
-                          )}
-                        </Typography>
-                      </Box>
-                    </Stack>
+                {loadingEcheances ? (
+                  <Box sx={{ p: 3, textAlign: 'center' }}>
+                    <CircularProgress size={24} />
                   </Box>
-                ))}
+                ) : errorEcheances ? (
+                  <Alert severity="error" sx={{ m: 2 }}>
+                    {errorEcheances}
+                  </Alert>
+                ) : echeances.length === 0 ? (
+                  <Typography variant="body2" sx={{ p: 3, color: 'text.secondary', textAlign: 'center' }}>
+                    Aucune échéance à venir
+                  </Typography>
+                ) : (
+                  echeances.map((echeance) => (
+                    <Box
+                      key={echeance.slug}
+                      sx={{
+                        p: 2,
+                        '&:not(:last-child)': {
+                          borderBottom: (theme) => `dashed 1px ${theme.palette.divider}`,
+                        },
+                        '&:hover': {
+                          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                        },
+                      }}
+                    >
+                      <Stack direction="row" alignItems="center" justifyContent="space-between">
+                        <Box>
+                          <Typography variant="subtitle2" noWrap>
+                            Facture #{echeance.number}
+                          </Typography>
+                          <Typography variant="caption">
+                            Montant : {fCurrency(parseFloat(echeance.amount))}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: 'text.secondary', display: 'block', mt: 0.5 }}
+                          >
+                            Échéance: {new Date(echeance.due_date).toLocaleDateString()}
+                            {echeance.days_between && ` (${echeance.days_between} jours)`}
+                          </Typography>
+                        </Box>
+                        
+                      </Stack>
+                    </Box>
+                  ))
+                )}
               </Stack>
-            </Scrollbar>
+            </Box>
             <Divider />
-            <Box sx={{ p: 2, textAlign: 'center' }}>
+            {/* <Box sx={{ p: 2, textAlign: 'center' }}>
               <Button
                 size="small"
                 color="inherit"
@@ -778,9 +851,9 @@ export function ComptableDashboard() {
               >
                 Ajouter un rappel
               </Button>
-            </Box>
+            </Box> */}
           </Card>
-        </Grid> */}
+        </Grid>
       </Grid>
     </Container>
   );
