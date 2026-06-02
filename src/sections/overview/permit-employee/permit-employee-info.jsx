@@ -388,7 +388,7 @@ export function PermitEmloyeeInfo({ info, type, onSyncSuccess }) {
                   },
                 }}
               />
-              {/* <Chip
+              <Chip
                 icon={
                   <Iconify
                     icon={info?.is_registered_in_abis ? 'mdi:check-circle' : 'mdi:close-circle'}
@@ -414,7 +414,7 @@ export function PermitEmloyeeInfo({ info, type, onSyncSuccess }) {
                 }}
               />
 
-              {/* {type === 'agent' &&
+              {type === 'agent' &&
                 info?.status !== 'printed' &&
                 info?.status !== 'delivered' &&
                 info?.status !== 'enrolled' &&
@@ -436,7 +436,7 @@ export function PermitEmloyeeInfo({ info, type, onSyncSuccess }) {
                       },
                     }}
                   />
-                )} */}
+                )}
 
               {info?.status === 'correction' && (type === 'agent' || type === 'admin') && (
                 <Chip
