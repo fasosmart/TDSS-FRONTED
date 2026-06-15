@@ -20,6 +20,8 @@ import { Iconify } from 'src/components/iconify';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
+import { usePermissions } from 'src/auth/hooks';
+
 import { AfricanizationPlanNew } from '../plan-africanisation/new_plan-africanisation';
 // ----------------------------------------------------------------------
 
@@ -30,10 +32,11 @@ export function PlanAfricanisation({
   isExpatriate,
   permitExpiryDate,
   onUpdate,
-  type,
 }) {
   const fileRef = useRef(null);
   const router = useRouter();
+
+  const { can } = usePermissions();
 
   const [openForm, setOpenForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
@@ -300,7 +303,7 @@ export function PlanAfricanisation({
               title="Plan d’Africanisation"
               subheader={`Gestion des assistants guinéens pour ${employeeName}`}
               action={
-                (type === 'aguipe' || type === 'agent') && (
+                can('can_create_africanization_plan') && (
                   <Button
                     variant="contained"
                     startIcon={<Iconify icon="eva:plus-fill" />}
@@ -377,13 +380,12 @@ export function PlanAfricanisation({
                     },
                   }}
                 />
-                {type === 'aguipe' ||
-                  (type === 'agent' && (
-                    <Button variant="contained" onClick={handleOpenEdit}>
-                      <Iconify icon="mdi:edit" width={20} sx={{ mr: 0.5 }} />
-                      Modifier
-                    </Button>
-                  ))}
+                {can('can_edit_africanization_plan') && (
+                  <Button variant="contained" onClick={handleOpenEdit}>
+                    <Iconify icon="mdi:edit" width={20} sx={{ mr: 0.5 }} />
+                    Modifier
+                  </Button>
+                )}
               </Stack>
             </Box>
 

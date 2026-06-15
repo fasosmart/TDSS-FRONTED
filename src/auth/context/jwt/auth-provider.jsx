@@ -48,11 +48,21 @@ export function AuthProvider({ children }) {
       if (access_token && isValidToken(access_token)) {
         setSession(access_token);
 
-        const res = await axios.get(API.me());
+        const [meRes, assignmentsRes] = await Promise.all([
+          axios.get(API.me()),
+          axios.get(API.myAssignments()).catch((err) => {
+            if (err?.response?.status !== 404) {
+              console.error('my-assignments error:', err);
+            }
+            return null;
+          }),
+        ]);
 
-        const user = res.data;
+        const permissions = assignmentsRes?.data ?? {};
 
-        // Sauvegarder l'utilisateur dans le localStorage
+        const user = { ...meRes.data, permissions };
+
+        // Sauvegarder l'utilisateur avec ses permissions dans le localStorage
         localStorage.setItem('user', JSON.stringify(user));
         setState({ user: { ...user, access_token }, loading: false });
 

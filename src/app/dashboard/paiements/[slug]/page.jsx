@@ -1,7 +1,7 @@
 
 import { CONFIG } from 'src/config-global';
 
-
+import { PermissionGuard } from 'src/auth/guard';
 
 import { PaiementDetailsView } from 'src/sections/overview/paiements/view';
 
@@ -12,10 +12,11 @@ export const metadata = { title: `Payment details | Dashboard - ${CONFIG.appName
 export default async function Page({ params }) {
   const { slug } = await params;
 
-
-
-  return <PaiementDetailsView slug={slug} />;
-
+  return (
+    <PermissionGuard permission="can_view_payment">
+      <PaiementDetailsView slug={slug} />
+    </PermissionGuard>
+  );
 }
 // ----------------------------------------------------------------------
 

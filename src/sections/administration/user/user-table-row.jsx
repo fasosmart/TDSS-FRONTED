@@ -16,6 +16,8 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 import { Iconify } from 'src/components/iconify';
 import { Label } from 'src/components/label';
 
+import { usePermissions } from 'src/auth/hooks';
+
 import { UserQuickEditForm } from './user-quick-edit-form';
 
 // ----------------------------------------------------------------------
@@ -34,6 +36,8 @@ export function UserTableRow({
   const popover = usePopover();
 
   const quickEdit = useBoolean();
+
+  const { can } = usePermissions();
 
   return (
     <>
@@ -146,26 +150,31 @@ export function UserTableRow({
             Voir
           </MenuItem>
 
-          <MenuItem
-            onClick={() => {
-              onEditRow();
-              popover.onClose();
-            }}
-          >
-            <Iconify icon="solar:pen-bold" />
-            Modifier
-          </MenuItem>
+          {can('can_edit_user') && (
+            <MenuItem
+              onClick={() => {
+                onEditRow();
+                popover.onClose();
+              }}
+            >
+              <Iconify icon="solar:pen-bold" />
+              Modifier
+            </MenuItem>
+          )}
 
-          {/* <MenuItem
-            onClick={() => {
-              confirm.onTrue();
-              popover.onClose();
-            }}
-            sx={{ color: 'error.main' }}
-          >
-            <Iconify icon="solar:trash-bin-trash-bold" />
-            Supprimer
-          </MenuItem> */}
+          {/* Suppression désactivée au niveau produit. Pour la réactiver, dégater par can_delete_user :
+          {can('can_delete_user') && (
+            <MenuItem
+              onClick={() => {
+                confirm.onTrue();
+                popover.onClose();
+              }}
+              sx={{ color: 'error.main' }}
+            >
+              <Iconify icon="solar:trash-bin-trash-bold" />
+              Supprimer
+            </MenuItem>
+          )} */}
         </MenuList>
       </CustomPopover>
 

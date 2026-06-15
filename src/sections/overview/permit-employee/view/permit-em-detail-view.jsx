@@ -224,7 +224,6 @@ export function PermitDetailView({ slug }) {
         <PlanAfricanisation
           info={permit?.africanization_plan}
           employeeId={permit?.slug}
-          type={type}
           employeeName={`${permit?.first} ${permit?.last}`}
           isExpatriate={
             permit &&

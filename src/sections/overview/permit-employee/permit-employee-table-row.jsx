@@ -18,8 +18,9 @@ import { Iconify } from 'src/components/iconify';
 import { Label } from 'src/components/label';
 
 import { fDate } from 'src/utils/format-time';
+import { usePermissions } from 'src/auth/hooks';
+
 export function TableRowComPermit({
-  type,
   row,
   selected,
   onEditRow,
@@ -39,6 +40,8 @@ export function TableRowComPermit({
 
   const popover = usePopover();
 
+  const { can } = usePermissions();
+
   const quickEdit = useBoolean();
 
   const validateConfirm = useBoolean();
@@ -50,7 +53,7 @@ export function TableRowComPermit({
   const deliverConfirm = useBoolean();
 
   const printConfirm = useBoolean();
-  const isSelectable = type === 'printer' && Boolean(onSelectRow);
+  const isSelectable = can('can_mark_as_printed') && Boolean(onSelectRow);
 
   const [rejectForm, setRejectForm] = useState({
     reject_reason_type: '',
@@ -223,10 +226,8 @@ export function TableRowComPermit({
         slotProps={{ arrow: { placement: 'right-top' } }}
       >
         <MenuList>
-          {type === 'agent' &&
-            (row.status === 'processing' ||
-              row.status === 'paid' ||
-              row.status === 'correction') && (
+          {can('can_submit_declaration_employee') &&
+            (row.status === 'paid' || row.status === 'correction') && (
               <MenuItem
                 onClick={() => {
                   submitConfirm.onTrue();
@@ -239,36 +240,40 @@ export function TableRowComPermit({
               </MenuItem>
             )}
 
-          {(type === 'supervisor' || type === 'aguipe') &&
-            row.status === 'submitted' && [
-              <MenuItem
-                key="validate"
-                onClick={() => {
-                  validateConfirm.onTrue();
-                  popover.onClose();
-                }}
-                sx={{ color: 'success.main' }}
-              >
-                <Iconify icon="solar:check-bold" />
-                Valider
-              </MenuItem>,
+          {row.status === 'submitted' &&
+            (can('can_validate_declaration_employee') ||
+              can('can_correct_declaration_employee')) && (
+              <>
+                {can('can_validate_declaration_employee') && (
+                  <MenuItem
+                    onClick={() => {
+                      validateConfirm.onTrue();
+                      popover.onClose();
+                    }}
+                    sx={{ color: 'success.main' }}
+                  >
+                    <Iconify icon="solar:check-bold" />
+                    Valider
+                  </MenuItem>
+                )}
+                {can('can_correct_declaration_employee') && (
+                  <MenuItem
+                    onClick={() => {
+                      rejetConfirm.onTrue();
+                      popover.onClose();
+                    }}
+                    sx={{ color: 'error.main' }}
+                  >
+                    <Iconify icon="solar:check-bold" />
+                    Rejeter
+                  </MenuItem>
+                )}
+              </>
+            )}
 
-              <MenuItem
-                key="reject"
-                onClick={() => {
-                  rejetConfirm.onTrue();
-                  popover.onClose();
-                }}
-                sx={{ color: 'error.main' }}
-              >
-                <Iconify icon="solar:close-circle-bold" />
-                Rejeter
-              </MenuItem>,
-            ]}
-
-          {type === 'printer' && (
+          {(can('can_mark_as_printed') || can('can_deliver_permit')) && (
             <>
-              {row.status === 'validated' && (
+              {can('can_mark_as_printed') && row.status === 'validated' && (
                 <MenuItem
                   onClick={() => {
                     printConfirm.onTrue();
@@ -280,7 +285,7 @@ export function TableRowComPermit({
                   imprimer le permis
                 </MenuItem>
               )}
-              {row.status === 'printed' && (
+              {can('can_deliver_permit') && row.status === 'printed' && (
                 <MenuItem
                   onClick={() => {
                     deliverConfirm.onTrue();

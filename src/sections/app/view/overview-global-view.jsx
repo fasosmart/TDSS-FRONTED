@@ -1,7 +1,7 @@
 'use client';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 
 // Import des vues des différents rôles
 import { OverviewAppView } from '../overview-app-view';
@@ -16,30 +16,18 @@ import Loading from 'src/app/dashboard/loading';
 // ----------------------------------------------------------------------
 
 export function OverviewGlobalView() {
-  const { user } = useMockedUser();
+  const { can } = usePermissions();
 
-  const type = user?.type_code.toLowerCase().trim();
-
-  // Rendu conditionnel basé sur le type d'utilisateur
+  // Sélection du dashboard par permission (chaque rôle a SA permission de dashboard).
   const renderView = () => {
-    switch (type) {
-      case 'admin':
-        return <OverviewAppView />;
-      case 'agent':
-        return <AgentAppView />;
-      case 'supervisor':
-        return <AguipeAppView />;
-      case 'accountant':
-        return <ComptableAppView />;
-      case 'treasurer':
-        return <CaissierAppView />;
-      case 'aguipe':
-        return <AguipeAppView />;
-      case 'printer':
-        return <PrinterAppView />;
-      default:
-        return <Loading />;
-    }
+    if (can('can_view_admin_dashboard')) return <OverviewAppView />;
+    if (can('can_view_agent_dashboard')) return <AgentAppView />;
+    if (can('can_view_supervisor_dashboard')) return <SuperviserAppView />;
+    if (can('can_view_accountant_dashboard')) return <ComptableAppView />;
+    if (can('can_view_treasurer_dashboard')) return <CaissierAppView />;
+    if (can('can_view_aguipe_dashboard')) return <AguipeAppView />;
+    if (can('can_view_permit_dashboard')) return <PrinterAppView />;
+    return <Loading />;
   };
 
   return <DashboardContent maxWidth="xl">{renderView()}</DashboardContent>;

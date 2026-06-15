@@ -13,6 +13,8 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { Iconify } from 'src/components/iconify';
 import { toast } from 'src/components/snackbar';
 
+import { usePermissions } from 'src/auth/hooks';
+
 import { PayeurForm } from './form-factures';
 import { generateFactureDocument } from './facture-pdf-service';
 
@@ -136,7 +138,7 @@ export function FactureToolbar({ facture, user, currentStatus, onChangeStatus, d
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [printLoading, setPrintLoading] = useState(false);
 
-  const type = user?.type_code?.toLowerCase().trim();
+  const { can } = usePermissions();
   const canUsePdfActions = !!facture;
 
   const handlePreview = async () => {
@@ -240,7 +242,7 @@ export function FactureToolbar({ facture, user, currentStatus, onChangeStatus, d
 
           <Box sx={{ flexGrow: 1 }} />
 
-          {(type === 'treasurer' || type === 'accountant') && currentStatus === 'unpaid' && (
+          {can('can_mark_facture_paid') && currentStatus === 'unpaid' && (
             <Tooltip title="Payer la facture">
               <IconButton onClick={payeurForm.onTrue}>
                 <Iconify icon="mdi:credit-card" />

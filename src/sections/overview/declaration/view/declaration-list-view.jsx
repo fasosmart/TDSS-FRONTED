@@ -58,7 +58,7 @@ import { DeclarationTableRow } from '../declaration-table-row';
 import { DeclarationTableToolbar } from '../declaration-table-toolbar';
 import { DeclarationPDF, generateDeclarationPDF } from '../declaration-pdf';
 
-import { useMockedUser } from 'src/auth/hooks';
+import { useMockedUser, usePermissions } from 'src/auth/hooks';
 
 import dayjs from 'src/utils/format-time'; // Ensure this imports the correct dayjs instance
 dayjs.locale('fr'); // Set the default locale to French
@@ -84,7 +84,10 @@ export function DeclarationListView() {
   const theme = useTheme();
 
   const { user } = useMockedUser();
+  const { can } = usePermissions();
 
+  // type_user reste utilisé uniquement pour l'organisation cosmétique des onglets/cards
+  // de statut (les données sont déjà filtrées par le scope côté back). À nettoyer en Phase 6.
   const type_user = user?.type_code?.toLowerCase().trim();
 
   // console.log('type_user:', type_user);
@@ -865,7 +868,7 @@ export function DeclarationListView() {
             { name: 'Listes des déclarations' },
           ]}
           action={
-            type_user === 'agent' && ( //  Cache le bouton si type_user est "admin"
+            can('can_create_declaration') && (
               <Button
                 component={RouterLink}
                 href={paths.dashboard.declaration.new}
@@ -996,7 +999,7 @@ export function DeclarationListView() {
               action={
                 <Stack direction="row">
                   {/* telecharger toutes les declarations en un seul fichier */}
-                  {type_user === 'accountant' && (
+                  {can('can_invoice_declaration') && (
                     <Tooltip title="Facturer">
                       <IconButton
                         color="primary"

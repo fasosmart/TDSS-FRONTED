@@ -58,6 +58,7 @@ import { TableRowComPermit } from '../permit-employee-table-row';
 import { useMockedUser } from 'src/auth/hooks';
 import dayjs, { fIsBetween } from 'src/utils/format-time'; // Ensure this imports the correct dayjs instance
 import { set } from 'nprogress';
+
 dayjs.locale('fr'); // Set the default locale to French
 
 // ----------------------------------------------------------------------
@@ -1035,7 +1036,6 @@ export function PermitListView() {
                     {/* slug, name, sign, value */}
                     {tableData.map((row) => (
                       <TableRowComPermit
-                        type={type}
                         key={row.slug}
                         row={row}
                         rejectReasons={RejetReasons}
