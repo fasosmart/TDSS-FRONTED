@@ -1,4 +1,5 @@
 import { CONFIG } from 'src/config-global';
+import { PermissionGuard } from 'src/auth/guard';
 import { JobEditView } from 'src/sections/administration/fonction/view';
 
 
@@ -10,7 +11,7 @@ export const metadata = { title: `Job edit | Dashboard - ${CONFIG.appName}` };
 export default async function Page({ params }) {
     const { slug } = await params;
 
-    return <JobEditView slug={slug} />;
+    return <PermissionGuard permission="can_manage_jobs"><JobEditView slug={slug} /></PermissionGuard>;
 }
 
 // ----------------------------------------------------------------------
