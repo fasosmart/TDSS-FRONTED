@@ -21,7 +21,7 @@ import { paths } from 'src/routes/paths';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useSetState } from 'src/hooks/use-set-state';
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { ConfirmDialog } from 'src/components/custom-dialog';
@@ -66,8 +66,7 @@ export function EmployeeListView() {
   const confirm = useBoolean();
   const createDialog = useBoolean();
 
-  const { user } = useMockedUser();
-  const type_user = user?.type_code?.toLowerCase().trim();
+  const { can } = usePermissions();
 
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -212,7 +211,7 @@ export function EmployeeListView() {
             { name: 'Listes des employes' },
           ]}
           action={
-            (type_user === 'admin' || type_user === 'agent') && (
+            can('can_create_employee') && (
               <Button
                 variant="contained"
                 startIcon={<Iconify icon="mingcute:add-line" />}

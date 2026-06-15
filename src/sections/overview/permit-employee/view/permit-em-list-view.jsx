@@ -55,7 +55,7 @@ import {
 import { TableToolbar } from '../table-filter';
 import { TableFiltersResult } from '../table-filter-result';
 import { TableRowComPermit } from '../permit-employee-table-row';
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 import dayjs, { fIsBetween } from 'src/utils/format-time'; // Ensure this imports the correct dayjs instance
 import { set } from 'nprogress';
 
@@ -78,15 +78,6 @@ const STATUS_OPTIONS = [
   { value: 'delivered', label: 'Livré' },
   { value: 'expired', label: 'Expiré' },
 ];
-
-const STATUS_OPTIONS_BY_ROLE = {
-  agent: ['all', 'processing', 'billed', 'paid', 'submitted', 'correction', 'validated'],
-  supervisor: ['all', 'submitted', 'validated', 'correction'],
-  aguipe: ['all', 'submitted', 'validated', 'correction'],
-  printer: ['validated', 'printed'],
-  admin: STATUS_OPTIONS.map((option) => option.value),
-  default: ['all'],
-};
 
 const BASE_TABLE_HEAD = [
   // { id: 'check', width: 88 },
@@ -111,8 +102,7 @@ const BASE_TABLE_HEAD = [
 export function PermitListView() {
   const table = useTable();
 
-  const { user } = useMockedUser();
-  const type = user?.type_code?.toLowerCase().trim();
+  const { can } = usePermissions();
 
   const [RejetReasons, setRejetReasons] = useState([]);
   const [rejectForm, setRejectForm] = useState({
@@ -120,9 +110,16 @@ export function PermitListView() {
     reject_reason_description: '',
   });
 
-  const isPrinter = type === 'printer';
-  const isSupervisor = type === 'supervisor' || type === 'aguipe';
-  const allowedStatusValues = STATUS_OPTIONS_BY_ROLE[type] || STATUS_OPTIONS_BY_ROLE.default;
+  const isPrinter = can('can_view_permit_dashboard');
+  const isSupervisor = can('can_view_supervisor_dashboard') || can('can_view_aguipe_dashboard');
+  const allowedStatusValues = useMemo(() => {
+    if (can('can_view_admin_dashboard')) return STATUS_OPTIONS.map((option) => option.value);
+    if (can('can_view_agent_dashboard'))
+      return ['all', 'processing', 'billed', 'paid', 'submitted', 'correction', 'validated'];
+    if (isSupervisor) return ['all', 'submitted', 'validated', 'correction'];
+    if (isPrinter) return ['validated', 'printed'];
+    return ['all'];
+  }, [can, isSupervisor, isPrinter]);
   const defaultStatusValue = isPrinter ? 'validated' : 'all';
   const statusOptions = useMemo(
     () => STATUS_OPTIONS.filter((option) => allowedStatusValues.includes(option.value)),

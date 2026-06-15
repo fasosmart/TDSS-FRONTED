@@ -17,7 +17,7 @@ import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import CircularProgress from '@mui/material/CircularProgress';
 import axios from 'src/utils/axios';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { varAlpha } from 'src/theme/styles';
 import { Label } from 'src/components/label';
@@ -86,11 +86,24 @@ export function DeclarationListView() {
   const { user } = useMockedUser();
   const { can } = usePermissions();
 
-  // type_user reste utilisé uniquement pour l'organisation cosmétique des onglets/cards
-  // de statut (les données sont déjà filtrées par le scope côté back). À nettoyer en Phase 6.
-  const type_user = user?.type_code?.toLowerCase().trim();
 
-  // console.log('type_user:', type_user);
+  const allowedTabStatuses = useMemo(() => {
+    if (can('can_view_admin_dashboard'))
+      return ['all', 'submitted', 'validated', 'billed', 'unsubmitted', 'rejected'];
+    if (can('can_view_agent_dashboard'))
+      return ['all', 'submitted', 'validated', 'unsubmitted', 'rejected'];
+    if (can('can_view_aguipe_dashboard')) return ['all', 'submitted', 'rejected'];
+    if (can('can_view_accountant_dashboard')) return ['all', 'billed', 'validated'];
+    return ['all'];
+  }, [can]);
+
+  const allowedCardStatuses = useMemo(() => {
+    if (can('can_view_admin_dashboard')) return ['all', 'submitted', 'validated', 'billed'];
+    if (can('can_view_agent_dashboard')) return ['all', 'submitted', 'validated', 'unsubmitted'];
+    if (can('can_view_aguipe_dashboard')) return ['all', 'submitted', 'rejected'];
+    if (can('can_view_accountant_dashboard')) return ['all', 'billed', 'validated'];
+    return ['all'];
+  }, [can]);
 
   const router = useRouter();
   const fetchRequestIdRef = useRef(0);
@@ -231,22 +244,6 @@ export function DeclarationListView() {
     return (number / totalCount) * 100;
   };
 
-  const allowedStatusByRole = {
-    admin: ['all', 'submitted', 'validated', 'billed', 'unsubmitted', 'rejected'],
-    agent: ['all', 'submitted', 'validated', 'unsubmitted', 'rejected'],
-    aguipe: ['all', 'submitted', 'rejected'],
-    accountant: ['all', 'billed', 'validated'],
-    default: ['all'],
-  };
-
-  const allowedStatus = {
-    admin: ['all', 'submitted', 'validated', 'billed'],
-    agent: ['all', 'submitted', 'validated', 'unsubmitted'],
-    aguipe: ['all', 'submitted', 'rejected'],
-    accountant: ['all', 'billed', 'validated'],
-    default: ['all'],
-  };
-
   // Mapping des statuts aux composants/cards
   const statusCards = {
     all: (
@@ -381,12 +378,7 @@ export function DeclarationListView() {
     },
   ];
 
-  function getTabsForUser(userType) {
-    const allowed = allowedStatusByRole[userType] || allowedStatusByRole.default;
-    return TABS.filter((tab) => allowed.includes(tab.value));
-  }
-
-  const tabs = getTabsForUser(type_user);
+  const tabs = TABS.filter((tab) => allowedTabStatuses.includes(tab.value));
 
   const handleDeleteRow = async (id) => {
     try {
@@ -851,7 +843,7 @@ export function DeclarationListView() {
   const open = Boolean(anchorEl);
   const id = open ? 'declaration-popover' : undefined;
 
-  const allowedStatuses = allowedStatus[type_user] || allowedStatus.default;
+  const allowedStatuses = allowedCardStatuses;
 
   {
     isLoading && toast.info('Téléchargement en cours, veuillez patienter...');

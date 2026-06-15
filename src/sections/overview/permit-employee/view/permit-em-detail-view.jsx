@@ -12,7 +12,7 @@ import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
 import Tabs from '@mui/material/Tabs';
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 
 import { EmployeeCover } from '../../employee/employee-cover';
 
@@ -54,9 +54,8 @@ const TABS_PERMITS = [
 
 export function PermitDetailView({ slug }) {
   const tabs = useTabs('info');
-  const { user } = useMockedUser();
-  const type = user?.type_code?.toLowerCase().trim();
-  const isSupervisor = type === 'supervisor' || type === 'aguipe';
+  const { can } = usePermissions();
+  const canCorrect = can('can_correct_declaration_employee');
   const [loading, setLoading] = useState(true);
 
   const [permit, setPermit] = useState();
@@ -126,7 +125,7 @@ export function PermitDetailView({ slug }) {
   const [rejectReasons, setRejectReasons] = useState([]);
 
   useEffect(() => {
-    if (!isSupervisor) return;
+    if (!canCorrect) return;
 
     const fetchRejectReasons = async () => {
       try {
@@ -137,7 +136,7 @@ export function PermitDetailView({ slug }) {
       }
     };
     fetchRejectReasons();
-  }, [isSupervisor]);
+  }, [canCorrect]);
 
   const handleChangeStatus = useCallback((newStatus) => {
     setStatus(newStatus);
@@ -190,7 +189,7 @@ export function PermitDetailView({ slug }) {
         </Box>
       </Card>
       {tabs.value === 'details' && (
-        <PermitEmloyeeInfo info={permit} type={type} onSyncSuccess={fecthPermit} />
+        <PermitEmloyeeInfo info={permit} onSyncSuccess={fecthPermit} />
       )}
 
       {tabs.value === 'doc' && (
@@ -246,7 +245,6 @@ export function PermitDetailView({ slug }) {
           employee_slug={permit?.employee_slug}
           fingerprints_picture={permit?.fingerprints_picture}
           onUpdate={handleUpdate}
-          type={type}
           status={permit?.status}
           abisLastRetrievedAt={permit?.abis_last_retrieved_at}
         />
