@@ -23,7 +23,6 @@ import { usePermissions } from 'src/auth/hooks';
 
 export function DeclarationTableRow({
   row,
-  user,
   selected,
   onSelectRow,
   onViewRow,

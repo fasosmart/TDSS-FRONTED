@@ -58,7 +58,7 @@ import { DeclarationTableRow } from '../declaration-table-row';
 import { DeclarationTableToolbar } from '../declaration-table-toolbar';
 import { DeclarationPDF, generateDeclarationPDF } from '../declaration-pdf';
 
-import { useMockedUser, usePermissions } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 
 import dayjs from 'src/utils/format-time'; // Ensure this imports the correct dayjs instance
 dayjs.locale('fr'); // Set the default locale to French
@@ -83,7 +83,6 @@ export function DeclarationListView() {
   const [anchorEl, setAnchorEl] = useState(null);
   const theme = useTheme();
 
-  const { user } = useMockedUser();
   const { can } = usePermissions();
 
 
@@ -1100,7 +1099,6 @@ export function DeclarationListView() {
                   <TableBody>
                     {tableData.map((row) => (
                       <DeclarationTableRow
-                        user={user}
                         key={row.slug}
                         row={row}
                         selected={table.selected.includes(row.slug)}
