@@ -11,7 +11,6 @@ import { useTabs } from 'src/hooks/use-tabs';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
-import { useMockedUser } from 'src/auth/hooks';
 import { EmployeeCover } from '../employee-cover';
 import { EmployeeInfo } from '../employee-info';
 import { EmployeeDeclarations } from '../employee-declaration';
@@ -40,8 +39,6 @@ const TABS_ENTREPRISE = [
 ];
 
 export function EmployeeDetailsView({ slug }) {
-  const { user } = useMockedUser();
-  const type = user?.type_code?.toLowerCase().trim();
   const [employee, setEmployee] = useState();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -126,7 +123,7 @@ export function EmployeeDetailsView({ slug }) {
       </Card>
 
       {tabs.value === 'profile' && (
-        <EmployeeInfo info={employee} type={type} onSyncSuccess={fetchEmployee} />
+        <EmployeeInfo info={employee} onSyncSuccess={fetchEmployee} />
       )}
       {tabs.value === 'declaration' && (
         <EmployeeDeclarations declarations={declarations} loading={loading} employee={employee} />
@@ -146,7 +143,6 @@ export function EmployeeDetailsView({ slug }) {
           signature={employee?.signature}
           fingerprints_picture={employee?.fingerprints_picture}
           employee_slug={employee?.slug}
-          type={type}
           status={employee?.status}
           abisLastRetrievedAt={employee?.abis_last_retrieved_at}
         />

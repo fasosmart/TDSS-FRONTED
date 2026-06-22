@@ -24,12 +24,14 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { Iconify } from 'src/components/iconify';
 import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
+import { usePermissions } from 'src/auth/hooks';
 import { PaiementPDF } from './paiement-pdf';
 import { UpdatePaiement } from './paiement-update';
 
 // ----------------------------------------------------------------------
 
-export function PaiementToolbar({ payment, componentRef, currentStatus, onChangeStatus, user }) {
+export function PaiementToolbar({ payment, componentRef, currentStatus, onChangeStatus }) {
+  const { can } = usePermissions();
   const view = useBoolean();
   const confirm = useBoolean();
   const updateConfirm = useBoolean();
@@ -131,17 +133,21 @@ export function PaiementToolbar({ payment, componentRef, currentStatus, onChange
           {/* Bouton de validation */}
           {currentStatus === 'pending' && (
             <>
-              <Tooltip title="Valider">
-                <IconButton onClick={() => confirm.onTrue()}>
-                  <Iconify icon="eva:checkmark-circle-2-fill" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Modifier">
-                <IconButton onClick={() => updateConfirm.onTrue()}>
-                  <Iconify icon="eva:edit-2-fill" />
-                </IconButton>
-              </Tooltip>
-              {user?.type_code === 'admin' && (
+              {can('can_validate_payment') && (
+                <Tooltip title="Valider">
+                  <IconButton onClick={() => confirm.onTrue()}>
+                    <Iconify icon="eva:checkmark-circle-2-fill" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {can('can_edit_payment') && (
+                <Tooltip title="Modifier">
+                  <IconButton onClick={() => updateConfirm.onTrue()}>
+                    <Iconify icon="eva:edit-2-fill" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {can('can_delete_payment') && (
                 <Tooltip title="Supprimer">
                   <IconButton onClick={() => deleteConfirm.onTrue()}>
                     <Iconify icon="eva:trash-2-outline" />

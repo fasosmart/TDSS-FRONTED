@@ -29,7 +29,7 @@ import { DeclarationPDF } from 'src/sections/overview/declaration/declaration-pd
 import DeclarationDetailsPrint from 'src/sections/overview/declaration/declaration-print';
 import { WorkPermitCard } from './permit-print';
 
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { toast } from 'src/components/snackbar';
 
@@ -46,9 +46,7 @@ export function PermitToolbar({
 
   const [openPrint, setOpenPrint] = useState(false);
 
-  const { user } = useMockedUser();
-  const type = user?.type_code?.toLowerCase().trim();
-  const profil = user?.companies[0]?.type_name?.toLowerCase().trim();
+  const { can } = usePermissions();
 
   // const [logoData, setLogoData] = useState(null);
   const logoUrl = permit?.company?.picture;
@@ -271,7 +269,7 @@ export function PermitToolbar({
               onPrint={handlePrintPermis}
             />
           </Box>
-          {type === 'printer' && currentStatus === 'validated' && (
+          {can('can_mark_as_printed') && currentStatus === 'validated' && (
             <Tooltip title="Imprimer">
               <IconButton onClick={handlePrint}>
                 <Iconify icon="solar:printer-minimalistic-bold" />
@@ -279,7 +277,7 @@ export function PermitToolbar({
             </Tooltip>
           )}
 
-          {type === 'printer' && currentStatus === 'printed' && (
+          {can('can_deliver_permit') && currentStatus === 'printed' && (
             <Tooltip title="Delivrer">
               <IconButton onClick={() => deliverConfirm.onTrue()}>
                 <Iconify icon="solar:send-square-bold" />
@@ -287,18 +285,17 @@ export function PermitToolbar({
             </Tooltip>
           )}
 
-          {type === 'agent' && (currentStatus === 'rejected' || currentStatus === 'submitted') && (
-            <Tooltip title="Mettre en edition">
-              <IconButton onClick={() => unsubmitConfirm.onTrue()}>
-                <Iconify icon="solar:pen-bold" />
-              </IconButton>
-            </Tooltip>
-          )}
+          {can('can_submit_declaration_employee') &&
+            (currentStatus === 'rejected' || currentStatus === 'submitted') && (
+              <Tooltip title="Mettre en edition">
+                <IconButton onClick={() => unsubmitConfirm.onTrue()}>
+                  <Iconify icon="solar:pen-bold" />
+                </IconButton>
+              </Tooltip>
+            )}
 
-          {type === 'agent' &&
-            (currentStatus === 'processing' ||
-              currentStatus === 'paid' ||
-              currentStatus === 'correction') && (
+          {can('can_submit_declaration_employee') &&
+            (currentStatus === 'paid' || currentStatus === 'correction') && (
               <Tooltip title="Soumettre">
                 <IconButton onClick={() => submitConfirm.onTrue()}>
                   <Iconify icon="mdi:check-bold" />
@@ -306,21 +303,27 @@ export function PermitToolbar({
               </Tooltip>
             )}
 
-          {(type === 'supervisor' || type === 'aguipe') && currentStatus === 'submitted' && (
-            <>
-              <Tooltip title="Valider">
-                <IconButton onClick={() => validateConfirm.onTrue()}>
-                  <Iconify icon="mdi:check-bold" />
-                </IconButton>
-              </Tooltip>
+          {currentStatus === 'submitted' &&
+            (can('can_validate_declaration_employee') ||
+              can('can_correct_declaration_employee')) && (
+              <>
+                {can('can_validate_declaration_employee') && (
+                  <Tooltip title="Valider">
+                    <IconButton onClick={() => validateConfirm.onTrue()}>
+                      <Iconify icon="mdi:check-bold" />
+                    </IconButton>
+                  </Tooltip>
+                )}
 
-              <Tooltip title="Rejeter">
-                <IconButton onClick={() => setOpenRejetDialog(true)}>
-                  <Iconify icon="material-symbols:cancel" />
-                </IconButton>
-              </Tooltip>
-            </>
-          )}
+                {can('can_correct_declaration_employee') && (
+                  <Tooltip title="Rejeter">
+                    <IconButton onClick={() => setOpenRejetDialog(true)}>
+                      <Iconify icon="material-symbols:cancel" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </>
+            )}
         </Stack>
       </Stack>
 

@@ -48,7 +48,7 @@ import { UserTableToolbar } from '../user-table-toolbar';
 import { CircularProgress } from '@mui/material'
 
 import { getUserTypes } from 'src/utils/options';
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 // ----------------------------------------------------------------------
 
 const STATUS_OPTIONS = [
@@ -76,9 +76,7 @@ export function UserListView() {
 
   const confirm = useBoolean();
 
- const { user } = useMockedUser();
-
-  const company = user?.companies[0]?.type_code?.toLowerCase().trim();
+  const { can } = usePermissions();
 
   const [tableData, setTableData] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -237,17 +235,17 @@ export function UserListView() {
           ]}
           
           action={
-           company === 'tdss' && (
-            <Button
-              component={RouterLink}
-              href={paths.dashboard.user.new}
-              variant="contained"
-              startIcon={<Iconify icon="mingcute:add-line" />}
-            >
-              Nouvel Utilisateur
-            </Button>
-          )
-        }
+            can('can_create_user') && (
+              <Button
+                component={RouterLink}
+                href={paths.dashboard.user.new}
+                variant="contained"
+                startIcon={<Iconify icon="mingcute:add-line" />}
+              >
+                Nouvel Utilisateur
+              </Button>
+            )
+          }
         
           sx={{ mb: { xs: 3, md: 5 } }}
         />

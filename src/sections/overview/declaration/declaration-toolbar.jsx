@@ -28,7 +28,7 @@ import { Iconify } from 'src/components/iconify';
 import { DeclarationPDF } from './declaration-pdf';
 import DeclarationDetailsPrint from './declaration-print';
 
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { toast } from 'src/components/snackbar';
 
@@ -43,9 +43,7 @@ export function DeclarationToolbar({
 }) {
   const router = useRouter();
 
-  const { user } = useMockedUser();
-  const type = user?.type_code?.toLowerCase().trim();
-  const profil = user?.companies[0]?.type_name?.toLowerCase().trim();
+  const { can } = usePermissions();
 
   // const [logoData, setLogoData] = useState(null);
   const logoUrl = declaration?.company?.picture;
@@ -256,7 +254,7 @@ export function DeclarationToolbar({
             </IconButton>
           </Tooltip>
 
-          {(type === 'agent' || type === 'admin') && declaration?.status === 'unsubmitted' && (
+          {can('can_edit_declaration') && declaration?.status === 'unsubmitted' && (
             <Tooltip title="Modifier">
               <IconButton onClick={handleEdit}>
                 <Iconify icon="solar:pen-bold" />
@@ -264,15 +262,16 @@ export function DeclarationToolbar({
             </Tooltip>
           )}
 
-          {type === 'agent' && (currentStatus === 'rejected' || currentStatus === 'submitted') && (
-            <Tooltip title="Mettre en edition">
-              <IconButton onClick={() => unsubmitConfirm.onTrue()}>
-                <Iconify icon="solar:pen-bold" />
-              </IconButton>
-            </Tooltip>
-          )}
+          {can('can_unsubmit_declaration') &&
+            (currentStatus === 'rejected' || currentStatus === 'submitted') && (
+              <Tooltip title="Mettre en edition">
+                <IconButton onClick={() => unsubmitConfirm.onTrue()}>
+                  <Iconify icon="solar:pen-bold" />
+                </IconButton>
+              </Tooltip>
+            )}
 
-          {type === 'agent' && currentStatus === 'unsubmitted' && (
+          {can('can_submit_declaration') && currentStatus === 'unsubmitted' && (
             <Tooltip title="Soumettre">
               <IconButton onClick={() => submitConfirm.onTrue()}>
                 <Iconify icon="mdi:check-bold" />
@@ -280,23 +279,28 @@ export function DeclarationToolbar({
             </Tooltip>
           )}
 
-          {(type === 'aguipe' || type === 'accountant') && currentStatus === 'submitted' && (
-            <>
-              <Tooltip title="Valider">
-                <IconButton onClick={() => validateConfirm.onTrue()}>
-                  <Iconify icon="mdi:check-bold" />
-                </IconButton>
-              </Tooltip>
+          {currentStatus === 'submitted' &&
+            (can('can_validate_declaration') || can('can_reject_declaration')) && (
+              <>
+                {can('can_validate_declaration') && (
+                  <Tooltip title="Valider">
+                    <IconButton onClick={() => validateConfirm.onTrue()}>
+                      <Iconify icon="mdi:check-bold" />
+                    </IconButton>
+                  </Tooltip>
+                )}
 
-              <Tooltip title="Rejeter">
-                <IconButton onClick={() => setOpenRejetDialog(true)}>
-                  <Iconify icon="material-symbols:cancel" />
-                </IconButton>
-              </Tooltip>
-            </>
-          )}
+                {can('can_reject_declaration') && (
+                  <Tooltip title="Rejeter">
+                    <IconButton onClick={() => setOpenRejetDialog(true)}>
+                      <Iconify icon="material-symbols:cancel" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </>
+            )}
 
-          {type === 'accountant' && currentStatus === 'validated' && (
+          {can('can_invoice_declaration') && currentStatus === 'validated' && (
             <Tooltip title="Facturer">
               <IconButton onClick={() => factureConfirm.onTrue()}>
                 <Iconify icon="mdi:credit-card" />

@@ -49,7 +49,6 @@ import { PaiementTableToolbar } from '../paiement-table-toolbar';
 import { fCurrency, fGNF } from 'src/utils/format-number';
 
 import dayjs from 'dayjs';
-import { useMockedUser } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
@@ -71,8 +70,6 @@ const TABLE_HEAD = [
 export function PaiementListView() {
   const theme = useTheme();
 
-  const { user } = useMockedUser();
-  const type_user = user?.type_code.trim();
 
   const router = useRouter();
 
@@ -453,8 +450,6 @@ export function PaiementListView() {
                     <PaiementTableRow
                       key={row.slug}
                       row={row}
-                      user={user}
-                      type_user={type_user}
                       selected={table.selected.includes(row.slug)}
                       onViewRow={() => handleViewRow(row.slug)}
                       onValidateRow={() => handleValidate(row.slug)}

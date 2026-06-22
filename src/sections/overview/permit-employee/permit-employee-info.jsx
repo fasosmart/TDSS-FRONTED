@@ -14,6 +14,7 @@ import { Iconify } from 'src/components/iconify';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
+import { usePermissions } from 'src/auth/hooks';
 
 import { EmployeeQuickEditForm } from '../declaration/components/employe-quick-edit-form';
 
@@ -25,9 +26,10 @@ import axios from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export function PermitEmloyeeInfo({ info, type, onSyncSuccess }) {
+export function PermitEmloyeeInfo({ info, onSyncSuccess }) {
   const fileRef = useRef(null);
   const router = useRouter();
+  const { can } = usePermissions();
 
   const editOpen = useBoolean();
 
@@ -414,7 +416,7 @@ export function PermitEmloyeeInfo({ info, type, onSyncSuccess }) {
                 }}
               />
 
-              {type === 'agent' &&
+              {can('can_enroll_employee_abis') &&
                 info?.status !== 'printed' &&
                 info?.status !== 'delivered' &&
                 info?.status !== 'enrolled' &&
@@ -438,7 +440,7 @@ export function PermitEmloyeeInfo({ info, type, onSyncSuccess }) {
                   />
                 )}
 
-              {info?.status === 'correction' && (type === 'agent' || type === 'admin') && (
+              {info?.status === 'correction' && can('can_edit_declaration_employee') && (
                 <Chip
                   icon={<Iconify icon="mdi:pen" width={18} />}
                   label="Modifier"

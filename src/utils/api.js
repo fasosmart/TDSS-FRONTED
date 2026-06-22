@@ -5,12 +5,15 @@ import { create } from '@mui/material/styles/createTransitions';
 import { get } from 'react-hook-form';
 import { list } from 'src/theme/core/components/list';
 
-const BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`; // Adresse de votre backend
+// const BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`; // Adresse de votre backend
+
+const BASE_URL = 'http://localhost:8000/api';
 
 const API = {
   nextjsPage: () => `${BASE_URL}/nextjs/page`, // Vue Next.js
   login: () => `${BASE_URL}/auth/jwt/create/`, // api connexion
   me: () => `${BASE_URL}/users/me/`, // informations de l'utilisateur connecté
+  myAssignments: () => `${BASE_URL}/users/my-assignments/`, // permissions granulaires de l'assignment actif
   logout: () => `${BASE_URL}/auth/jwt/logout/`, // deconnexion
   resetPassword: () => `${BASE_URL}/users/reset_password/`, // reinitialisation du password
   resetPasswordConfirmation: () => `${BASE_URL}/users/reset_password_confirm/`, // reinitialisation du password

@@ -20,6 +20,7 @@ import { Iconify } from 'src/components/iconify';
 import { toast } from 'src/components/snackbar';
 import axios from 'src/utils/axios';
 import API from 'src/utils/api';
+import { usePermissions } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
@@ -30,10 +31,10 @@ export function BiometricData({
   fingerprints_picture,
   onUpdate,
   employee_slug,
-  type,
   status,
   abisLastRetrievedAt,
 }) {
+  const { can } = usePermissions();
   const [openPreview, setOpenPreview] = useState(false);
   const [previewData, setPreviewData] = useState({ type: '', url: '' });
 
@@ -498,7 +499,7 @@ export function BiometricData({
                 }}
               />
             )}
-            {type === 'agent' &&
+            {can('can_retrieve_abis_data') &&
               status !== 'printed' &&
               status !== 'delivered' &&
               status !== 'enrolled' && (

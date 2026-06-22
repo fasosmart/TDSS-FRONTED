@@ -57,7 +57,7 @@ import { FactureTableToolbar } from '../factures-table-toolbar';
 import { PayeurForm } from '../form-factures';
 import { generateFactureDocument } from '../facture-pdf-service';
 
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 
 import dayjs from 'src/utils/format-time'; // Ensure this imports the correct dayjs instance
 
@@ -89,8 +89,7 @@ const TABLE_HEAD = [
 export function FactureListView() {
   const theme = useTheme();
 
-  const { user } = useMockedUser();
-  const type_user = user?.type_code.toLowerCase().trim();
+  const { can } = usePermissions();
 
   const router = useRouter();
 
@@ -632,7 +631,7 @@ export function FactureListView() {
                     </IconButton>
                   </Tooltip>
 
-                  {(type_user === 'treasurer' || type_user === 'accountant') && (
+                  {can('can_mark_facture_paid') && (
                     <Tooltip title="Payer">
                       <IconButton
                         color="primary"
@@ -687,7 +686,6 @@ export function FactureListView() {
                     {tableData.map((row) => (
                       <FactureTableRow
                         key={row.slug}
-                        user={user}
                         row={row}
                         selected={table.selected.includes(row.slug)}
                         onSelectRow={() => table.onSelectRow(row.slug)}
