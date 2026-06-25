@@ -5,9 +5,7 @@ import { create } from '@mui/material/styles/createTransitions';
 import { get } from 'react-hook-form';
 import { list } from 'src/theme/core/components/list';
 
-// const BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`; // Adresse de votre backend
-
-const BASE_URL = 'http://localhost:8000/api';
+const BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`; // Adresse de votre backend
 
 const API = {
   nextjsPage: () => `${BASE_URL}/nextjs/page`, // Vue Next.js
