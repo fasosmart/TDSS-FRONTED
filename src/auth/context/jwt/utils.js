@@ -84,7 +84,9 @@ export async function setSession(access_token, refresh_token) {
     const setCookie = (name, value, days) => {
       const expirationDate = new Date();
       expirationDate.setDate(expirationDate.getDate() + days);
-      const cookieValue = `${encodeURIComponent(value)}; expires=${expirationDate.toUTCString()}; path=/; SameSite=Lax`;
+      // Secure uniquement en HTTPS pour ne pas casser le dev local en http.
+      const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+      const cookieValue = `${encodeURIComponent(value)}; expires=${expirationDate.toUTCString()}; path=/; SameSite=Lax${secure}`;
       document.cookie = `${name}=${cookieValue}`;
     };
 

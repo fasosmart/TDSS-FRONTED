@@ -13,7 +13,7 @@ import { usePermissions } from '../hooks/use-permissions';
 
 // ----------------------------------------------------------------------
 //
-// Garde de page basée sur les permissions granulaires (remplace RoleBasedGuard).
+// Garde de page basée sur les permissions granulaires.
 //
 //   <PermissionGuard permission="can_view_user"><UserListView /></PermissionGuard>
 //   <PermissionGuard any={['can_view_facture']}>...</PermissionGuard>
