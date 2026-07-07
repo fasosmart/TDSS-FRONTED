@@ -13,11 +13,13 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { JobCategoryHome } from '../job-category-home';
+import { DetailNotFoundView } from 'src/sections/error';
 
 export function JobCategoryDetailsView({ slug }) {
     const [jobCategory, setJobCategory] = useState();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [notFound, setNotFound] = useState(false);
 
     const router = useRouter()
 
@@ -34,7 +36,11 @@ export function JobCategoryDetailsView({ slug }) {
                 const response = await axios.get(API.editJobCategory(slug));
                 setJobCategory(response.data);
             } catch (err) {
-                setError(err.message || 'Erreur lors du chargement des données.');
+                if (err?.status === 404) {
+                    setNotFound(true);
+                } else {
+                    setError(err.message || 'Erreur lors du chargement des données.');
+                }
             } finally {
                 setLoading(false);
             }
@@ -45,6 +51,12 @@ export function JobCategoryDetailsView({ slug }) {
     
     
     if (loading) return <div>Chargement...</div>;
+    if (notFound)
+        return (
+            <DashboardContent>
+                <DetailNotFoundView title="Fonction professionnelle introuvable" href={paths.dashboard.jobCategory.list} />
+            </DashboardContent>
+        );
     if (error) return <div>{error}</div>;
 
     return (

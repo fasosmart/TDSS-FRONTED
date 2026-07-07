@@ -38,7 +38,18 @@ axiosInstance.interceptors.request.use(
 
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject((error.response && error.response.data) || 'Something went wrong!')
+  (error) => {
+    const data = error.response && error.response.data;
+    // On conserve le status HTTP quand le corps est un objet (ex. réponses DRF)
+    // afin que les vues puissent détecter un 404. Comportement inchangé pour
+    // les corps texte / erreurs réseau.
+    if (data && typeof data === 'object') {
+      // eslint-disable-next-line prefer-promise-reject-errors -- convention app : on rejette le corps de réponse, pas une Error
+      return Promise.reject({ ...data, status: error.response.status });
+    }
+    // eslint-disable-next-line prefer-promise-reject-errors -- convention app : on rejette le corps de réponse, pas une Error
+    return Promise.reject(data || 'Something went wrong!');
+  }
 );
 
 export default axiosInstance;

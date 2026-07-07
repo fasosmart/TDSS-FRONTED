@@ -2,7 +2,7 @@ module.exports = {
   root: true,
   env: { browser: true, es2020: true },
   plugins: ['perfectionist', 'unused-imports', 'prettier'],
-  extends: ['airbnb', 'airbnb/hooks', 'prettier', 'next/core-web-vitals'],
+  extends: ['airbnb', 'prettier', 'next/core-web-vitals'],
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
