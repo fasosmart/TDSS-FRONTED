@@ -841,7 +841,11 @@ export function PermitListView() {
                 ? { name: filters.state.name }
                 : {}),
           ...(filters.state.type !== 'all' ? { type: filters.state.type } : {}),
-          ...(currentStatusFilter !== 'all' ? { status: currentStatusFilter } : {}),
+          ...(currentStatusFilter === 'expired'
+            ? { is_expired: true }
+            : currentStatusFilter !== 'all'
+              ? { status: currentStatusFilter }
+              : {}),
           ...(filters.state.declaration ? { declaration: filters.state.declaration } : {}),
           ...(filters.state.company ? { company: filters.state.company } : {}),
           ...(filters.state.number ? { number: filters.state.number } : {}),

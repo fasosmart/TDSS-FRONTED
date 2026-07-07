@@ -1,6 +1,5 @@
 import { paths } from 'src/routes/paths';
 import { Iconify } from 'src/components/iconify';
-import { Divider } from '@mui/material';
 
 // ----------------------------------------------------------------------
 
@@ -70,5 +69,4 @@ export const _account = [
     href: paths.dashboard.user.account,
     icon: <Iconify icon="solar:settings-bold-duotone" />,
   },
-  <Divider></Divider>,
 ];
