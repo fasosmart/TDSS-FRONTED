@@ -77,8 +77,11 @@ export function JwtSignInView() {
       // si pas d’activation on redirige simplement
       router.push(paths.dashboard.root);
     } catch (error) {
-      console.error('Sign in error dans la vue :', error);
-      setErrorMsg(typeof error === 'string' ? error : error.message || 'Authentication failed');
+      const raw = typeof error === 'string' ? error : error?.message || '';
+      const friendly = /no active account/i.test(raw)
+        ? 'Identifiant ou mot de passe incorrect.'
+        : raw || 'Échec de la connexion.';
+      setErrorMsg(friendly);
     }
   });
 
