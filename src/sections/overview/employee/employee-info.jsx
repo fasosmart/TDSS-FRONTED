@@ -396,9 +396,7 @@ export function EmployeeInfo({ info, type, onSyncSuccess }) {
               icon="mdi:calendar-clock"
               label="Duree"
               value={
-                info?.contract_duration
-                  ? `${info?.contract_duration} an${info?.contract_duration > 1 ? 's' : ''}`
-                  : '-'
+                info?.contract_duration ? `${info?.contract_duration} mois` : '-'
               }
             />
             {info?.motif_rejet && (

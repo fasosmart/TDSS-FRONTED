@@ -6,7 +6,7 @@ import { PermitListView } from 'src/sections/administration/permit/permit-list-v
 
 // ----------------------------------------------------------------------
 
-export const metadata = { title: `Permit | Dashboard - ${CONFIG.appName}` };
+export const metadata = { title: `Type Permis | Dashboard - ${CONFIG.appName}` };
 
 export default function Page() {
   return (
