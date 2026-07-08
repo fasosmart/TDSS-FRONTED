@@ -85,6 +85,7 @@ const API = {
   statsFactures: () => `${BASE_URL}/factures/stats`,
 
   listPaiments: () => `${BASE_URL}/payments/`, // Liste des paiements
+  statsPaiements: () => `${BASE_URL}/payments/stats/`, // Agrégats (total nombre + montants)
   detailsPaiement: (slug) => `${BASE_URL}/payments/${slug}/`, // Details d'un paiement
   removePayment: (slug) => `${BASE_URL}/payments/${slug}/`, // supprimer un paiement
   updatepayment: (slug) => `${BASE_URL}/payments/${slug}/`, // modifier les informations d'un paiment
