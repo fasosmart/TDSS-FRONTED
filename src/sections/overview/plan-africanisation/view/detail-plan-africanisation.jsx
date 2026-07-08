@@ -789,7 +789,7 @@ export function AfricanizationPlanDetails({ slug }) {
       <ConfirmDialog
         open={reassignConfirm.value}
         onClose={reassignConfirm.onFalse}
-        title="Reassigner ce plan à un autre permit"
+        title="Réassigner ce plan à un autre permis"
         content={
           <Autocomplete
             size="small"
@@ -803,7 +803,7 @@ export function AfricanizationPlanDetails({ slug }) {
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Rechercher ou selectionner un permit "
+                label="Rechercher ou sélectionner un permis "
                 placeholder="Taper pour rechercher"
                 variant="outlined"
                 size="small"

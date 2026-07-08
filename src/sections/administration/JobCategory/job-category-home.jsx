@@ -50,7 +50,7 @@ export function JobCategoryHome({ info }) {
           <Box display="flex" alignItems="center" mx={2}>
             <Iconify icon="mdi:certificate" width={28} sx={{ mr: 1, color: 'primary.main' }} />
             <Box>
-              <Box sx={{ fontWeight: 600 }}>Permit</Box>
+              <Box sx={{ fontWeight: 600 }}>Permis</Box>
               <Box variant="body2" color="text.secondary">
                 {info.permit}
               </Box>

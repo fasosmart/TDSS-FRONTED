@@ -308,7 +308,7 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
           <!-- Informations à droite de la photo -->
           <div style="position: absolute; top: 22mm; left: 28mm; right: 10mm;">
             <!-- NOM -->
-            ${createLabelValueHTML('N° INDENTITE ', permit?.passport_number)}
+            ${createLabelValueHTML('N° IDENTITE ', permit?.passport_number)}
             ${createLabelValueHTML('NOM ', permit?.last)}
             ${createLabelValueHTML('PRÉNOM(S) ', permit?.first)}
             ${createLabelValueHTML('NÉ(E) LE ', formatDate(permit?.birthday))}
@@ -583,7 +583,7 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
 
         {/* Informations */}
         <Box sx={{ position: 'absolute', top: '22.6mm', left: '33.3mm', right: '11.9mm' }}>
-          <LabelValue label="N° INDENTITE " value={permit?.passport_number || 'N/A'} />
+          <LabelValue label="N° IDENTITE " value={permit?.passport_number || 'N/A'} />
           <LabelValue label="NOM " value={permit?.last?.toUpperCase()} />
 
           <LabelValue label=" PRÉNOM(S) " value={permit?.first?.toUpperCase()} />

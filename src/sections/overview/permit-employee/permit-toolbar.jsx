@@ -411,7 +411,7 @@ export function PermitToolbar({
           setOpenRejetDialog(false);
           setRejectForm({ reject_reason_type: '', reject_reason_description: '' });
         }}
-        title="Rejeter le permit"
+        title="Rejeter le permis"
         content={
           <>
             <TextField

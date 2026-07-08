@@ -454,7 +454,7 @@ export function PermitListView() {
 
   const handleBulkPrint = useCallback(async () => {
     if (table.selected.length === 0) {
-      toast.error("Aucun permit sélectionné pour l'impression.");
+      toast.error("Aucun permis sélectionné pour l'impression.");
       return;
     }
 
@@ -760,7 +760,7 @@ export function PermitListView() {
           </div>
 
           <div style="position: absolute; top: 19mm; left: 28mm; right: 10mm;">
-            ${createLabelValueHTML('N° INDENTITE ', permit?.passport_number)}
+            ${createLabelValueHTML('N° IDENTITE ', permit?.passport_number)}
             ${createLabelValueHTML('NOM ', permit?.last)}
             ${createLabelValueHTML('PRÉNOM(S) ', permit?.first)}
             ${createLabelValueHTML('NÉ(E) LE ', formatDate(permit?.birthday))}

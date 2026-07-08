@@ -423,7 +423,7 @@ export function TableRowComPermit({
             reject_reason_description: '',
           });
         }}
-        title="Rejeter le permit"
+        title="Rejeter le permis"
         content={
           <>
             <TextField

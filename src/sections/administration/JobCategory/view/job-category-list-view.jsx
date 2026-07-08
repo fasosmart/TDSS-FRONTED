@@ -52,7 +52,7 @@ const STATUS_OPTIONS = [
 
 const TABLE_HEAD = [
     { id: 'name', label: 'Nom ' },
-    { id: 'permit', label: 'Permit' },
+    { id: 'permit', label: 'Permis' },
     { id: 'status', label: 'Status' },
     { id: '', width: 88 },
 ];

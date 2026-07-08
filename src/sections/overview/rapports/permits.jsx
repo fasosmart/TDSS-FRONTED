@@ -480,7 +480,7 @@ export function ReportPermit() {
 
       <Grid2 size={{ xs: 12, md: 12 }}>
         <DeclarationNew
-          title="Rapports des permits"
+          title="Rapports des permis"
           tableData={permits}
           totalCount={count}
           loading={loading}
