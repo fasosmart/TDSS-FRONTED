@@ -241,63 +241,57 @@ export function TableRowComPermit({
             )}
 
           {row.status === 'submitted' &&
-            (can('can_validate_declaration_employee') ||
-              can('can_correct_declaration_employee')) && (
-              <>
-                {can('can_validate_declaration_employee') && (
-                  <MenuItem
-                    onClick={() => {
-                      validateConfirm.onTrue();
-                      popover.onClose();
-                    }}
-                    sx={{ color: 'success.main' }}
-                  >
-                    <Iconify icon="solar:check-bold" />
-                    Valider
-                  </MenuItem>
-                )}
-                {can('can_correct_declaration_employee') && (
-                  <MenuItem
-                    onClick={() => {
-                      rejetConfirm.onTrue();
-                      popover.onClose();
-                    }}
-                    sx={{ color: 'error.main' }}
-                  >
-                    <Iconify icon="solar:check-bold" />
-                    Rejeter
-                  </MenuItem>
-                )}
-              </>
+            can('can_validate_declaration_employee') && (
+              <MenuItem
+                onClick={() => {
+                  validateConfirm.onTrue();
+                  popover.onClose();
+                }}
+                sx={{ color: 'success.main' }}
+              >
+                <Iconify icon="solar:check-bold" />
+                Valider
+              </MenuItem>
             )}
 
-          {(can('can_mark_as_printed') || can('can_deliver_permit')) && (
-            <>
-              {can('can_mark_as_printed') && row.status === 'validated' && (
-                <MenuItem
-                  onClick={() => {
-                    printConfirm.onTrue();
-                    popover.onClose();
-                  }}
-                  sx={{ color: 'success.main' }}
-                >
-                  <Iconify icon="solar:printer-minimalistic-bold" />
-                  imprimer le permis
-                </MenuItem>
-              )}
-              {can('can_deliver_permit') && row.status === 'printed' && (
-                <MenuItem
-                  onClick={() => {
-                    deliverConfirm.onTrue();
-                    popover.onClose();
-                  }}
-                  sx={{ color: 'success.main' }}
-                >
-                  <Iconify icon="mdi:check-bold" />
-                  Livrer
-                </MenuItem>
-              )}
-            </>
+          {row.status === 'submitted' &&
+            can('can_correct_declaration_employee') && (
+              <MenuItem
+                onClick={() => {
+                  rejetConfirm.onTrue();
+                  popover.onClose();
+                }}
+                sx={{ color: 'error.main' }}
+              >
+                <Iconify icon="solar:check-bold" />
+                Rejeter
+              </MenuItem>
+            )}
+
+          {can('can_mark_as_printed') && row.status === 'validated' && (
+            <MenuItem
+              onClick={() => {
+                printConfirm.onTrue();
+                popover.onClose();
+              }}
+              sx={{ color: 'success.main' }}
+            >
+              <Iconify icon="solar:printer-minimalistic-bold" />
+              imprimer le permis
+            </MenuItem>
+          )}
+
+          {can('can_deliver_permit') && row.status === 'printed' && (
+            <MenuItem
+              onClick={() => {
+                deliverConfirm.onTrue();
+                popover.onClose();
+              }}
+              sx={{ color: 'success.main' }}
+            >
+              <Iconify icon="mdi:check-bold" />
+              Livrer
+            </MenuItem>
           )}
 
           <MenuItem
