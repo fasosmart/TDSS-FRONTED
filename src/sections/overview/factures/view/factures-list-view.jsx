@@ -875,7 +875,10 @@ export function FactureListView() {
         }
       />
       <PayeurForm
-        slug={table.selected}
+        slug={table.selected.filter((s) => {
+          const selectedRow = tableData.find((row) => row.slug === s);
+          return selectedRow && selectedRow.status === 'unpaid' && !selectedRow.has_payment;
+        })}
         open={payeurForm.value}
         onclose={payeurForm.onFalse}
         onSuccess={() => {
