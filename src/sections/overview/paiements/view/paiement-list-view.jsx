@@ -241,8 +241,8 @@ export function PaiementListView() {
           limit,
           ...(filters.state.date_before && filters.state.date_after && !dateError
             ? {
-                date_after: dayjs(filters.state.date_before).format('YYYY-MM-DD'),
-                date_before: dayjs(filters.state.date_after).format('YYYY-MM-DD'),
+                date_before: dayjs(filters.state.date_before).format('YYYY-MM-DD'),
+                date_after: dayjs(filters.state.date_after).format('YYYY-MM-DD'),
               }
             : {}),
           ...(filters.state.payment_method.length > 0 && {

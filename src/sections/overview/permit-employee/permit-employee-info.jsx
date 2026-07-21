@@ -540,9 +540,9 @@ export function PermitEmloyeeInfo({ info, onSyncSuccess }) {
                 value={info?.contract_duration ? `${info?.contract_duration} mois` : 'N/A'}
               />
               {info?.reject_reasons?.length > 0
-                ? info.reject_reasons.map((reason, index) => (
+                ? info.reject_reasons.map((reason) => (
                     <InfoItem
-                      key={index}
+                      key={reason.id || reason.slug || reason.type?.id}
                       icon="mdi:alert-circle"
                       label={
                         reason?.type?.name

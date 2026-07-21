@@ -2,7 +2,7 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 // import PropTypes from 'prop-types';
-import { PDFDownloadLink, PDFViewer, pdf } from '@react-pdf/renderer';
+import { PDFViewer, pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
 import { useReactToPrint } from 'react-to-print';
 import { useCallback, useState } from 'react';
@@ -183,22 +183,15 @@ export function PaiementToolbar({ payment, componentRef, currentStatus, onChange
           </Typography>
 
           {payment && (
-            <PDFDownloadLink
-              document={<PaiementPDF payment={payment} />}
-              fileName={`recu-paiement-${payment?.reference || payment?.number || 'sans-reference'}.pdf`}
-              style={{ textDecoration: 'none' }}
+            <Button
+              color="primary"
+              variant="contained"
+              startIcon={<Iconify icon="eva:download-fill" />}
+              disabled={downloadLoading}
+              onClick={handleDownload}
             >
-              {({ loading }) => (
-                <Button
-                  color="primary"
-                  variant="contained"
-                  startIcon={<Iconify icon="eva:download-fill" />}
-                  disabled={loading}
-                >
-                  {loading ? 'Chargement...' : 'Télécharger'}
-                </Button>
-              )}
-            </PDFDownloadLink>
+              {downloadLoading ? 'Chargement...' : 'Télécharger'}
+            </Button>
           )}
 
           <IconButton onClick={view.onFalse}>

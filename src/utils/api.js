@@ -1,9 +1,5 @@
 // const BASE_URL = 'http://192.168.1.152:8000/api'; // Adresse de votre backend
 
-import { Save } from '@mui/icons-material';
-import { create } from '@mui/material/styles/createTransitions';
-import { get } from 'react-hook-form';
-import { list } from 'src/theme/core/components/list';
 
 const BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`; // Adresse de votre backend
 
@@ -46,8 +42,6 @@ const API = {
   FacturerDeclaration: () => `${BASE_URL}/declarations/facturer/`,
   rejetterDeclaration: (slug) => `${BASE_URL}/declarations/${slug}/reject/`, // Rejetter une déclaration
   supprimerDeclaration: (slug) => `${BASE_URL}/declarations/${slug}/`, // Supprimer une déclaration
-
-  rejetterDeclaration: (slug) => `${BASE_URL}/declarations/${slug}/reject/`, // Rejetter une déclaration
 
   retirerDeclaration: (slug) => `${BASE_URL}/factures/${slug}/remove-declaration/`, // Supprimer une déclaration dans une facture
   ajouterDeclaration: (slug) => `${BASE_URL}/factures/${slug}/add-declaration/`, // Ajouter une déclaration dans une facture
@@ -230,7 +224,7 @@ const API = {
 
   // Tableau de bord AGUIP
   getAguipDashboard: (startDate = null, endDate = null) => {
-    let url = `${BASE_URL}/declarations/dashboard-aguip/`;
+    const url = `${BASE_URL}/declarations/dashboard-aguip/`;
     const params = new URLSearchParams();
 
     if (startDate) params.append('start_date', startDate);
