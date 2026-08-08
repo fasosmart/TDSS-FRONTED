@@ -113,13 +113,7 @@ export function PermitDetailView({ slug }) {
   };
 
   const handleUpdate = (updatedData) => {
-    console.log('Données mises à jour:', updatedData);
-    setPermit((prev) => ({
-      ...prev,
-      picture: updatedData.picture,
-      signature: updatedData.signature,
-      fingerprints_picture: updatedData.fingerprints_picture,
-    }));
+    setPermit((prev) => ({ ...prev, ...updatedData }));
   };
 
   const [rejectReasons, setRejectReasons] = useState([]);
@@ -237,11 +231,8 @@ export function PermitDetailView({ slug }) {
 
       {tabs?.value === 'biometrie' && (
         <BiometricData
-          employeeSlug={permit?.slug}
-          declarationSlug={permit?.declaration_slug}
           picture={permit?.picture}
           signature={permit?.signature}
-          slug={permit?.slug}
           employee_slug={permit?.employee_slug}
           fingerprints_picture={permit?.fingerprints_picture}
           onUpdate={handleUpdate}
