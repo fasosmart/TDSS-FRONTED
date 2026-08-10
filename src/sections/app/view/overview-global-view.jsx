@@ -11,7 +11,7 @@ import { ComptableAppView } from '../comptable/comptable-app-view';
 import { CaissierAppView } from '../caissier/caissier-app-view';
 import { PrinterAppView } from '../printer';
 import AguipeAppView from '../aguipe/AguipeAppView';
-import Loading from 'src/app/dashboard/loading';
+import { EmptyContent } from 'src/components/empty-content';
 
 // ----------------------------------------------------------------------
 
@@ -27,7 +27,14 @@ export function OverviewGlobalView() {
     if (can('can_view_treasurer_dashboard')) return <CaissierAppView />;
     if (can('can_view_aguipe_dashboard')) return <AguipeAppView />;
     if (can('can_view_permit_dashboard')) return <PrinterAppView />;
-    return <Loading />;
+    return (
+      <EmptyContent
+        filled
+        title="Aucun tableau de bord disponible"
+        description="Votre compte ne dispose d'aucun tableau de bord. Contactez un administrateur si vous pensez qu'il s'agit d'une erreur."
+        sx={{ py: 10 }}
+      />
+    );
   };
 
   return <DashboardContent maxWidth="xl">{renderView()}</DashboardContent>;
