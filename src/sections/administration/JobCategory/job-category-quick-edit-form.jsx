@@ -124,7 +124,7 @@ export function JobCategoryQuickEditForm({ currentJobCategory, open, onClose, on
                     >
 
                         <Field.Text name="name" label="Nom" fullWidth />
-                        <Field.Select name="permit" label="Permit" fullWidth>
+                        <Field.Select name="permit" label="Permis" fullWidth>
                             {permits.map((permit) => (
                                 <MenuItem key={permit.slug} value={permit.slug}>
                                     {permit.name}

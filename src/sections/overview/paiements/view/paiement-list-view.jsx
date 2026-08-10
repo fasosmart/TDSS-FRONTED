@@ -99,38 +99,22 @@ export function PaiementListView() {
     const fetchSummary = async () => {
       try {
         setLoader(true);
-        // --- 1) Récupérer le count global ---
-        const countRes = await axios.get(API.listPaiments(), {
-          params: { limit: 1 },
-        });
-        const totalCount = countRes.data.count;
+        const res = await axios.get(API.statsPaiements());
 
-        // --- 2) Récupérer tous les paiements en une seule requête ---
-        const allRes = await axios.get(API.listPaiments(), {
-          params: { limit: totalCount },
-        });
-        const allPaiements = allRes.data.results;
-
-        // --- 3) Somme des montants en GNF ---
-        const totalAmountGnf = sumBy(allPaiements, (p) => p.amount);
-        // console.log('montant total', totalAmountGnf);
-
-        // --- 4) Conversion GNF → USD (taux fixe ici) ---
+        const totalAmountGnf = res.data.total_amount_gnf;
+        // Conversion GNF -> USD (taux fixe)
         const GNF_PER_USD = 9200;
-        const totalAmountUsd = totalAmountGnf / GNF_PER_USD;
 
-        // --- 5) On met à jour le state ---
         setSummary({
-          totalCount,
+          totalCount: res.data.total_count,
           totalAmountGnf,
-          totalAmountUsd,
+          totalAmountUsd: totalAmountGnf / GNF_PER_USD,
         });
-        setLoader(false);
-        // console.log('montant en gnf', summary.totalAmountGnf);
-        // console.log('montant en USD', summary.totalAmountUsd)
       } catch (err) {
         console.error('Erreur summary paiements', err);
         toast.error('Impossible de charger le total des paiements');
+      } finally {
+        setLoader(false);
       }
     };
 

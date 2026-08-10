@@ -221,7 +221,7 @@ export function FactureTableRow({
             Modifier
           </MenuItem> */}
 
-          {can('can_mark_facture_paid') && row.status === 'unpaid' && (
+          {can('can_mark_facture_paid') && row.status === 'unpaid' && !row.has_payment && (
             <MenuItem
               color={payeurForm.value ? 'inherit' : 'default'}
               onClick={() => {

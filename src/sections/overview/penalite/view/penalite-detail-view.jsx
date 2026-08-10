@@ -17,6 +17,7 @@ import { LoadingScreen } from 'src/components/loading-screen';
 import { toast } from 'src/components/snackbar';
 
 import { PenaliteDetails } from '../penalite-details';
+import { DetailNotFoundView } from 'src/sections/error';
 
 function extractErrorMessage(error) {
   if (!error) return 'Une erreur est survenue.';
@@ -46,19 +47,25 @@ export function PenaliteDetailsView({ slug }) {
   const [penalite, setPenalite] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [notFound, setNotFound] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   const fetchPenalite = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setNotFound(false);
 
     try {
       const response = await axios.get(API.detailsPenalty(slug));
       setPenalite(response.data || null);
     } catch (err) {
-      const message = extractErrorMessage(err);
-      setError(message);
-      toast.error(message);
+      if (err?.status === 404) {
+        setNotFound(true);
+      } else {
+        const message = extractErrorMessage(err);
+        setError(message);
+        toast.error(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -101,6 +108,14 @@ export function PenaliteDetailsView({ slug }) {
   }, [runPenaltyAction, slug]);
 
   const heading = penalite?.reference ? `Penalite ${penalite.reference}` : 'Details penalite';
+
+  if (notFound) {
+    return (
+      <DashboardContent maxWidth="xl">
+        <DetailNotFoundView title="Pénalité introuvable" href={paths.dashboard.penalite.list} />
+      </DashboardContent>
+    );
+  }
 
   return (
     <DashboardContent maxWidth="xl">

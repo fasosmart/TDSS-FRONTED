@@ -2,7 +2,8 @@
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 // import PropTypes from 'prop-types';
-import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
+import { PDFViewer, pdf } from '@react-pdf/renderer';
+import { saveAs } from 'file-saver';
 import { useReactToPrint } from 'react-to-print';
 import { useCallback, useState } from 'react';
 import axios from 'src/utils/axios';
@@ -40,6 +41,21 @@ export function PaiementToolbar({ payment, componentRef, currentStatus, onChange
   const router = useRouter();
 
   const [error, setError] = useState(null);
+  const [downloadLoading, setDownloadLoading] = useState(false);
+
+  const handleDownload = useCallback(async () => {
+    if (!payment) return;
+
+    setDownloadLoading(true);
+    try {
+      const blob = await pdf(<PaiementPDF payment={payment} />).toBlob();
+      saveAs(blob, `recu-paiement-${payment?.number || ''}.pdf`);
+    } catch (err) {
+      toast.error('Impossible de télécharger le reçu de paiement.');
+    } finally {
+      setDownloadLoading(false);
+    }
+  }, [payment]);
 
   const handleValidate = useCallback(async (slug) => {
     try {
@@ -103,23 +119,17 @@ export function PaiementToolbar({ payment, componentRef, currentStatus, onChange
           {/* Bouton de téléchargement PDF */}
           <NoSsr>
             {payment ? (
-              <PDFDownloadLink
-                document={payment ? <PaiementPDF payment={payment} /> : <div>Chargement...</div>}
-                fileName={`recu-paiement-${payment?.number || ''}.pdf`}
-                style={{ textDecoration: 'none' }}
-              >
-                {({ loading }) => (
-                  <Tooltip title="Télécharger">
-                    <IconButton>
-                      {loading ? (
-                        <CircularProgress size={24} color="inherit" />
-                      ) : (
-                        <Iconify icon="eva:cloud-download-fill" />
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </PDFDownloadLink>
+              <Tooltip title="Télécharger">
+                <span>
+                  <IconButton onClick={handleDownload} disabled={downloadLoading}>
+                    {downloadLoading ? (
+                      <CircularProgress size={24} color="inherit" />
+                    ) : (
+                      <Iconify icon="eva:cloud-download-fill" />
+                    )}
+                  </IconButton>
+                </span>
+              </Tooltip>
             ) : null}
           </NoSsr>
 
@@ -173,22 +183,15 @@ export function PaiementToolbar({ payment, componentRef, currentStatus, onChange
           </Typography>
 
           {payment && (
-            <PDFDownloadLink
-              document={<PaiementPDF payment={payment} />}
-              fileName={`recu-paiement-${payment?.reference || payment?.number || 'sans-reference'}.pdf`}
-              style={{ textDecoration: 'none' }}
+            <Button
+              color="primary"
+              variant="contained"
+              startIcon={<Iconify icon="eva:download-fill" />}
+              disabled={downloadLoading}
+              onClick={handleDownload}
             >
-              {({ loading }) => (
-                <Button
-                  color="primary"
-                  variant="contained"
-                  startIcon={<Iconify icon="eva:download-fill" />}
-                  disabled={loading}
-                >
-                  {loading ? 'Chargement...' : 'Télécharger'}
-                </Button>
-              )}
-            </PDFDownloadLink>
+              {downloadLoading ? 'Chargement...' : 'Télécharger'}
+            </Button>
           )}
 
           <IconButton onClick={view.onFalse}>

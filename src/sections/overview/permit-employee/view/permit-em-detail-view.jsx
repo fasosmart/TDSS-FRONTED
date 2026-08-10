@@ -19,11 +19,11 @@ import { EmployeeCover } from '../../employee/employee-cover';
 import { PermitEmployeeDoc } from '../permit-employee-doc';
 import { PermitEmloyeeInfo } from '../permit-employee-info';
 import { PermitDeclaration } from '../permit-employee-dec';
-import { PermitJob } from '../permit-job';
 import { PermitInfo } from '../info-permit';
 import { PermitToolbar } from '../permit-toolbar';
 import { PlanAfricanisation } from '../plan-africanisation';
 import { BiometricData } from '../permit-biometrie';
+import { DetailNotFoundView } from 'src/sections/error';
 
 const TABS_PERMITS = [
   { value: 'info', label: 'Info Permit', icon: <Iconify icon="solar:user-id-bold" width={24} /> },
@@ -65,6 +65,7 @@ export function PermitDetailView({ slug }) {
   const [job, setJob] = useState();
   const [declarations, setDeclarations] = useState([]);
   const [error, setError] = useState(null);
+  const [notFound, setNotFound] = useState(false);
 
   const displayedTabs = TABS_PERMITS;
 
@@ -77,9 +78,13 @@ export function PermitDetailView({ slug }) {
       setDocuments(response.data.documents);
       setDeclarations(response.data.declarations);
     } catch (error) {
-      const errorMessage = error.data || error.details || error.message || error.detail;
-      setError(errorMessage);
-      toast.error(error);
+      if (error?.status === 404) {
+        setNotFound(true);
+      } else {
+        const errorMessage = error.data || error.details || error.message || error.detail;
+        setError(errorMessage);
+        toast.error(error);
+      }
     } finally {
       setLoading(false);
     }
@@ -141,6 +146,14 @@ export function PermitDetailView({ slug }) {
   const handleChangeStatus = useCallback((newStatus) => {
     setStatus(newStatus);
   }, []);
+
+  if (notFound) {
+    return (
+      <DashboardContent>
+        <DetailNotFoundView title="Permis introuvable" href={paths.dashboard.permit.root} />
+      </DashboardContent>
+    );
+  }
 
   return (
     <DashboardContent>

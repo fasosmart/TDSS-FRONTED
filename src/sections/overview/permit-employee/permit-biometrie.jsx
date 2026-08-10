@@ -57,6 +57,13 @@ export function BiometricData({
   const [loadingABIS, setLoadingABIS] = useState(false);
   const abisActionLabel = 'Récupérer les données';
 
+  // L'utilisateur peut-il déclencher la récupération des données ABIS ?
+  const canRetrieveABIS =
+    can('can_retrieve_abis_data') &&
+    status !== 'printed' &&
+    status !== 'delivered' &&
+    status !== 'enrolled';
+
   const handleOpenPreview = (type, url) => {
     setPreviewData({ type, url });
     setOpenPreview(true);
@@ -499,10 +506,7 @@ export function BiometricData({
                 }}
               />
             )}
-            {can('can_retrieve_abis_data') &&
-              status !== 'printed' &&
-              status !== 'delivered' &&
-              status !== 'enrolled' && (
+            {canRetrieveABIS && (
                 <Chip
                   icon={
                     loadingABIS ? (
@@ -568,7 +572,7 @@ export function BiometricData({
           </Grid>
         </Grid>
 
-        {!picturePreview && !signaturePreview && !fingerprintsPreview && (
+        {canRetrieveABIS && !picturePreview && !signaturePreview && !fingerprintsPreview && (
           <Alert severity="info" sx={{ mt: 3 }}>
             <Typography variant="body2">
               Aucune donnée biométrique n'a été enregistrée. Cliquez sur "{abisActionLabel}" pour

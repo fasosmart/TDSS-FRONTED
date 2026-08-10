@@ -125,7 +125,7 @@ export function useNavData() {
         ...(can('can_view_declaration_employee')
           ? [
               {
-                title: 'Permits',
+                title: 'Permis',
                 path: paths.dashboard.permit.root,
                 icon: ICONS.permis,
               },
@@ -269,7 +269,7 @@ export function useNavData() {
                         ...(can('can_manage_permits')
                           ? [
                               {
-                                title: 'Type Permits',
+                                title: 'Type Permis',
                                 path: paths.dashboard.permitAdmin.root,
                                 icon: ICONS.permis,
                               },

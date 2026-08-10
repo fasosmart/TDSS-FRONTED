@@ -19,6 +19,7 @@ import { ProfileCover } from '../../user/profile-cover';
 import { ProfileHome } from '../../user/profile-home';
 import { ProfileUsers } from '../../user/profile-users';
 import { ClientDocuments } from '../client-documents';
+import { DetailNotFoundView } from 'src/sections/error';
 
 // Définir les onglets pour chaque type
 const TABS_ADMIN = [
@@ -91,6 +92,7 @@ export function ClientDetailsView({ slug }) {
   const [user, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [notFound, setNotFound] = useState(false);
 
   const router = useRouter();
 
@@ -107,7 +109,11 @@ export function ClientDetailsView({ slug }) {
         const response = await axios.get(API.UpdateProfile(slug));
         setProfil(response.data);
       } catch (err) {
-        setError(err.message || 'Erreur lors du chargement des données.');
+        if (err?.status === 404) {
+          setNotFound(true);
+        } else {
+          setError(err.message || 'Erreur lors du chargement des données.');
+        }
       } finally {
         setLoading(false);
       }
@@ -141,6 +147,12 @@ export function ClientDetailsView({ slug }) {
   }
 
   if (loading) return <div>Chargement...</div>;
+  if (notFound)
+    return (
+      <DashboardContent>
+        <DetailNotFoundView title="Structure introuvable" href={paths.dashboard.client.root} />
+      </DashboardContent>
+    );
   if (error) return <div>{error}</div>;
 
   return (

@@ -242,7 +242,7 @@ export function FactureToolbar({ facture, user, currentStatus, onChangeStatus, d
 
           <Box sx={{ flexGrow: 1 }} />
 
-          {can('can_mark_facture_paid') && currentStatus === 'unpaid' && (
+          {can('can_mark_facture_paid') && currentStatus === 'unpaid' && !facture?.has_payment && (
             <Tooltip title="Payer la facture">
               <IconButton onClick={payeurForm.onTrue}>
                 <Iconify icon="mdi:credit-card" />

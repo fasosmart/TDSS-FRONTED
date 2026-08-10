@@ -17,6 +17,7 @@ import { EmployeeDeclarations } from '../employee-declaration';
 import { EmployeeJob } from '../employee-job';
 import { EmployeeDoc } from '../employee-doc';
 import { BiometricData } from '../../permit-employee/permit-biometrie';
+import { DetailNotFoundView } from 'src/sections/error';
 
 const TABS_ENTREPRISE = [
   { value: 'profile', label: 'Infos', icon: <Iconify icon="solar:user-id-bold" width={24} /> },
@@ -42,6 +43,7 @@ export function EmployeeDetailsView({ slug }) {
   const [employee, setEmployee] = useState();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [notFound, setNotFound] = useState(false);
   const [declarations, setDeclarations] = useState([]);
   const [job, setJob] = useState([]);
   const [documents, setDocuments] = useState([]);
@@ -63,7 +65,11 @@ export function EmployeeDetailsView({ slug }) {
 
       setDeclarations(Array.isArray(employeeDeclarations) ? employeeDeclarations : []);
     } catch (err) {
-      setError(err.message || 'Erreur lors du chargement des donnees.');
+      if (err?.status === 404) {
+        setNotFound(true);
+      } else {
+        setError(err.message || 'Erreur lors du chargement des donnees.');
+      }
     } finally {
       setLoading(false);
     }
@@ -80,6 +86,12 @@ export function EmployeeDetailsView({ slug }) {
   const displayedTabs = TABS_ENTREPRISE;
 
   if (loading) return <div>Chargement...</div>;
+  if (notFound)
+    return (
+      <DashboardContent>
+        <DetailNotFoundView title="Employé introuvable" href={paths.dashboard.employee.list} />
+      </DashboardContent>
+    );
   if (error) return <div>{error}</div>;
 
   return (

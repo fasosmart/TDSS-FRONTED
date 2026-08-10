@@ -539,13 +539,26 @@ export function PermitEmloyeeInfo({ info, onSyncSuccess }) {
                 label="Durée"
                 value={info?.contract_duration ? `${info?.contract_duration} mois` : 'N/A'}
               />
-              {info?.motif_rejet && (
-                <InfoItem
-                  icon="mdi:alert-circle"
-                  label="Motif de Rejet"
-                  value={info?.motif_rejet}
-                />
-              )}
+              {info?.reject_reasons?.length > 0
+                ? info.reject_reasons.map((reason) => (
+                    <InfoItem
+                      key={reason.id || reason.slug || reason.type?.id}
+                      icon="mdi:alert-circle"
+                      label={
+                        reason?.type?.name
+                          ? `Motif de Rejet — ${reason.type.name}`
+                          : 'Motif de Rejet'
+                      }
+                      value={reason?.description}
+                    />
+                  ))
+                : info?.motif_rejet && (
+                    <InfoItem
+                      icon="mdi:alert-circle"
+                      label="Motif de Rejet"
+                      value={info?.motif_rejet}
+                    />
+                  )}
             </Box>
           </Box>
 

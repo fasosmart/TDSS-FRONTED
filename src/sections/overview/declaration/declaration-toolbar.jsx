@@ -11,7 +11,8 @@ import NoSsr from '@mui/material/NoSsr';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
-import { PDFViewer, PDFDownloadLink } from '@react-pdf/renderer';
+import { PDFViewer, pdf } from '@react-pdf/renderer';
+import { saveAs } from 'file-saver';
 import axios from 'src/utils/axios';
 import API from 'src/utils/api';
 import { useRef, useState, useCallback } from 'react';
@@ -63,6 +64,7 @@ export function DeclarationToolbar({
   const [openRejetDialog, setOpenRejetDialog] = useState(false);
   const [motifRejet, setMotifRejet] = useState('');
   const [error, setError] = useState(null);
+  const [downloadLoading, setDownloadLoading] = useState(false);
 
   const handleEdit = useCallback(() => {
     router.push(paths.dashboard.declaration.edit(`${declaration?.slug}`));
@@ -75,6 +77,22 @@ export function DeclarationToolbar({
     documentTitle: `Declaration_${declaration?.reference}`,
     onAfterPrint: () => console.log('Impression terminée'),
   });
+
+  const handleDownload = useCallback(async () => {
+    if (!declaration) return;
+
+    setDownloadLoading(true);
+    try {
+      const blob = await pdf(
+        <DeclarationPDF declaration={declaration} employees={employees} logoUrl={proxiedLogoUrl} />
+      ).toBlob();
+      saveAs(blob, `${declaration?.number || 'declaration'}.pdf`);
+    } catch (err) {
+      toast.error('Impossible de télécharger la déclaration.');
+    } finally {
+      setDownloadLoading(false);
+    }
+  }, [declaration, employees, proxiedLogoUrl]);
 
   const handleSubmitRow = useCallback(async () => {
     try {
@@ -192,33 +210,17 @@ export function DeclarationToolbar({
   const renderDownload = (
     <NoSsr>
       {declaration && (
-        <PDFDownloadLink
-          document={
-            declaration ? (
-              <DeclarationPDF
-                declaration={declaration}
-                employees={employees}
-                logoUrl={proxiedLogoUrl}
-              />
-            ) : (
-              ''
-            )
-          }
-          fileName={declaration?.number}
-          style={{ textDecoration: 'none' }}
-        >
-          {({ loading }) => (
-            <Tooltip title="Telecharger">
-              <IconButton>
-                {loading ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  <Iconify icon="eva:cloud-download-fill" />
-                )}
-              </IconButton>
-            </Tooltip>
-          )}
-        </PDFDownloadLink>
+        <Tooltip title="Telecharger">
+          <span>
+            <IconButton onClick={handleDownload} disabled={downloadLoading}>
+              {downloadLoading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                <Iconify icon="eva:cloud-download-fill" />
+              )}
+            </IconButton>
+          </span>
+        </Tooltip>
       )}
     </NoSsr>
   );
