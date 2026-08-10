@@ -150,12 +150,12 @@ export function EmployeeDetailsView({ slug }) {
       )}
       {tabs.value === 'biometrie' && (
         <BiometricData
-          slug={employee?.slug}
           picture={employee?.picture}
           signature={employee?.signature}
           fingerprints_picture={employee?.fingerprints_picture}
           employee_slug={employee?.slug}
           status={employee?.status}
+          onUpdate={fetchEmployee}
           abisLastRetrievedAt={employee?.abis_last_retrieved_at}
         />
       )}

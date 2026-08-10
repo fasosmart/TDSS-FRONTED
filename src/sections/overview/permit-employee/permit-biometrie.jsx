@@ -25,7 +25,6 @@ import { usePermissions } from 'src/auth/hooks';
 // ----------------------------------------------------------------------
 
 export function BiometricData({
-  slug,
   picture,
   signature,
   fingerprints_picture,
@@ -93,11 +92,14 @@ export function BiometricData({
         // Exemple : afficher infos utiles
         if (data?.biometrics_status && !data.biometrics_status.is_complete) {
           toast.warning(
-            `Biométrie incomplète : 
-           Face: ${data.biometrics_status.has_face ? '✔' : '❌'}, 
-           Signature: ${data.biometrics_status.has_signature ? '✔' : '❌'}, 
+            `Biométrie incomplète :
+           Face: ${data.biometrics_status.has_face ? '✔' : '❌'},
            Empreintes: ${data.biometrics_status.fingerprints_count}`
           );
+        }
+
+        if (data?.biometrics_status && !data.biometrics_status.has_signature) {
+          toast.info("La signature n'est pas récupérée depuis ABIS, ajoutez-la manuellement.");
         }
 
         if (!data.is_enrolled) {
@@ -134,7 +136,7 @@ export function BiometricData({
         const formData = new FormData();
         formData.append(fieldName, file);
 
-        const response = await axios.patch(API.updateFile(slug), formData, {
+        const response = await axios.patch(API.updateFile(employee_slug), formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -156,7 +158,11 @@ export function BiometricData({
         if (fieldName === 'fingerprints_picture') setFingerprintsFile(null);
       } catch (error) {
         const errorMessage =
-          error?.response?.data?.message || error?.message || 'Erreur lors de la mise à jour';
+          error?.response?.data?.detail ||
+          error?.response?.data?.message ||
+          error?.response?.data?.[fieldName]?.[0] ||
+          error?.message ||
+          'Erreur lors de la mise à jour';
         toast.error(errorMessage);
 
         // Restaurer l'aperçu original en cas d'erreur
@@ -167,7 +173,7 @@ export function BiometricData({
         setLoading(false);
       }
     },
-    [slug, onUpdate]
+    [employee_slug, onUpdate]
   );
 
   const BiometricCard = ({ type, label, icon, url, color = 'primary', onEdit }) => {
@@ -284,16 +290,20 @@ export function BiometricData({
                 Voir
               </Button>
             )}
-            {/* <Button
-              variant={hasData ? 'outlined' : 'contained'}
-              color={color}
-              fullWidth
-              startIcon={<Iconify icon={hasData ? 'mdi:pencil' : 'mdi:upload'} />}
-              onClick={onEdit}
-              sx={{ fontWeight: 600 }}
-            >
-              {hasData ? 'Modifier' : 'Ajouter'}
-            </Button> */}
+            {/* Seule la signature reste peut etre modifier manuellement : la photo et les
+                empreintes proviennent d'ABIS (onEdit n'est fourni que pour la signature). */}
+            {onEdit && can('can_update_employee_file') && (
+              <Button
+                variant={hasData ? 'outlined' : 'contained'}
+                color={color}
+                fullWidth
+                startIcon={<Iconify icon={hasData ? 'mdi:pencil' : 'mdi:upload'} />}
+                onClick={onEdit}
+                sx={{ fontWeight: 600 }}
+              >
+                {hasData ? 'Modifier' : 'Ajouter'}
+              </Button>
+            )}
           </Stack>
         </Box>
       </Card>
@@ -545,7 +555,8 @@ export function BiometricData({
               icon="mdi:camera"
               url={picturePreview}
               color="primary"
-              onEdit={() => setPictureDialog(true)}
+              // Photo recuperee depuis ABIS
+              // onEdit={() => setPictureDialog(true)}
             />
           </Grid>
 
@@ -567,7 +578,8 @@ export function BiometricData({
               icon="mdi:fingerprint"
               url={fingerprintsPreview}
               color="info"
-              onEdit={() => setFingerprintsDialog(true)}
+              // Empreintes recuperees depuis ABIS
+              // onEdit={() => setFingerprintsDialog(true)}
             />
           </Grid>
         </Grid>
@@ -583,7 +595,7 @@ export function BiometricData({
       </Card>
 
       {/* Dialog pour Photo */}
-      <UploadDialog
+      {/* <UploadDialog
         open={pictureDialog}
         onClose={() => setPictureDialog(false)}
         title="Photo d'Identité"
@@ -602,7 +614,7 @@ export function BiometricData({
           setPictureFile(null);
           setPicturePreview(picture || '');
         }}
-      />
+      /> */}
 
       {/* Dialog pour Signature */}
       <UploadDialog
@@ -633,7 +645,7 @@ export function BiometricData({
       />
 
       {/* Dialog pour Empreintes */}
-      <UploadDialog
+      {/* <UploadDialog
         open={fingerprintsDialog}
         onClose={() => setFingerprintsDialog(false)}
         title="Empreintes Digitales"
@@ -663,7 +675,7 @@ export function BiometricData({
           setFingerprintsFile(null);
           setFingerprintsPreview(fingerprints_picture || '');
         }}
-      />
+      /> */}
 
       {/* Dialog de prévisualisation */}
       <Dialog open={openPreview} onClose={() => setOpenPreview(false)} maxWidth="md" fullWidth>
