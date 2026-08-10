@@ -66,9 +66,7 @@ export function TableToolbar({ filters, options, onResetPage, onOpenColumnSelect
     number: 'Recherche par Numéro de permis',
   };
 
-  const getFieldFromFilter = useCallback((filter) => {
-    return filter || 'name';
-  }, []);
+  const getFieldFromFilter = useCallback((filter) => filter || 'name', []);
 
   const handleInputChange = useCallback(
     (event) => {
@@ -178,11 +176,12 @@ export function TableToolbar({ filters, options, onResetPage, onOpenColumnSelect
     return () => document.removeEventListener('mousedown', handler);
   }, [showOptions]);
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       Object.values(debounceTimers.current).forEach((t) => t && clearTimeout(t));
-    };
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     const field = getFieldFromFilter(selectedFilter);
@@ -202,9 +201,7 @@ export function TableToolbar({ filters, options, onResetPage, onOpenColumnSelect
         <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
           <Checkbox
             checked={filters?.state?.not_printed || false}
-            onChange={(event) =>
-              filters?.setState({ not_printed: event.target.checked ? true : false })
-            }
+            onChange={(event) => filters?.setState({ not_printed: !!event.target.checked })}
           />
           <Box> Non imprimés</Box>
         </Box>

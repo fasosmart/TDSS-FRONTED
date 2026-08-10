@@ -328,8 +328,9 @@ export function FactureListView() {
         if (requestId !== fetchRequestIdRef.current) return;
         setError(err.message || 'Erreur lors du chargement des données.');
       } finally {
-        if (requestId !== fetchRequestIdRef.current) return;
-        setLoading(false);
+        if (requestId === fetchRequestIdRef.current) {
+          setLoading(false);
+        }
       }
     };
 
@@ -462,6 +463,7 @@ export function FactureListView() {
       if (selectedSlugs.includes(row.slug)) {
         return { ...row, status: 'paid' }; // Mettre à jour le statut à 'paid'
       }
+      return row;
     });
     setTableData(updatedData);
   }, []);

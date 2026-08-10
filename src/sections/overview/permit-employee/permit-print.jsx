@@ -290,8 +290,7 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
   `;
   }
 
-  const getCardFrontHTML = () => {
-    return `
+  const getCardFrontHTML = () => `
       <div class="card-face card-front">
         
         <div class="card-content" style="padding: 8mm 5mm;">
@@ -352,10 +351,8 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
         </div>
       </div>
     `;
-  };
 
-  const getCardBackHTML = () => {
-    return `
+  const getCardBackHTML = () => `
       <div class="card-face card-back">
         
         <div class="card-content" style="padding: 8mm 5mm;">
@@ -373,7 +370,7 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
            ${createLabelValueHTML('FONCTION ', permit?.job?.name || 'N/A')}
             
             <!-- CATÉGORIE -->
-          ${createLabelValueHTML('CATÉGORIE ', 'TYPE ' + (getLabelPermit(permit?.category || permit?.job?.permit) || ''))}
+          ${createLabelValueHTML('CATÉGORIE ', `TYPE ${getLabelPermit(permit?.category || permit?.job?.permit) || ''}`)}
             
 
             <!-- VALIDITÉ ET DURÉE -->
@@ -415,7 +412,6 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
         </div>
       </div>
     `;
-  };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -448,39 +444,37 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
     lineHeight: 1,
   };
 
-  const LabelValue = ({ label, value, valueNoWrap = false }) => {
-    return (
-      <Typography
+  const LabelValue = ({ label, value, valueNoWrap = false }) => (
+    <Typography
+      sx={{
+        ...previewTextSx,
+        mb: '1.2mm',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'baseline',
+        minWidth: 0,
+      }}
+    >
+      <Box component="span" sx={{ fontWeight: 400, mr: '1mm', whiteSpace: 'nowrap' }}>
+        {label} :
+      </Box>
+      <Box
+        component="span"
         sx={{
           ...previewTextSx,
-          mb: '1.2mm',
-          width: '100%',
-          display: 'flex',
-          alignItems: 'baseline',
+          fontWeight: 600,
           minWidth: 0,
+          verticalAlign: 'middle',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: valueNoWrap ? 'nowrap' : 'normal',
         }}
+        title={value}
       >
-        <Box component="span" sx={{ fontWeight: 400, mr: '1mm', whiteSpace: 'nowrap' }}>
-          {label} :
-        </Box>
-        <Box
-          component="span"
-          sx={{
-            ...previewTextSx,
-            fontWeight: 600,
-            minWidth: 0,
-            verticalAlign: 'middle',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: valueNoWrap ? 'nowrap' : 'normal',
-          }}
-          title={value}
-        >
-          {value || 'N/A'}
-        </Box>
-      </Typography>
-    );
-  };
+        {value || 'N/A'}
+      </Box>
+    </Typography>
+  );
 
   const InlineLabelValue = ({ label, value, sx }) => (
     <Typography
@@ -693,7 +687,7 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
           {permit?.picture ? (
             <img
               src={permit.picture}
-              alt="Photo"
+              alt="Titulaire du permis"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           ) : (

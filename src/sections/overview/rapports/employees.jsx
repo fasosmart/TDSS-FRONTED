@@ -80,17 +80,20 @@ export function ReportEmployee() {
 
   const [selectedColumns, setSelectedColumns] = useState(DEFAULT_COLUMNS);
 
-  const filters = useSetState({
-    reference: '',
-    company: '',
-    declaration_number: '',
-    passport: '',
-    job: null,
-    name: '',
-    nationality: 'all',
-    sexe: 'all',
-    permit_type: 'all',
-  }, { persistByPath: true });
+  const filters = useSetState(
+    {
+      reference: '',
+      company: '',
+      declaration_number: '',
+      passport: '',
+      job: null,
+      name: '',
+      nationality: 'all',
+      sexe: 'all',
+      permit_type: 'all',
+    },
+    { persistByPath: true }
+  );
 
   const fectCountries = async () => {
     try {
@@ -381,17 +384,17 @@ export function ReportEmployee() {
   };
 
   const statusOptions = [
-    { value: 'processing', label: STATUS_TRANSLATIONS['processing'] },
-    { value: 'submitted', label: STATUS_TRANSLATIONS['submitted'] },
-    { value: 'validated', label: STATUS_TRANSLATIONS['validated'] },
-    { value: 'rejected', label: STATUS_TRANSLATIONS['rejected'] },
-    { value: 'printed', label: STATUS_TRANSLATIONS['printed'] },
-    { value: 'delivered', label: STATUS_TRANSLATIONS['delivered'] },
+    { value: 'processing', label: STATUS_TRANSLATIONS.processing },
+    { value: 'submitted', label: STATUS_TRANSLATIONS.submitted },
+    { value: 'validated', label: STATUS_TRANSLATIONS.validated },
+    { value: 'rejected', label: STATUS_TRANSLATIONS.rejected },
+    { value: 'printed', label: STATUS_TRANSLATIONS.printed },
+    { value: 'delivered', label: STATUS_TRANSLATIONS.delivered },
   ];
 
   const sexeOptions = [
-    { value: 'male', label: SEXE_TRANSLATIONS['male'] },
-    { value: 'female', label: SEXE_TRANSLATIONS['female'] },
+    { value: 'male', label: SEXE_TRANSLATIONS.male },
+    { value: 'female', label: SEXE_TRANSLATIONS.female },
   ];
 
   const permitTypes = [
@@ -475,4 +478,3 @@ export function ReportEmployee() {
     </DashboardContent>
   );
 }
-
