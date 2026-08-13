@@ -268,7 +268,7 @@ export const exportToCSVM = (data, columns, filename = 'export.csv') => {
           .map((col) => {
             let value = row[col.key] ?? '';
             if (col.translate) value = col.translate[value] ?? value;
-            if (col.isDate) value = new Date(value).toLocaleDateString('fr-FR');
+            if (col.isDate) value = value ? new Date(value).toLocaleDateString('fr-FR') : '-';
 
             return value;
           })
@@ -287,7 +287,7 @@ export const exportToExcelM = (data, columns, filename = 'export.xlsx') => {
       columns.map((col) => {
         let value = row[col.key] ?? '-';
         if (col.translate) value = col.translate[value] ?? value;
-        if (col.isDate) value = new Date(value).toLocaleDateString('fr-FR');
+        if (col.isDate) value = row[col.key] ? new Date(value).toLocaleDateString('fr-FR') : '-';
         return value;
       })
     ),
@@ -314,7 +314,7 @@ export const exportToZipM = async (data, columns, filename = 'export.zip') => {
           .map((col) => {
             let value = row[col.key] ?? '';
             if (col.translate) value = col.translate[value] ?? value;
-            if (col.isDate) value = fDate(value);
+            if (col.isDate) value = fDate(value) ?? '-';
             return value;
           })
           .join(';')
@@ -330,7 +330,7 @@ export const exportToZipM = async (data, columns, filename = 'export.zip') => {
       columns.map((col) => {
         let value = row[col.key] ?? '-';
         if (col.translate) value = col.translate[value] ?? value;
-        if (col.isDate) value = new Date(value).toLocaleDateString('fr-FR');
+        if (col.isDate) value = row[col.key] ? new Date(value).toLocaleDateString('fr-FR') : '-';
         return value;
       })
     ),

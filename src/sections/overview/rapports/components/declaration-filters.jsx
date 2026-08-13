@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import Chip from '@mui/material/Chip';
-import { fDateRangeShortLabel } from 'src/utils/format-time';
+import { fDate, fDateRangeShortLabel } from 'src/utils/format-time';
 import { chipProps, FiltersBlock, FiltersResult } from 'src/components/filters-result';
 
 const STATUS_TRANSLATIONS = {
@@ -47,6 +47,10 @@ export function DeclarationreportFilters({
   // Handlers spécifiques
   const handleRemoveDate = useCallback(() => {
     filters.setState({ created_on_before: null, created_on_after: null });
+  }, [filters]);
+
+  const handleRemovePrintedDate = useCallback(() => {
+    filters.setState({ printed_at_before: null, printed_at_after: null });
   }, [filters]);
 
   const handleRemoveStatus = useCallback(() => {
@@ -114,6 +118,17 @@ export function DeclarationreportFilters({
     () => Boolean(filters.state.created_on_after && filters.state.created_on_before),
     [filters.state.created_on_after, filters.state.created_on_before]
   );
+
+  // La plage d'impression accepte une seule borne, contrairement à la plage de création
+  const printedDateLabel = useMemo(() => {
+    const after = filters.state.printed_at_after;
+    const before = filters.state.printed_at_before;
+
+    if (after && before) return fDateRangeShortLabel(after, before);
+    if (after) return `Depuis le ${fDate(after)}`;
+    if (before) return `Jusqu'au ${fDate(before)}`;
+    return '';
+  }, [filters.state.printed_at_after, filters.state.printed_at_before]);
 
   const showStatusFilter = useMemo(
     () => filters.state.status && filters.state.status !== 'all',
@@ -254,6 +269,13 @@ export function DeclarationreportFilters({
                 label={filters.state.card_number}
                 onDelete={handleRemoveCardNumber}
               />
+            </FiltersBlock>
+          )}
+
+          {/* Date d'impression uniquement pour les permis */}
+          {isPermit && (
+            <FiltersBlock label="Date d'impression:" isShow={!!printedDateLabel}>
+              <Chip {...chipProps} label={printedDateLabel} onDelete={handleRemovePrintedDate} />
             </FiltersBlock>
           )}
 

@@ -35,6 +35,7 @@ export function CommonPersonFilters({
   loading,
   isPermit = false,
   dateError,
+  printedDateError,
 }) {
   const [selectedFilter, setSelectedFilter] = useState('name');
   const [showOptions, setShowOptions] = useState(false);
@@ -47,24 +48,25 @@ export function CommonPersonFilters({
 
   // Définition de tous les filtres disponibles
   const AVAILABLE_FILTERS = [
-    { key: 'permit_type', label: 'Type Permis', icon: '📋' },
-    { key: 'job', label: 'Fonction', icon: '💼' },
-    { key: 'nationality', label: 'Nationalité', icon: '🌍' },
-    { key: 'sexe', label: 'Sexe', icon: '👥' },
-    ...(isPermit ? [{ key: 'status', label: 'Statut', icon: '🚫' }] : []),
+    { key: 'permit_type', label: 'Type Permis' },
+    { key: 'job', label: 'Fonction' },
+    { key: 'nationality', label: 'Nationalité' },
+    { key: 'sexe', label: 'Sexe' },
+    ...(isPermit ? [{ key: 'status', label: 'Statut' }] : []),
+    ...(isPermit ? [{ key: 'printed_at', label: "Date d'impression" }] : []),
   ];
 
   const getFilterOptions = () => {
     const baseOptions = [
-      { key: 'name', label: 'Nom', icon: '👤' },
-      { key: 'passport', label: 'Passeport', icon: '🛂' },
-      { key: 'reference', label: 'Référence', icon: '🔖' },
-      { key: 'declaration_number', label: 'Déclaration', icon: '📋' },
-      { key: 'company', label: 'Entreprise', icon: '🏢' },
+      { key: 'name', label: 'Nom' },
+      { key: 'passport', label: 'Passeport' },
+      { key: 'reference', label: 'Référence' },
+      { key: 'declaration_number', label: 'Déclaration' },
+      { key: 'company', label: 'Entreprise' },
     ];
 
     if (isPermit) {
-      baseOptions.splice(4, 0, { key: 'card_number', label: 'N° Permis', icon: '🎫' });
+      baseOptions.splice(4, 0, { key: 'card_number', label: 'N° Permis' });
     }
 
     return baseOptions;
@@ -158,6 +160,7 @@ export function CommonPersonFilters({
         nationality: { nationality: 'all' },
         sexe: { sexe: 'all' },
         status: { status: 'all' },
+        printed_at: { printed_at_after: null, printed_at_before: null },
       };
 
       if (resetMap[filterKey]) {
@@ -177,6 +180,8 @@ export function CommonPersonFilters({
       sexe: 'all',
       created_on_after: null,
       created_on_before: null,
+      printed_at_after: null,
+      printed_at_before: null,
       status: 'all',
     });
     setActiveAdvancedFilters([]);
@@ -191,6 +196,8 @@ export function CommonPersonFilters({
     if (filters.sexe && filters.sexe !== 'all') count++;
     if (filters.created_on_after) count++;
     if (filters.created_on_before) count++;
+    if (filters.printed_at_after) count++;
+    if (filters.printed_at_before) count++;
     if (filters.status && filters.status !== 'all') count++;
     return count;
   };
@@ -313,6 +320,51 @@ export function CommonPersonFilters({
           </FormControl>
         );
 
+      case 'printed_at':
+        return (
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="Impression début"
+                value={filters.printed_at_after || null}
+                onChange={(newValue) => onFiltersChange({ printed_at_after: newValue })}
+                format="DD/MM/YYYY"
+                slotProps={{
+                  textField: {
+                    size: 'small',
+                    sx: {
+                      width: 180,
+                      bgcolor: 'background.paper',
+                      '& .MuiOutlinedInput-root:hover': { boxShadow: 1 },
+                    },
+                  },
+                }}
+              />
+            </LocalizationProvider>
+
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="Impression fin"
+                value={filters.printed_at_before || null}
+                onChange={(newValue) => onFiltersChange({ printed_at_before: newValue })}
+                format="DD/MM/YYYY"
+                slotProps={{
+                  textField: {
+                    size: 'small',
+                    error: printedDateError,
+                    helperText: printedDateError ? 'Date invalide' : null,
+                    sx: {
+                      width: 180,
+                      bgcolor: 'background.paper',
+                      '& .MuiOutlinedInput-root:hover': { boxShadow: 1 },
+                    },
+                  },
+                }}
+              />
+            </LocalizationProvider>
+          </Box>
+        );
+
       default:
         return null;
     }
@@ -358,7 +410,10 @@ export function CommonPersonFilters({
           display: 'flex',
           gap: 1.5,
           alignItems: 'center',
-          flexWrap: activeAdvancedFilters.length > 3 ? 'wrap' : 'nowrap',
+          flexWrap:
+            activeAdvancedFilters.length > 3 || activeAdvancedFilters.includes('printed_at')
+              ? 'wrap'
+              : 'nowrap',
         }}
       >
         {/* Bouton Filtres avec menu */}
@@ -419,7 +474,14 @@ export function CommonPersonFilters({
                     <Chip
                       key={filter.key}
                       label={filter.label}
-                      icon={isActive ? <CheckIcon /> : <span>{filter.icon}</span>}
+                      icon={
+                        // eslint-disable-next-line no-nested-ternary
+                        isActive ? (
+                          <CheckIcon />
+                        ) : filter.icon ? (
+                          <span>{filter.icon}</span>
+                        ) : undefined
+                      }
                       color={isActive ? 'primary' : 'default'}
                       onClick={() => handleToggleAdvancedFilter(filter.key)}
                       sx={{
@@ -457,14 +519,14 @@ export function CommonPersonFilters({
 
         {/* Filtres actifs sur la même ligne */}
         {activeAdvancedFilters.map((filterKey) => {
-          const filterInfo = AVAILABLE_FILTERS.find((f) => f.key === filterKey);
+          const isDateRange = filterKey === 'printed_at';
           return (
             <Box
               key={filterKey}
               sx={{
-                minWidth: 180,
-                maxWidth: activeAdvancedFilters.length > 3 ? 200 : 250,
-                flexGrow: activeAdvancedFilters.length <= 3 ? 1 : 0,
+                minWidth: isDateRange ? 372 : 180,
+                maxWidth: isDateRange ? 'none' : activeAdvancedFilters.length > 3 ? 200 : 250,
+                flexGrow: isDateRange ? 0 : activeAdvancedFilters.length <= 3 ? 1 : 0,
               }}
             >
               {renderFilterComponent(filterKey)}

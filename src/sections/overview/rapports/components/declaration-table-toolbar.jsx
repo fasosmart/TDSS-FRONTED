@@ -35,6 +35,7 @@ export function DecReportToolbar({
   countryOptions,
   permitTypeOptions,
   dateError,
+  printedDateError,
   loading,
 }) {
   // Local state pour les inputs avec debounce
@@ -227,6 +228,7 @@ export function DecReportToolbar({
           loading={loading}
           isPermit={isPermit}
           dateError={dateError}
+          printedDateError={printedDateError}
         />
       )}
 
