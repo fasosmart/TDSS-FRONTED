@@ -90,13 +90,12 @@ function SingleDeclaration({ declaration }) {
   };
 
   // Formatage de la date
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString('fr-FR', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
-  };
 
   return (
     <Grid xs={12} md={12}>
@@ -225,13 +224,12 @@ function MultipleDeclarationItem({ declaration }) {
   };
 
   // Formatage de la date
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
     });
-  };
 
   return (
     <Card

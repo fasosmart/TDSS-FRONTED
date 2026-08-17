@@ -13,25 +13,25 @@ class AguipService {
     try {
       // Valider et formater les dates si elles sont fournies
       const params = {};
-      
+
       if (startDate) {
         params.start_date = startDate;
       }
-      
+
       if (endDate) {
         params.end_date = endDate;
       }
-      
+
       const url = API.getAguipDashboard(params.start_date, params.end_date);
       console.log('AguipService - Appel API vers:', url);
-      
+
       const response = await axios.get(url);
       console.log('AguipService - Réponse API reçue:', response.data);
-      
+
       // Vérifier si la réponse contient des données
       if (!response.data) {
         console.error('AguipService - Aucune donnée dans la réponse');
-        throw new Error('Aucune donnée reçue de l\'API');
+        throw new Error("Aucune donnée reçue de l'API");
       }
 
       // Formater les données pour correspondre à la structure attendue
@@ -47,9 +47,9 @@ class AguipService {
           facture: response.data.statistique_shart?.facture || {},
           payment: response.data.statistique_shart?.payment || {},
         },
-        recentDeclarations: response.data.laste_declaration_liste || []
+        recentDeclarations: response.data.laste_declaration_liste || [],
       };
-      
+
       console.log('AguipService - Données formatées:', formattedData);
       return formattedData;
     } catch (error) {
@@ -60,14 +60,14 @@ class AguipService {
           total_declarations: 0,
           total_facture: 0,
           total_payment: 0,
-          taux_payment: 0
+          taux_payment: 0,
         },
         statistique_shart: {
           declaration: {},
           facture: {},
-          payment: {}
+          payment: {},
         },
-        recentDeclarations: []
+        recentDeclarations: [],
       };
     }
   }
@@ -79,44 +79,47 @@ class AguipService {
    */
   static formatChartData(data) {
     if (!data || !data.statistique_shart) {
-      return { 
-        series: [], 
-        categories: Array(12).fill().map((_, i) => (i + 1).toString()) 
+      return {
+        series: [],
+        categories: Array(12)
+          .fill()
+          .map((_, i) => (i + 1).toString()),
       };
     }
 
     const { declaration = {}, facture = {}, payment = {} } = data.statistique_shart;
-    
+
     // Créer les catégories (mois de l'année)
-    const categories = Array(12).fill().map((_, i) => {
-      const date = new Date(2023, i, 1);
-      return date.toLocaleString('fr-FR', { month: 'short' });
-    });
+    const categories = Array(12)
+      .fill()
+      .map((_, i) => {
+        const date = new Date(2023, i, 1);
+        return date.toLocaleString('fr-FR', { month: 'short' });
+      });
 
     // Fonction pour convertir les objets en tableaux triés par clé numérique
-    const convertToArray = (obj) => {
-      return Object.entries(obj)
+    const convertToArray = (obj) =>
+      Object.entries(obj)
         .sort(([a], [b]) => parseInt(a, 10) - parseInt(b, 10))
         .map(([_, value]) => value || 0);
-    };
 
     // Créer les séries pour chaque type de données
     const series = [
       {
         name: 'Déclarations',
         type: 'line',
-        data: convertToArray(declaration)
+        data: convertToArray(declaration),
       },
       {
         name: 'Factures',
         type: 'line',
-        data: convertToArray(facture)
+        data: convertToArray(facture),
       },
       {
         name: 'Paiements',
         type: 'line',
-        data: convertToArray(payment)
-      }
+        data: convertToArray(payment),
+      },
     ];
 
     return { series, categories };

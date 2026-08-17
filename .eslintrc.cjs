@@ -67,9 +67,15 @@ module.exports = {
     'no-restricted-exports': 0,
 
     'no-promise-executor-return': 0,
+    'no-await-in-loop': 0,
+    'no-restricted-syntax': 0,
+    // jsPDF est un constructeur bien qu'il commence par une minuscule.
+    'new-cap': [2, { newIsCap: true, newIsCapExceptions: ['jsPDF'], capIsNew: false }],
     'import/prefer-default-export': 0,
     'prefer-destructuring': [1, { object: true, array: false }],
     // react
+    // Les composants du template sont majoritairement des `forwardRef` anonymes.
+    'react/display-name': 0,
     'react/prop-types': 0,
     'react/no-children-prop': 0,
     'react/react-in-jsx-scope': 0,

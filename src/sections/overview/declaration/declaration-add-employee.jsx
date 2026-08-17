@@ -236,9 +236,7 @@ export function DeclarationAddEmployee({ declaration, open, onClose }) {
             params: { offset: 0, limit: total },
           });
           if (isMounted) setCountries(resp2.data.results);
-        } else {
-          if (isMounted) setCountries(resp1.data.results);
-        }
+        } else if (isMounted) setCountries(resp1.data.results);
       } catch (error) {
         console.error('Erreur lors du chargement des pays :', error);
       } finally {
@@ -276,7 +274,7 @@ export function DeclarationAddEmployee({ declaration, open, onClose }) {
       router.push(paths.dashboard.declaration.details(declaration?.slug));
     } catch (err) {
       const data = err.response?.data || err || err.message || err.details || err.messages;
-      let messages = [];
+      const messages = [];
 
       if (Array.isArray(data)) {
         data.forEach((errObj) => {
@@ -289,10 +287,8 @@ export function DeclarationAddEmployee({ declaration, open, onClose }) {
             }
           });
         });
-      } else {
-        if (data.message) messages.push(data.message);
-        else messages.push('Erreur inconnue');
-      }
+      } else if (data.message) messages.push(data.message);
+      else messages.push('Erreur inconnue');
 
       messages.forEach((msg) => toast.error(msg));
     } finally {

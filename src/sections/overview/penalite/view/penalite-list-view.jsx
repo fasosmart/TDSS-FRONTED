@@ -222,8 +222,9 @@ export function PenaliteListView() {
       setPagination({ count: 0, next: null, previous: null });
       toast.error(message);
     } finally {
-      if (requestId !== fetchRequestIdRef.current) return;
-      setLoading(false);
+      if (requestId === fetchRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [buildPenaltyParams, filters.isHydrated]);
 

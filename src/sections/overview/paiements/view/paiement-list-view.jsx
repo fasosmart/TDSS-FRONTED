@@ -270,8 +270,9 @@ export function PaiementListView() {
         );
         toast.error(error);
       } finally {
-        if (requestId !== fetchRequestIdRef.current) return;
-        setLoading(false);
+        if (requestId === fetchRequestIdRef.current) {
+          setLoading(false);
+        }
       }
     };
 
