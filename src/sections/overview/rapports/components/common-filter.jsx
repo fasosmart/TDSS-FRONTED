@@ -24,6 +24,9 @@ import CheckIcon from '@mui/icons-material/Check';
 
 const DEBOUNCE_DELAY = 1000;
 
+// 2 DatePickers de 180px + le gap de 12px (gap: 1.5) qui les sépare
+const DATE_RANGE_FILTER_MIN_WIDTH = 372;
+
 export function CommonPersonFilters({
   filters,
   onFiltersChange,
@@ -332,6 +335,8 @@ export function CommonPersonFilters({
                 slotProps={{
                   textField: {
                     size: 'small',
+                    error: printedDateError,
+                    helperText: printedDateError ? 'Date invalide' : null,
                     sx: {
                       width: 180,
                       bgcolor: 'background.paper',
@@ -474,14 +479,7 @@ export function CommonPersonFilters({
                     <Chip
                       key={filter.key}
                       label={filter.label}
-                      icon={
-                        // eslint-disable-next-line no-nested-ternary
-                        isActive ? (
-                          <CheckIcon />
-                        ) : filter.icon ? (
-                          <span>{filter.icon}</span>
-                        ) : undefined
-                      }
+                      icon={isActive ? <CheckIcon /> : undefined}
                       color={isActive ? 'primary' : 'default'}
                       onClick={() => handleToggleAdvancedFilter(filter.key)}
                       sx={{
@@ -524,7 +522,7 @@ export function CommonPersonFilters({
             <Box
               key={filterKey}
               sx={{
-                minWidth: isDateRange ? 372 : 180,
+                minWidth: isDateRange ? DATE_RANGE_FILTER_MIN_WIDTH : 180,
                 maxWidth: isDateRange ? 'none' : activeAdvancedFilters.length > 3 ? 200 : 250,
                 flexGrow: isDateRange ? 0 : activeAdvancedFilters.length <= 3 ? 1 : 0,
               }}
@@ -601,9 +599,6 @@ export function CommonPersonFilters({
                       label={FILTER_OPTIONS.find((o) => o.key === selectedFilter)?.label}
                       size="small"
                       onClick={() => setShowOptions(true)}
-                      icon={
-                        <span>{FILTER_OPTIONS.find((o) => o.key === selectedFilter)?.icon}</span>
-                      }
                       sx={{
                         height: 24,
                         cursor: 'pointer',

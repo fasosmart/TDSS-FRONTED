@@ -221,6 +221,15 @@ export function fDateRangeShortLabel(startDate, endDate, initial) {
   return label;
 }
 
+// Plage acceptant une seule borne
+export function fDateRangeOpenLabel(startDate, endDate) {
+  if (startDate && endDate) return fDateRangeShortLabel(startDate, endDate);
+  if (startDate) return `Depuis le ${fDate(startDate)}`;
+  if (endDate) return `Jusqu'au ${fDate(endDate)}`;
+
+  return '';
+}
+
 /** output: '2024-05-28T05:55:31+00:00'
  */
 export function fAdd({

@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import Chip from '@mui/material/Chip';
-import { fDate, fDateRangeShortLabel } from 'src/utils/format-time';
+import { fDateRangeOpenLabel, fDateRangeShortLabel } from 'src/utils/format-time';
 import { chipProps, FiltersBlock, FiltersResult } from 'src/components/filters-result';
 
 const STATUS_TRANSLATIONS = {
@@ -120,15 +120,10 @@ export function DeclarationreportFilters({
   );
 
   // La plage d'impression accepte une seule borne, contrairement à la plage de création
-  const printedDateLabel = useMemo(() => {
-    const after = filters.state.printed_at_after;
-    const before = filters.state.printed_at_before;
-
-    if (after && before) return fDateRangeShortLabel(after, before);
-    if (after) return `Depuis le ${fDate(after)}`;
-    if (before) return `Jusqu'au ${fDate(before)}`;
-    return '';
-  }, [filters.state.printed_at_after, filters.state.printed_at_before]);
+  const printedDateLabel = useMemo(
+    () => fDateRangeOpenLabel(filters.state.printed_at_after, filters.state.printed_at_before),
+    [filters.state.printed_at_after, filters.state.printed_at_before]
+  );
 
   const showStatusFilter = useMemo(
     () => filters.state.status && filters.state.status !== 'all',
