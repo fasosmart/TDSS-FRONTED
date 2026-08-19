@@ -53,15 +53,15 @@ export function ComptableWidgetSummary({
 
     switch (currency) {
       case 'GNF':
-        // Pas de conversion : on affiche “12 500 000 GNF”
+        // Pas de conversion : on affiche “12 500 000 GNF”
         return `${format(montant, 'fr-FR')} GNF`;
 
       case 'USD':
-        // Conversion approximative GNF → USD, puis format US “1,000.00 USD”
+        // Conversion approximative GNF → USD, puis format US “1,000.00 USD”
         return `${format(montant / 9200, 'en-US')} USD`;
 
       case 'EUR':
-        // Conversion approximative GNF → EUR, puis format FR “1 000,00 EUR”
+        // Conversion approximative GNF → EUR, puis format FR “1 000,00 EUR”
         return `${format(montant / 10000, 'fr-FR')} EUR`;
 
       default:

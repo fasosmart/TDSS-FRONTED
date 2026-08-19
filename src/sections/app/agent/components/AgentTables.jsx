@@ -74,7 +74,7 @@ export const getStatusColor = (status) => {
 
 // Fonction utilitaire pour obtenir le libellé d'un statut
 export const getStatusLabel = (status) => {
-  const statusOption = STATUS_OPTIONS.find(option => option.value === status);
+  const statusOption = STATUS_OPTIONS.find((option) => option.value === status);
   return statusOption ? statusOption.label : status.charAt(0).toUpperCase() + status.slice(1);
 };
 
@@ -89,16 +89,14 @@ export function AgentRecentDeclarations({ declarations = [] }) {
 
   // Extraire les statuts uniques des déclarations pour les options de filtre
   const availableStatuses = React.useMemo(() => {
-    const statusSet = new Set(declarations.map(dec => dec.status));
-    return STATUS_OPTIONS.filter(option => 
-      option.value === 'all' || statusSet.has(option.value)
-    );
+    const statusSet = new Set(declarations.map((dec) => dec.status));
+    return STATUS_OPTIONS.filter((option) => option.value === 'all' || statusSet.has(option.value));
   }, [declarations]);
 
   // Filtrer les déclarations par statut
-  const filteredDeclarations = declarations.filter((dec) => {
-    return filter === 'all' || dec.status === filter;
-  });
+  const filteredDeclarations = declarations.filter(
+    (dec) => filter === 'all' || dec.status === filter
+  );
 
   // Prioriser les déclarations non soumises (pending) et rejetées (rejected)
   const sortedDeclarations = [...filteredDeclarations].sort((a, b) => {
@@ -309,10 +307,7 @@ function AgentDeclarationRow({ row, isDarkMode }) {
           {row.employees}
         </TableCell>
         <TableCell>
-          <Label
-            variant="soft"
-            color={getStatusColor(row.status)}
-          >
+          <Label variant="soft" color={getStatusColor(row.status)}>
             {getStatusLabel(row.status)}
           </Label>
         </TableCell>

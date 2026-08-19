@@ -158,8 +158,9 @@ export function EmployeeListView() {
         setError(err.message || 'Erreur lors du chargement des donnees.');
         console.error('Erreur lors du chargement des employes:', err);
       } finally {
-        if (requestId !== fetchRequestIdRef.current) return;
-        setLoading(false);
+        if (requestId === fetchRequestIdRef.current) {
+          setLoading(false);
+        }
       }
     },
     [

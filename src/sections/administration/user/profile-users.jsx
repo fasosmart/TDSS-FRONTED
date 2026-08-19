@@ -42,14 +42,17 @@ export function ProfileUsers({ info, companySlug }) {
   const methods = useForm({
     mode: 'all',
   });
-  const { handleSubmit, formState: { isSubmitting } } = methods;
+  const {
+    handleSubmit,
+    formState: { isSubmitting },
+  } = methods;
 
   // 1. Récupérer le slug "entreprise" au montage du composant
   useEffect(() => {
     const fetchEntrepriseSlug = async () => {
       try {
         const response = await axios.get(API.listProfilesTypes());
-        const entrepriseType = response.data.results.find(t => t.code === 'entreprise');
+        const entrepriseType = response.data.results.find((t) => t.code === 'entreprise');
         if (entrepriseType) {
           setEntrepriseSlug(entrepriseType.slug);
         } else {
@@ -68,12 +71,12 @@ export function ProfileUsers({ info, companySlug }) {
   useEffect(() => {
     const loadInitialUsers = async () => {
       if (!entrepriseSlug) return;
-      
+
       try {
         // console.log('Chargement des utilisateurs avec slug:', entrepriseSlug);
-        const params = { 
+        const params = {
           type_profile: entrepriseSlug,
-          limit: 50 
+          limit: 50,
         };
         // console.log('Paramètres envoyés à listUsers:', params);
         const response = await axios.get(API.listUsers(params));
@@ -137,9 +140,12 @@ export function ProfileUsers({ info, companySlug }) {
   };
 
   // Fonction pour gérer le clic sur une ligne de la table
-  const handleViewDetail = useCallback((slug) => {
-    router.push(paths.dashboard.user.details(slug));
-  }, [router]);
+  const handleViewDetail = useCallback(
+    (slug) => {
+      router.push(paths.dashboard.user.details(slug));
+    },
+    [router]
+  );
 
   // Fonction pour ajouter un utilisateur à l'entreprise
   const onSubmit = handleSubmit(async () => {
@@ -147,22 +153,22 @@ export function ProfileUsers({ info, companySlug }) {
       // console.log('=== DÉBUT SOUMISSION ===');
       // console.log('selectedUser:', selectedUser);
       // console.log('Type de selectedUser:', typeof selectedUser);
-      
+
       if (!selectedUser) {
         toast.error('Veuillez sélectionner un utilisateur.');
         return;
       }
-      
+
       if (!selectedUser.slug) {
         console.error('selectedUser.slug est undefined:', selectedUser);
         toast.error('Erreur: Slug utilisateur manquant');
         return;
       }
-      
+
       // console.log('Utilisateur sélectionné:', selectedUser);
       // console.log('Slug utilisateur:', selectedUser.slug);
       // console.log('Slug entreprise:', companySlug);
-      
+
       const formData = {
         user: selectedUser.slug,
         profile: companySlug,
@@ -181,15 +187,15 @@ export function ProfileUsers({ info, companySlug }) {
         // Recharger la page pour mettre à jour la liste
         window.location.reload();
       } else {
-        throw new Error(response.data?.[0] || response.data?.message || 'Échec de l\'ajout.');
+        throw new Error(response.data?.[0] || response.data?.message || "Échec de l'ajout.");
       }
     } catch (error) {
       console.error('Erreur complète:', error.response?.data || error.message);
       toast.error(
         error.response?.data?.[0] ||
-        error.response?.data?.message ||
-        error.message ||
-        'Erreur lors de l\'ajout.'
+          error.response?.data?.message ||
+          error.message ||
+          "Erreur lors de l'ajout."
       );
     }
   });
@@ -226,11 +232,11 @@ export function ProfileUsers({ info, companySlug }) {
                   const fullName = `${option.name}`.trim();
                   return fullName || 'Nom non défini';
                 }}
-                getOptionKey={(option) => {
+                getOptionKey={(option) =>
                   // console.log('Option pour key:', option);
                   // console.log('Slug pour key:', option?.slug);
-                  return option?.slug || '';
-                }}
+                  option?.slug || ''
+                }
                 value={selectedUser}
                 onChange={(event, newValue) => {
                   // console.log('Utilisateur sélectionné dans onChange:', newValue);
@@ -240,12 +246,14 @@ export function ProfileUsers({ info, companySlug }) {
                 onInputChange={handleSearchChange}
                 onKeyPress={handleSearchSubmit}
                 loading={searchLoading}
-                loadingText={isSearching ? "Recherche en cours..." : "Chargement..."}
-                noOptionsText={isSearching ? "Aucun utilisateur trouvé" : "Aucun utilisateur disponible"}
+                loadingText={isSearching ? 'Recherche en cours...' : 'Chargement...'}
+                noOptionsText={
+                  isSearching ? 'Aucun utilisateur trouvé' : 'Aucun utilisateur disponible'
+                }
                 renderInput={(params) => (
-                  <TextField 
-                    {...params} 
-                    label="Rechercher un utilisateur" 
+                  <TextField
+                    {...params}
+                    label="Rechercher un utilisateur"
                     placeholder="Tapez et appuyez sur Entrée pour rechercher"
                     InputProps={{
                       ...params.InputProps,
@@ -262,7 +270,7 @@ export function ProfileUsers({ info, companySlug }) {
                   const { key, ...otherProps } = props;
                   // console.log('Option dans renderOption:', option);
                   // console.log('Slug de l\'option:', option?.slug);
-                  
+
                   return (
                     <Box component="li" key={key} {...otherProps}>
                       <Stack direction="row" alignItems="center" spacing={1}>
@@ -276,7 +284,8 @@ export function ProfileUsers({ info, companySlug }) {
                             {`${option.name || ''}`.trim() || 'Nom non défini'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {option.email || 'Email non défini'} • {option.type || 'Rôle non défini'}
+                            {option.email || 'Email non défini'} •{' '}
+                            {option.type || 'Rôle non défini'}
                           </Typography>
                         </Box>
                       </Stack>
@@ -295,8 +304,19 @@ export function ProfileUsers({ info, companySlug }) {
               </Button>
             </Box>
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-              <LoadingButton type="submit" variant="contained" size="small" loading={isSubmitting} disabled={!selectedUser}>
-                <Iconify icon="eva:checkmark-circle-2-outline" width={20} height={20} sx={{ mr: 1 }} />
+              <LoadingButton
+                type="submit"
+                variant="contained"
+                size="small"
+                loading={isSubmitting}
+                disabled={!selectedUser}
+              >
+                <Iconify
+                  icon="eva:checkmark-circle-2-outline"
+                  width={20}
+                  height={20}
+                  sx={{ mr: 1 }}
+                />
                 Ajouter
               </LoadingButton>
             </Box>

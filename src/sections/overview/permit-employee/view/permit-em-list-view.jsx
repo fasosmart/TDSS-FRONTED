@@ -786,7 +786,7 @@ export function PermitListView() {
             ${createLabelValueHTML('EMPLOYEUR', permit?.company_sigle)}
             ${createLabelValueHTML('ADRESSE', permit?.company_address || 'N/A')}
             ${createLabelValueHTML('FONCTION ', permit?.job?.name || 'N/A')}
-            ${createLabelValueHTML('CATÉGORIE ', 'TYPE ' + (getLabelPermit(permit?.category || permit?.job?.permit) || ''))}
+            ${createLabelValueHTML('CATÉGORIE ', `TYPE ${getLabelPermit(permit?.category || permit?.job?.permit) || ''}`)}
             ${createLabelValueHTML('DEBUT CONTRAT', formatDate(permit?.contract_starts_at))}
             <div style="display: flex; gap: 3mm; align-items: baseline;">
               <div style="flex: 0 0 50%; min-width: 0;">
@@ -879,8 +879,9 @@ export function PermitListView() {
         if (requestId !== fetchRequestIdRef.current) return;
         setError(err.message || 'Erreur lors du chargement des données.');
       } finally {
-        if (requestId !== fetchRequestIdRef.current) return;
-        setLoading(false);
+        if (requestId === fetchRequestIdRef.current) {
+          setLoading(false);
+        }
       }
     };
 

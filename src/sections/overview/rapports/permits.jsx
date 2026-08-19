@@ -92,23 +92,26 @@ export function ReportPermit() {
 
   const [selectedColumns, setSelectedColumns] = useState(DEFAULT_COLUMNS);
 
-  const filters = useSetState({
-    card_number: '',
-    reference: '',
-    company: '',
-    declaration_number: '',
-    passport: '',
-    status: 'all',
-    job: null,
-    name: '',
-    nationality: 'all',
-    sexe: 'all',
-    permit_type: 'all',
-    created_on_before: null,
-    created_on_after: null,
-    printed_at_before: null,
-    printed_at_after: null,
-  }, { persistByPath: true });
+  const filters = useSetState(
+    {
+      card_number: '',
+      reference: '',
+      company: '',
+      declaration_number: '',
+      passport: '',
+      status: 'all',
+      job: null,
+      name: '',
+      nationality: 'all',
+      sexe: 'all',
+      permit_type: 'all',
+      created_on_before: null,
+      created_on_after: null,
+      printed_at_before: null,
+      printed_at_after: null,
+    },
+    { persistByPath: true }
+  );
 
   const fectCountries = async () => {
     try {
@@ -437,17 +440,17 @@ export function ReportPermit() {
   };
 
   const statusOptions = [
-    { value: 'processing', label: STATUS_TRANSLATIONS['processing'] },
-    { value: 'submitted', label: STATUS_TRANSLATIONS['submitted'] },
-    { value: 'validated', label: STATUS_TRANSLATIONS['validated'] },
-    { value: 'rejected', label: STATUS_TRANSLATIONS['rejected'] },
-    { value: 'printed', label: STATUS_TRANSLATIONS['printed'] },
-    { value: 'delivered', label: STATUS_TRANSLATIONS['delivered'] },
+    { value: 'processing', label: STATUS_TRANSLATIONS.processing },
+    { value: 'submitted', label: STATUS_TRANSLATIONS.submitted },
+    { value: 'validated', label: STATUS_TRANSLATIONS.validated },
+    { value: 'rejected', label: STATUS_TRANSLATIONS.rejected },
+    { value: 'printed', label: STATUS_TRANSLATIONS.printed },
+    { value: 'delivered', label: STATUS_TRANSLATIONS.delivered },
   ];
 
   const sexeOptions = [
-    { value: 'male', label: SEXE_TRANSLATIONS['male'] },
-    { value: 'female', label: SEXE_TRANSLATIONS['female'] },
+    { value: 'male', label: SEXE_TRANSLATIONS.male },
+    { value: 'female', label: SEXE_TRANSLATIONS.female },
   ];
 
   return (
@@ -527,4 +530,3 @@ export function ReportPermit() {
     </DashboardContent>
   );
 }
-

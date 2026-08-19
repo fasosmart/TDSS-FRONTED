@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { 
-  Container, 
-  Stack, 
-  Typography, 
-  Box, 
-  Button, 
+import {
+  Container,
+  Stack,
+  Typography,
+  Box,
+  Button,
   CircularProgress,
   Grid,
   Alert,
-  Snackbar
+  Snackbar,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useAuthContext } from 'src/auth/hooks';
@@ -42,12 +42,12 @@ const PERIODS = [
 export default function AguipeAppView() {
   const theme = useTheme();
   const { user } = useAuthContext();
-  
+
   // États
   const [dashboardData, setDashboardData] = useState({
     stats: {},
     chartData: { series: [], categories: [] },
-    recentDeclarations: []
+    recentDeclarations: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -69,11 +69,12 @@ export default function AguipeAppView() {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Déterminer les dates en fonction de la période sélectionnée
-      let start, end;
+      let start;
+      let end;
       const today = dayjs();
-      
+
       switch (period) {
         case 'this_month':
           start = today.startOf('month');
@@ -99,40 +100,39 @@ export default function AguipeAppView() {
           start = today.startOf('month');
           end = today.endOf('month');
       }
-      
+
       // Formater les dates pour l'API
       const formattedStartDate = formatDate(start);
       const formattedEndDate = formatDate(end);
-      
+
       // Mettre à jour les états des dates
       setStartDate(start);
       setEndDate(end);
-      
+
       // Récupérer les données de l'API
       const data = await AguipService.getDashboardData({
         startDate: formattedStartDate,
-        endDate: formattedEndDate
+        endDate: formattedEndDate,
       });
-      
+
       // Vérifier si les données sont valides
       if (!data) {
         throw new Error('Aucune donnée reçue du service');
       }
-      
+
       setDashboardData(data);
-      
     } catch (err) {
       console.error('Erreur lors du chargement des données:', err);
       setError('Erreur lors du chargement des données. Veuillez réessayer.');
       setSnackbar({
         open: true,
         message: 'Erreur lors du chargement des données',
-        severity: 'error'
+        severity: 'error',
       });
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, startDate, endDate]); // Ajout de startDate et endDate aux dépendances
 
   // Charger les données au montage du composant  // Chargement initial des données
@@ -156,12 +156,12 @@ export default function AguipeAppView() {
 
     fetchData();
   }, []); // eslint-disable-next-line react-hooks/exhaustive-deps
-  
+
   // Gérer le changement de période
   const handlePeriodChange = (event) => {
     setPeriod(event.target.value);
   };
-  
+
   // Gérer le changement de date personnalisée
   const handleStartDateChange = (date) => {
     if (date) {
@@ -177,7 +177,7 @@ export default function AguipeAppView() {
       }
     }
   };
-  
+
   const handleEndDateChange = (date) => {
     if (date) {
       // S'assurer que la date est un objet dayjs valide
@@ -192,7 +192,7 @@ export default function AguipeAppView() {
       }
     }
   };
-  
+
   // Formater la période pour l'affichage
   const formatPeriodDisplay = () => {
     if (period === 'custom') {
@@ -205,7 +205,7 @@ export default function AguipeAppView() {
         return 'Période personnalisée';
       }
     }
-    return PERIODS.find(p => p.value === period)?.label || '';
+    return PERIODS.find((p) => p.value === period)?.label || '';
   };
 
   // Gérer la fermeture de la snackbar
@@ -228,7 +228,12 @@ export default function AguipeAppView() {
     <Container maxWidth="xl">
       <Stack spacing={3}>
         {/* En-tête avec informations utilisateur et période */}
-        <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'stretch', md: 'center' }} justifyContent="space-between" spacing={2}>
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          alignItems={{ xs: 'stretch', md: 'center' }}
+          justifyContent="space-between"
+          spacing={2}
+        >
           <Box>
             <Typography variant="h4">Tableau de bord AGUIPE</Typography>
             {user && (
@@ -241,8 +246,13 @@ export default function AguipeAppView() {
               {formatPeriodDisplay()}
             </Typography>
           </Box>
-          
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center" sx={{ width: { xs: '100%', md: 'auto' } }}>
+
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems="center"
+            sx={{ width: { xs: '100%', md: 'auto' } }}
+          >
             <select
               value={period}
               onChange={handlePeriodChange}
@@ -252,7 +262,7 @@ export default function AguipeAppView() {
                 border: '1px solid #ccc',
                 minWidth: '200px',
                 backgroundColor: 'white',
-                height: '40px'
+                height: '40px',
               }}
             >
               {PERIODS.map((option) => (
@@ -261,54 +271,54 @@ export default function AguipeAppView() {
                 </option>
               ))}
             </select>
-            
+
             <DatePicker
               label="Début"
               value={startDate}
               onChange={handleStartDateChange}
               format="DD/MM/YYYY"
-              slotProps={{ 
-                textField: { 
+              slotProps={{
+                textField: {
                   size: 'small',
                   placeholder: 'JJ/MM/AAAA',
-                  sx: { 
+                  sx: {
                     width: { xs: '100%', sm: 150 },
                     '& .MuiInputBase-input': {
                       textAlign: 'center',
                       padding: '8.5px 14px',
-                      height: '1.4375em'
-                    }
+                      height: '1.4375em',
+                    },
                   },
                   fullWidth: typeof window !== 'undefined' && window.innerWidth < 600,
-                  error: false
-                } 
+                  error: false,
+                },
               }}
               disabled={period !== 'custom'}
               disableFuture
               closeOnSelect
               autoOk
             />
-            
+
             <DatePicker
               label="Fin"
               value={endDate}
               onChange={handleEndDateChange}
               format="DD/MM/YYYY"
-              slotProps={{ 
-                textField: { 
+              slotProps={{
+                textField: {
                   size: 'small',
                   placeholder: 'JJ/MM/AAAA',
-                  sx: { 
+                  sx: {
                     width: { xs: '100%', sm: 150 },
                     '& .MuiInputBase-input': {
                       textAlign: 'center',
                       padding: '8.5px 14px',
-                      height: '1.4375em'
-                    }
+                      height: '1.4375em',
+                    },
                   },
                   fullWidth: typeof window !== 'undefined' && window.innerWidth < 600,
-                  error: false
-                } 
+                  error: false,
+                },
               }}
               disabled={period !== 'custom'}
               disableFuture
@@ -316,12 +326,18 @@ export default function AguipeAppView() {
               minDate={startDate}
               autoOk
             />
-            
-            <Button 
-              variant="contained" 
+
+            <Button
+              variant="contained"
               onClick={loadDashboardData}
               disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Iconify icon="mdi:refresh" />}
+              startIcon={
+                loading ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <Iconify icon="mdi:refresh" />
+                )
+              }
               fullWidth={typeof window !== 'undefined' && window.innerWidth < 600}
               sx={{ height: '40px' }}
             >
@@ -339,30 +355,26 @@ export default function AguipeAppView() {
 
         {/* Section des statistiques */}
         <div>
-
-          <AguipeStats 
+          <AguipeStats
             stats={{
               total_declarations: dashboardData.stats?.total_declarations || 0,
               total_facture: dashboardData.stats?.total_facture || 0,
               total_payment: dashboardData.stats?.total_payment || 0,
-              taux_payment: dashboardData.stats?.taux_payment || 0
+              taux_payment: dashboardData.stats?.taux_payment || 0,
             }}
             loading={loading}
           />
         </div>
 
         {/* Section des graphiques */}
-        <AguipeCharts 
+        <AguipeCharts
           statistique_shart={dashboardData.statistique_shart || {}}
           loading={loading}
           period={period} // Passer la période sélectionnée
         />
 
         {/* Section des tableaux */}
-        <AguipeTables 
-          declarations={dashboardData.recentDeclarations} 
-          loading={loading}
-        />
+        <AguipeTables declarations={dashboardData.recentDeclarations} loading={loading} />
       </Stack>
 
       {/* Snackbar pour les notifications */}

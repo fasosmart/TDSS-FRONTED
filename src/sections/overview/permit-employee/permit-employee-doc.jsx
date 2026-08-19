@@ -71,9 +71,8 @@ export function PermitEmployeeDoc({ type, documents = [], employee, onDocumentUp
   });
 
   // Trouver un document existant chez l'employé
-  const getDocumentBySlug = (name) => {
-    return documents?.find((doc) => doc.type === name || doc.name === name);
-  };
+  const getDocumentBySlug = (name) =>
+    documents?.find((doc) => doc.type === name || doc.name === name);
 
   const handleAddDocument = (docType) => {
     setSelectedDocType(docType);

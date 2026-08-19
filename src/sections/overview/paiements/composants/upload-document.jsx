@@ -67,7 +67,7 @@ export function UploadDocument({ slug, open, onclose, onUpdate }) {
 
   return (
     <Dialog fullWidth maxWidth="sm" open={open} onClose={onclose}>
-      <DialogTitle sx={{ color: 'text.disabled' }}>{'Uploader un nouveau document'}</DialogTitle>
+      <DialogTitle sx={{ color: 'text.disabled' }}>Uploader un nouveau document</DialogTitle>
 
       <Form methods={methods} onSubmit={onSubmit}>
         <DialogContent dividers>

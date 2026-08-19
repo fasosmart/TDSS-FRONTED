@@ -60,7 +60,8 @@ import { DeclarationPDF, generateDeclarationPDF } from '../declaration-pdf';
 
 import { usePermissions } from 'src/auth/hooks';
 
-import dayjs from 'src/utils/format-time'; // Ensure this imports the correct dayjs instance
+import dayjs from 'src/utils/format-time';
+// Ensure this imports the correct dayjs instance
 dayjs.locale('fr'); // Set the default locale to French
 
 // ----------------------------------------------------------------------
@@ -84,7 +85,6 @@ export function DeclarationListView() {
   const theme = useTheme();
 
   const { can } = usePermissions();
-
 
   const allowedTabStatuses = useMemo(() => {
     if (can('can_view_admin_dashboard'))
@@ -141,16 +141,19 @@ export function DeclarationListView() {
     previous: null,
   });
 
-  const filters = useSetState({
-    number: '', // mot-clé pour filtrer par numéro ou type de déclaration
-    fonction: [],
-    title: '',
-    company: '',
-    passport_number: '',
-    status: 'all',
-    starts_at: null,
-    ends_at: null,
-  }, { persistByPath: true });
+  const filters = useSetState(
+    {
+      number: '', // mot-clé pour filtrer par numéro ou type de déclaration
+      fonction: [],
+      title: '',
+      company: '',
+      passport_number: '',
+      status: 'all',
+      starts_at: null,
+      ends_at: null,
+    },
+    { persistByPath: true }
+  );
 
   const dateError = fIsBetween(filters.state.starts_at, filters.state.ends_at);
 
@@ -801,9 +804,9 @@ export function DeclarationListView() {
           err?.response?.data?.detail || err?.message || 'Une erreur est survenue';
         toast.error(errormessage);
       } finally {
-        if (requestId !== fetchRequestIdRef.current) return;
-
-        setLoading(false);
+        if (requestId === fetchRequestIdRef.current) {
+          setLoading(false);
+        }
       }
     };
 
@@ -844,8 +847,8 @@ export function DeclarationListView() {
 
   const allowedStatuses = allowedCardStatuses;
 
-  {
-    isLoading && toast.info('Téléchargement en cours, veuillez patienter...');
+  if (isLoading) {
+    toast.info('Téléchargement en cours, veuillez patienter...');
   }
 
   return (
@@ -1307,4 +1310,3 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
 
   return inputData;
 }
-

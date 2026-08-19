@@ -142,7 +142,7 @@ export const exportToZip = async (data, filename = 'rapport-declarations.zip') =
       ].join(';')
     ),
   ].join('\n');
-  zip.file('declarations.csv', '\uFEFF' + csvContent);
+  zip.file('declarations.csv', `\uFEFF${csvContent}`);
 
   // 2. Ajouter le fichier Excel
   const worksheetData = [
@@ -309,7 +309,7 @@ export const exportToZipM = async (data, columns, filename = 'export.zip') => {
   const csvContent = [columns.map((c) => c.label).join(';')]
     .concat(data.map((row) => columns.map((col) => formatExportCell(row, col, '')).join(';')))
     .join('\n');
-  zip.file('data.csv', '\uFEFF' + csvContent);
+  zip.file('data.csv', `\uFEFF${csvContent}`);
 
   // Excel
   const worksheetData = [

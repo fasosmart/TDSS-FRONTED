@@ -97,9 +97,7 @@ export function DeclarationNewEditDetails({ formData }) {
             params: { offset: 0, limit: total },
           });
           if (isMounted) setCountries(resp2.data.results);
-        } else {
-          if (isMounted) setCountries(resp1.data.results);
-        }
+        } else if (isMounted) setCountries(resp1.data.results);
       } catch (error) {
         console.error('Erreur lors du chargement des pays :', error);
       } finally {

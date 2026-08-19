@@ -163,13 +163,14 @@ export function DecReportToolbar({
   }, [filters.state]);
 
   // Cleanup des timers au démontage
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       Object.values(debounceTimers.current).forEach((timer) => {
         if (timer) clearTimeout(timer);
       });
-    };
-  }, []);
+    },
+    []
+  );
 
   // Gestion du clic en dehors pour fermer les options
   useEffect(() => {

@@ -391,13 +391,14 @@ export function CommonPersonFilters({
     }
   }, [showOptions, showFilterMenu]);
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       Object.values(debounceTimers.current).forEach((timer) => {
         if (timer) clearTimeout(timer);
       });
-    };
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     const currentField = getFieldFromFilter(selectedFilter);
