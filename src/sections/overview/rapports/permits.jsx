@@ -68,6 +68,7 @@ export function ReportPermit() {
       { key: 'job', label: 'Fonction' },
       { key: 'permit_type', label: 'Permis' },
       { key: 'created_on', label: 'Date de création', isDate: true },
+      { key: 'printed_at', label: "Date d'impression", isDate: true },
       { key: 'status', label: 'Statut', translate: STATUS_TRANSLATIONS },
     ],
     []
@@ -86,6 +87,7 @@ export function ReportPermit() {
     'permit_type',
     'status',
     'created_on',
+    'printed_at',
   ];
 
   const [selectedColumns, setSelectedColumns] = useState(DEFAULT_COLUMNS);
@@ -105,6 +107,8 @@ export function ReportPermit() {
       permit_type: 'all',
       created_on_before: null,
       created_on_after: null,
+      printed_at_before: null,
+      printed_at_after: null,
     },
     { persistByPath: true }
   );
@@ -220,6 +224,10 @@ export function ReportPermit() {
   }, []);
 
   const dateError = fIsBetween(filters.state.created_on_after, filters.state.created_on_before);
+  const printedDateError = fIsBetween(
+    filters.state.printed_at_after,
+    filters.state.printed_at_before
+  );
 
   const buildParams = (page = 0, limit = table.rowsPerPage) => {
     const params = {
@@ -269,6 +277,12 @@ export function ReportPermit() {
     if (filters.state.created_on_before && !dateError) {
       params.created_on_before = dayjs(filters.state.created_on_before).format('YYYY-MM-DD');
     }
+    if (filters.state.printed_at_after && !printedDateError) {
+      params.printed_at_after = dayjs(filters.state.printed_at_after).format('YYYY-MM-DD');
+    }
+    if (filters.state.printed_at_before && !printedDateError) {
+      params.printed_at_before = dayjs(filters.state.printed_at_before).format('YYYY-MM-DD');
+    }
     return params;
   };
 
@@ -313,6 +327,8 @@ export function ReportPermit() {
     filters.state.sexe,
     filters.state.created_on_after,
     filters.state.created_on_before,
+    filters.state.printed_at_after,
+    filters.state.printed_at_before,
   ]);
 
   const canReset =
@@ -327,7 +343,9 @@ export function ReportPermit() {
     !!filters.state.job ||
     filters.state.nationality !== 'all' ||
     filters.state.sexe !== 'all' ||
-    (!!filters.state.created_on_after && !!filters.state.created_on_before);
+    (!!filters.state.created_on_after && !!filters.state.created_on_before) ||
+    !!filters.state.printed_at_after ||
+    !!filters.state.printed_at_before;
 
   const notFound = !loading && permits.length === 0 && canReset;
   // Colonnes filtrées selon la sélection
@@ -469,6 +487,8 @@ export function ReportPermit() {
         countryOptions={countries}
         permitTypeOptions={permitTypes}
         isPermit={true}
+        dateError={dateError}
+        printedDateError={printedDateError}
         loading={loadingOptions}
       />
 
