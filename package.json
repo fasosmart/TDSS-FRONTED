@@ -16,8 +16,7 @@
     "re:start": "yarn rm:all && yarn install && yarn dev",
     "re:build": "yarn rm:all && yarn install && yarn build",
     "re:build-npm": "npm run rm:all && npm install && npm run build",
-    "start:out": "npx serve@latest out -p 3033",
-    "preinstall": "node preinstall.js"
+    "start:out": "npx serve@latest out -p 3033"
   },
   "engines": {
     "node": "20.x"
