@@ -67,7 +67,7 @@ export function AgenceListView() {
 
   const filters = useSetState({
     name: ''
-  });
+  }, { persistByPath: true });
 
   const dataFiltered = applyFilter({ inputData: tableData, filters: filters.state, sortBy });
 

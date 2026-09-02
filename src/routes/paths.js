@@ -78,10 +78,11 @@ export const paths = {
       list: `${ROOTS.DASHBOARD}/employee/list`,
       details: (slug) => `${ROOTS.DASHBOARD}/employee/${slug}`,
     },
-    // penalite: {
-    //   root: `${ROOTS.DASHBOARD}/penalite`,
-    //   list: `${ROOTS.DASHBOARD}/penalite/list`,
-    // },
+    penalite: {
+      root: `${ROOTS.DASHBOARD}/penalite`,
+      list: `${ROOTS.DASHBOARD}/penalite/list`,
+      details: (slug) => `${ROOTS.DASHBOARD}/penalite/${slug}`,
+    },
 
     planAfricanisation: {
       root: `${ROOTS.DASHBOARD}/plan`,

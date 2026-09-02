@@ -19,9 +19,10 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 import { Iconify } from 'src/components/iconify';
 import { Label } from 'src/components/label';
 
+import { usePermissions } from 'src/auth/hooks';
+
 export function DeclarationTableRow({
   row,
-  user,
   selected,
   onSelectRow,
   onViewRow,
@@ -52,7 +53,7 @@ export function DeclarationTableRow({
 
   const popover = usePopover();
 
-  const profil = user?.companies[0]?.type_name?.toLowerCase().trim();
+  const { can } = usePermissions();
 
   // Handler pour le rejet, après validation du motif
   const handleConfirmRejet = () => {
@@ -86,8 +87,6 @@ export function DeclarationTableRow({
         return 'default';
     }
   };
-
-  const type = user?.type_code.toLowerCase().trim();
 
   return (
     <>
@@ -182,7 +181,7 @@ export function DeclarationTableRow({
             Voir
           </MenuItem>
 
-          {(type === 'agent' || type === 'admin') && ['unsubmitted'].includes(row.status) && (
+          {can('can_edit_declaration') && ['unsubmitted'].includes(row.status) && (
             <MenuItem
               onClick={() => {
                 onEditRow();
@@ -194,7 +193,7 @@ export function DeclarationTableRow({
             </MenuItem>
           )}
 
-          {type === 'agent' && ['rejected', 'submitted'].includes(row.status) && (
+          {can('can_unsubmit_declaration') && ['rejected', 'submitted'].includes(row.status) && (
             <MenuItem
               key="unsubmit"
               onClick={() => {
@@ -207,7 +206,7 @@ export function DeclarationTableRow({
             </MenuItem>
           )}
 
-          {type === 'agent' &&
+          {can('can_submit_declaration') &&
             !['validated', 'billed', 'rejected', 'submitted'].includes(row.status) && (
               <MenuItem
                 key="submit"
@@ -221,8 +220,7 @@ export function DeclarationTableRow({
               </MenuItem>
             )}
 
-          {type === 'aguipe' &&
-            profil === 'aguipe' &&
+          {can('can_validate_declaration') &&
             !['validated', 'billed', 'rejected', 'unsubmitted'].includes(row.status) && (
               <MenuItem
                 key="validate"
@@ -236,8 +234,7 @@ export function DeclarationTableRow({
               </MenuItem>
             )}
 
-          {type === 'aguipe' &&
-            profil === 'aguipe' &&
+          {can('can_reject_declaration') &&
             !['rejected', 'billed', 'validated', 'unsubmitted'].includes(row.status) && (
               <MenuItem
                 key="reject"
@@ -265,7 +262,7 @@ export function DeclarationTableRow({
               </MenuItem>
             )} */}
 
-          {type === 'accountant' &&
+          {can('can_invoice_declaration') &&
             !['billed', 'rejected', 'unsublitted', 'submitted'].includes(row.status) && (
               <MenuItem
                 key="facture"

@@ -20,10 +20,21 @@ import { Iconify } from 'src/components/iconify';
 import { toast } from 'src/components/snackbar';
 import axios from 'src/utils/axios';
 import API from 'src/utils/api';
+import { usePermissions } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
-export function BiometricData({ slug, picture, signature, fingerprints_picture, onUpdate }) {
+export function BiometricData({
+  picture,
+  signature,
+  fingerprints_picture,
+  onUpdate,
+  employee_slug,
+  status,
+  // ABIS désactivé 
+  // abisLastRetrievedAt,
+}) {
+  const { can } = usePermissions();
   const [openPreview, setOpenPreview] = useState(false);
   const [previewData, setPreviewData] = useState({ type: '', url: '' });
 
@@ -43,6 +54,16 @@ export function BiometricData({ slug, picture, signature, fingerprints_picture, 
   const [loadingPicture, setLoadingPicture] = useState(false);
   const [loadingSignature, setLoadingSignature] = useState(false);
   const [loadingFingerprints, setLoadingFingerprints] = useState(false);
+  // ABIS désactivé 
+  // const [loadingABIS, setLoadingABIS] = useState(false);
+  // const abisActionLabel = 'Récupérer les données';
+
+  // L'utilisateur peut-il déclencher la récupération des données ABIS ?
+  // const canRetrieveABIS =
+  //   can('can_retrieve_abis_data') &&
+  //   status !== 'printed' &&
+  //   status !== 'delivered' &&
+  //   status !== 'enrolled';
 
   const handleOpenPreview = (type, url) => {
     setPreviewData({ type, url });
@@ -61,6 +82,50 @@ export function BiometricData({ slug, picture, signature, fingerprints_picture, 
     }
   };
 
+  // ABIS désactivé 
+  // const handleFetchABIS = useCallback(async () => {
+  //   setLoadingABIS(true);
+  //   try {
+  //     const response = await axios.get(API.getEmployeeFromABIS(employee_slug));
+  //     const data = response.data; // 👈 très important
+
+  //     if (data.success) {
+  //       toast.success(data.message || 'Données biométriques récupérées avec succès');
+
+  //       // Exemple : afficher infos utiles
+  //       if (data?.biometrics_status && !data.biometrics_status.is_complete) {
+  //         toast.warning(
+  //           `Biométrie incomplète :
+  //          Face: ${data.biometrics_status.has_face ? '✔' : '❌'},
+  //          Empreintes: ${data.biometrics_status.fingerprints_count}`
+  //         );
+  //       }
+
+  //       if (data?.biometrics_status && !data.biometrics_status.has_signature) {
+  //         toast.info("La signature n'est pas récupérée depuis ABIS, ajoutez-la manuellement.");
+  //       }
+
+  //       if (!data.is_enrolled) {
+  //         toast.info('Employé non encore enrôlé ');
+  //       }
+
+  //       window.location.reload();
+  //     } else {
+  //       toast.error(data.message || 'Échec de récupération des données biométriques');
+  //     }
+  //   } catch (error) {
+  //     const errorMessage =
+  //       error?.response?.data?.message ||
+  //       error?.response?.data?.detail ||
+  //       error?.message ||
+  //       'Erreur inconnue';
+
+  //     toast.error(errorMessage);
+  //   } finally {
+  //     setLoadingABIS(false);
+  //   }
+  // }, [employee_slug]);
+
   // Fonction générique pour sauvegarder un fichier
   const handleSaveFile = useCallback(
     async (fieldName, file, setLoading, setDialog, originalValue) => {
@@ -74,7 +139,7 @@ export function BiometricData({ slug, picture, signature, fingerprints_picture, 
         const formData = new FormData();
         formData.append(fieldName, file);
 
-        const response = await axios.patch(API.updateFile(slug), formData, {
+        const response = await axios.patch(API.updateFile(employee_slug), formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -96,7 +161,11 @@ export function BiometricData({ slug, picture, signature, fingerprints_picture, 
         if (fieldName === 'fingerprints_picture') setFingerprintsFile(null);
       } catch (error) {
         const errorMessage =
-          error?.response?.data?.message || error?.message || 'Erreur lors de la mise à jour';
+          error?.response?.data?.detail ||
+          error?.response?.data?.message ||
+          error?.response?.data?.[fieldName]?.[0] ||
+          error?.message ||
+          'Erreur lors de la mise à jour';
         toast.error(errorMessage);
 
         // Restaurer l'aperçu original en cas d'erreur
@@ -107,7 +176,7 @@ export function BiometricData({ slug, picture, signature, fingerprints_picture, 
         setLoading(false);
       }
     },
-    [slug, onUpdate]
+    [employee_slug, onUpdate]
   );
 
   const BiometricCard = ({ type, label, icon, url, color = 'primary', onEdit }) => {
@@ -224,16 +293,18 @@ export function BiometricData({ slug, picture, signature, fingerprints_picture, 
                 Voir
               </Button>
             )}
-            <Button
-              variant={hasData ? 'outlined' : 'contained'}
-              color={color}
-              fullWidth
-              startIcon={<Iconify icon={hasData ? 'mdi:pencil' : 'mdi:upload'} />}
-              onClick={onEdit}
-              sx={{ fontWeight: 600 }}
-            >
-              {hasData ? 'Modifier' : 'Ajouter'}
-            </Button>
+            {onEdit && can('can_update_employee_file') && (
+              <Button
+                variant={hasData ? 'outlined' : 'contained'}
+                color={color}
+                fullWidth
+                startIcon={<Iconify icon={hasData ? 'mdi:pencil' : 'mdi:upload'} />}
+                onClick={onEdit}
+                sx={{ fontWeight: 600 }}
+              >
+                {hasData ? 'Modifier' : 'Ajouter'}
+              </Button>
+            )}
           </Stack>
         </Box>
       </Card>
@@ -426,6 +497,54 @@ export function BiometricData({ slug, picture, signature, fingerprints_picture, 
             <Iconify icon="mdi:fingerprint" width={{ xs: 24, sm: 28 }} />
             Données Biométriques
           </Typography>
+          {/* ABIS désactivé  */}
+          {/* <Stack direction="row" spacing={1}>
+            {abisLastRetrievedAt && (
+              <Chip
+                icon={<Iconify icon="solar:refresh-bold" width={14} />}
+                label={`Récupéré le : ${new Date(abisLastRetrievedAt).toLocaleString('fr-FR')}`}
+                size="small"
+                color="default"
+                variant="outlined"
+                sx={{
+                  fontWeight: 600,
+                  px: 1,
+                  height: { xs: 28, sm: 32 },
+                  '& .MuiChip-icon': { ml: 0.5 },
+                  '& .MuiChip-label': {
+                    px: 1,
+                    fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                  },
+                }}
+              />
+            )}
+            {canRetrieveABIS && (
+                <Chip
+                  icon={
+                    loadingABIS ? (
+                      <CircularProgress size={16} color="inherit" />
+                    ) : (
+                      <Iconify icon="solar:refresh-bold" width={18} />
+                    )
+                  }
+                  label={loadingABIS ? 'Chargement...' : abisActionLabel}
+                  color="default"
+                  onClick={loadingABIS ? undefined : handleFetchABIS}
+                  disabled={loadingABIS}
+                  size="small"
+                  sx={{
+                    fontWeight: 600,
+                    px: 1,
+                    height: { xs: 28, sm: 32 },
+                    '& .MuiChip-icon': { ml: 0.5 },
+                    '& .MuiChip-label': {
+                      px: 1,
+                      fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                    },
+                  }}
+                />
+              )}
+          </Stack> */}
         </Box>
 
         <Divider sx={{ mb: 3 }} />
@@ -465,11 +584,20 @@ export function BiometricData({ slug, picture, signature, fingerprints_picture, 
           </Grid>
         </Grid>
 
+        {/* ABIS désactivé  */}
+        {/* {canRetrieveABIS && !picturePreview && !signaturePreview && !fingerprintsPreview && (
+          <Alert severity="info" sx={{ mt: 3 }}>
+            <Typography variant="body2">
+              Aucune donnée biométrique n'a été enregistrée. Cliquez sur "{abisActionLabel}" pour
+              obtenir les fichiers.
+            </Typography>
+          </Alert>
+        )} */}
         {!picturePreview && !signaturePreview && !fingerprintsPreview && (
           <Alert severity="info" sx={{ mt: 3 }}>
             <Typography variant="body2">
-              Aucune donnée biométrique n'a été enregistrée. Cliquez sur "Ajouter" pour télécharger
-              les fichiers.
+              Aucune donnée biométrique n'a été enregistrée. Utilisez les boutons "Ajouter" pour
+              téléverser la photo, la signature et les empreintes.
             </Typography>
           </Alert>
         )}

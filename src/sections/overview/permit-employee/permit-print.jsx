@@ -41,9 +41,7 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
   useEffect(() => {
     const generateQRCode = async () => {
       try {
-        const qrData = encodeURIComponent(
-          `Permit N° ${permit?.card_number || permit?.reference || 'N/A'}`
-        );
+        const qrData = encodeURIComponent(` ${permit?.card_number}${permit?.contract_duration}`);
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${qrData}&size=200x200`;
         setQrCodeUrl(qrUrl);
       } catch (error) {
@@ -62,14 +60,14 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
 
   const handlePrintClick = async () => {
     try {
-      // const ok = await onPrint?.();
+      const ok = await onPrint?.();
 
-      // if (ok) {
-      //   onClose?.();
-      setOpenPrintDialog(true);
-      // } else {
-      //   onClose?.();
-      // }
+      if (ok) {
+        onClose?.();
+        setOpenPrintDialog(true);
+      } else {
+        onClose?.();
+      }
     } catch (error) {
       console.error('Erreur lors du print click:', err);
       onClose?.();
@@ -93,6 +91,10 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
                 margin: 0;
                 padding: 0;
                 box-sizing: border-box;
+
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+                text-rendering: geometricPrecision;
               }
               
               body {
@@ -104,7 +106,7 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
                 align-items: center;
                 justify-content: center;
                 min-height: 100vh;
-                font-family: Arial, sans-serif;
+                font-family: "Bahnschrift SemiBold Condensed", Bahnschrift, Arial, sans-serif;
               }
               
               .print-container {
@@ -195,44 +197,51 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
 
   function createLabelValueHTML(label, value, options = {}) {
     const {
-      labelSize = 1.8,
-      valueSize = 2.5,
+      labelFontSize = 2.1,
+      valueFontSize = 2.8,
       labelWeight = 400,
       valueWeight = 700,
       marginBottom = 1,
       uppercase = true,
+      valueNoWrap = false,
     } = options;
 
     const displayValue = (value && (uppercase ? String(value).toUpperCase() : value)) || 'N/A';
 
-    // On applique le style max-width SEULEMENT pour FONCTION et ADRESSE
     const shouldLimit =
       label.trim().toUpperCase() === 'FONCTION' || label.trim().toUpperCase() === 'ADRESSE';
 
     const limitedStyle = shouldLimit
       ? `
-        max-width: 30mm;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      `
-      : ''; // pas de limitation pour les autres
+      max-width: 30mm;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    `
+      : '';
 
     return `
     <div style="
       margin-bottom: ${marginBottom}mm;
       color: #000;
-      font-size: ${labelSize}mm;
+      display: flex;
+      align-items: baseline;
+      line-height: 1;
+     
     ">
-      <span style="font-weight: ${labelWeight};">
+      <span style="font-size: ${labelFontSize}mm; font-weight: ${labelWeight}; white-space: nowrap; flex-shrink: 0;">
         ${label} :
       </span>
       <span style="
-        font-size: ${valueSize}mm;
+        font-family: &quot;Bahnschrift SemiBold Condensed&quot;, Bahnschrift, Arial, sans-serif;
+        font-stretch: condensed;
+        font-size: ${valueFontSize}mm;
         font-weight: ${valueWeight};
-        letter-spacing: 0.1mm;
-        vertical-align: middle;
-        display: inline-block;
+        letter-spacing: 0;
+        margin-left: 1mm;
+        min-width: 0;
+        ${valueNoWrap ? 'white-space: nowrap;' : ''}
+       
         ${limitedStyle}
       ">
         ${displayValue}
@@ -246,12 +255,12 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
     const length = text.length;
 
     // Taille adaptative TRÈS LARGE
-    let fontSize = 2.5; // mm (normal)
+    let fontSize = 3.6; // mm (normal)
 
-    if (length > 55) fontSize = 1.6;
-    else if (length > 45) fontSize = 1.8;
-    else if (length > 35) fontSize = 2.0;
-    else if (length > 28) fontSize = 2.2;
+    if (length > 55) fontSize = 2.6;
+    else if (length > 45) fontSize = 2.8;
+    else if (length > 35) fontSize = 3.0;
+    else if (length > 28) fontSize = 3.2;
 
     return `
     <div style="
@@ -264,9 +273,11 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
         ${label} :
       </span>
       <span style="
+        font-family: &quot;Bahnschrift SemiBold Condensed&quot;, Bahnschrift, Arial, sans-serif;
+        font-stretch: condensed;
         font-size: ${fontSize}mm;
-        font-weight: 700;
-        letter-spacing: 0.03mm;
+        font-weight: 800;
+        letter-spacing: 0;
         display: inline-block;
         max-width: 38mm;
         white-space: nowrap;
@@ -279,14 +290,13 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
   `;
   }
 
-  const getCardFrontHTML = () => {
-    return `
+  const getCardFrontHTML = () => `
       <div class="card-face card-front">
         
         <div class="card-content" style="padding: 8mm 5mm;">
           
           <!-- Photo - Position absolue en haut à gauche -->
-          <div style="position: absolute; top: 19mm; left: 4mm; width: 20mm; height: 27mm; background: white; border: 0.3mm solid #999; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+          <div style="position: absolute; top: 19mm; left: 3.8mm; width: 20mm; height: 29mm; background: white;  overflow: hidden; display: flex; align-items: center; justify-content: center;">
             ${
               permit?.picture
                 ? `<img src="${permit.picture}" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;" />`
@@ -295,15 +305,15 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
           </div>
 
           <!-- Informations à droite de la photo -->
-          <div style="position: absolute; top: 19mm; left: 28mm; right: 10mm;">
+          <div style="position: absolute; top: 22mm; left: 28mm; right: 10mm;">
             <!-- NOM -->
+            ${createLabelValueHTML('N° IDENTITE ', permit?.passport_number)}
             ${createLabelValueHTML('NOM ', permit?.last)}
             ${createLabelValueHTML('PRÉNOM(S) ', permit?.first)}
-            ${createLabelValueHTML('N° INDENTITE ', permit?.passport_number)}
             ${createLabelValueHTML('NÉ(E) LE ', formatDate(permit?.birthday))}
             ${createLabelValueHTML('À ', permit?.birth_place)}
             ${createLabelValueHTML('NATIONALITÉ ', permit?.nationality)}
-            ${createLabelValueHTML('SEXE ', permit?.sexe === 'male' ? 'M' : 'F')}
+            ${createLabelValueHTML('SEXE ', permit?.sexe === 'male' ? 'HOMME' : 'FEMME')}
          
            
           </div>
@@ -316,7 +326,7 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
               left: 4mm; 
               width: 20mm; 
               height: 6mm; 
-              border: 1px solid #999; 
+              
               display: flex; 
               align-items: center; 
               justify-content: center; 
@@ -334,25 +344,23 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
           </div>
 
 
-          <!-- NUMÉRO DE CARTE en bas à droite -->
-          <div style="position: absolute; top: 14mm; left: 55mm; font-size: 3mm; font-weight: 700; color: #000;">
-            N° ${permit?.card_number}
+          <!-- NUMÉRO DE CARTE en haut à droite -->
+          <div style="position: absolute; top: 14mm; left: 50.2mm; font-size: 3mm; font-weight: 700; color: #000;">
+            N°${permit?.card_number}
           </div>
         </div>
       </div>
     `;
-  };
 
-  const getCardBackHTML = () => {
-    return `
+  const getCardBackHTML = () => `
       <div class="card-face card-back">
         
         <div class="card-content" style="padding: 8mm 5mm;">
           
           <!-- Section supérieure avec informations employeur -->
-          <div style="position: absolute; top: 4mm; left: 5mm; right: 22mm;">
+          <div style="position: absolute; top: 4mm; left: 3mm; right: 17mm;">
           <!-- EMPLOYEUR -->
-          ${createEmployerHTML('EMPLOYEUR', permit?.company_sigle)}
+          ${createLabelValueHTML('EMPLOYEUR', permit?.company_sigle)}
 
 
             <!-- ADRESSE EMPLOYEUR -->
@@ -362,20 +370,26 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
            ${createLabelValueHTML('FONCTION ', permit?.job?.name || 'N/A')}
             
             <!-- CATÉGORIE -->
-          ${createLabelValueHTML('CATÉGORIE ', 'TYPE ' + (getLabelPermit(permit?.category || permit?.job?.permit) || ''))}
+          ${createLabelValueHTML('CATÉGORIE ', `TYPE ${getLabelPermit(permit?.category || permit?.job?.permit) || ''}`)}
             
 
             <!-- VALIDITÉ ET DURÉE -->
+            ${createLabelValueHTML('DEBUT CONTRAT', formatDate(permit?.contract_starts_at))}
        
-             ${createLabelValueHTML('DURÉE CONTRAT', calculateDuration(permit?.contract_starts_at, permit?.contract_duration))}
-               
-               ${createLabelValueHTML('VALIDITÉ ', formatDate(permit?.card_expires_at || permit?.contract_starts_at))}
+             <div style="display: flex; gap: 3mm; align-items: baseline;">
+               <div style="flex: 0 0 50%; min-width: 0;">
+                 ${createLabelValueHTML('DURÉE CONTRAT', calculateDuration(permit?.contract_starts_at, permit?.contract_duration), { marginBottom: 0, valueNoWrap: true })}
+               </div>
+               <div style="flex: 1; min-width: 0; padding-left: 2mm;">
+                 ${createLabelValueHTML('VALIDITÉ ', formatDate(permit?.card_expires_at), { marginBottom: 0, valueNoWrap: true })}
+               </div>
+             </div>
 
        
           </div>
 
           <!-- Photo miniature en haut à droite -->
-          <div style="position: absolute; top: 7mm; right: 27.5mm; width: 8mm; height: 12mm; background: white; border: 0.3mm solid #999; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+          <div style="position: absolute; top: 7mm; right: 27mm; width: 8mm; height: 12mm; background: white;  overflow: hidden; display: flex; align-items: center; justify-content: center;">
             ${
               permit?.picture
                 ? `<img src="${permit.picture}" alt="Photo" style="width: 100%; height: 100%; object-fit: cover;" />`
@@ -384,7 +398,7 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
           </div>
 
           <!-- QR Code en bas à gauche -->
-          <div style="position: absolute; bottom: 8mm; left: 6mm; width: 17mm; height: 17mm; background: white; border: 0.3mm solid #ccc; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+          <div style="position: absolute; bottom: 8mm; left: 4mm; width: 17mm; height: 17mm; background: white;  display: flex; align-items: center; justify-content: center; overflow: hidden;">
             ${
               qrCodeUrl
                 ? `<img src="${qrCodeUrl}" alt="QR Code" style="width: 100%; height: 100%;" />`
@@ -394,12 +408,10 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
 
           <!-- NUMÉRO DE CARTE en bas à droite -->
          
-
           
         </div>
       </div>
     `;
-  };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -423,31 +435,76 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
       .toUpperCase();
   };
 
-  const LabelValue = ({ label, value }) => {
-    return (
-      <Typography sx={{ color: '#000', lineHeight: 1, mb: 0.3, width: '100%' }}>
-        <Box component="span" sx={{ fontSize: '0.6rem', mr: 0.5 }}>
-          {label} :
-        </Box>
-        <Box
-          component="span"
-          sx={{
-            fontSize: '0.7rem',
-            fontWeight: 700,
-            display: 'inline-block',
-            maxWidth: 'calc(100% - 120px)', // ajuste selon l'espace disponible
-            verticalAlign: 'middle',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-          title={value}
-        >
-          {value || 'N/A'}
-        </Box>
-      </Typography>
-    );
+  const previewTextSx = {
+    fontFamily: '"Bahnschrift SemiBold Condensed", Bahnschrift, Arial, sans-serif',
+    fontSize: '10.3pt',
+    fontStretch: 'condensed',
+    color: '#000',
+    letterSpacing: 0,
+    lineHeight: 1,
   };
+
+  const LabelValue = ({ label, value, valueNoWrap = false }) => (
+    <Typography
+      sx={{
+        ...previewTextSx,
+        mb: '1.2mm',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'baseline',
+        minWidth: 0,
+      }}
+    >
+      <Box component="span" sx={{ fontWeight: 400, mr: '1mm', whiteSpace: 'nowrap' }}>
+        {label} :
+      </Box>
+      <Box
+        component="span"
+        sx={{
+          ...previewTextSx,
+          fontWeight: 600,
+          minWidth: 0,
+          verticalAlign: 'middle',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: valueNoWrap ? 'nowrap' : 'normal',
+        }}
+        title={value}
+      >
+        {value || 'N/A'}
+      </Box>
+    </Typography>
+  );
+
+  const InlineLabelValue = ({ label, value, sx }) => (
+    <Typography
+      sx={{
+        ...previewTextSx,
+        minWidth: 0,
+        display: 'flex',
+        alignItems: 'baseline',
+        ...sx,
+      }}
+    >
+      <Box component="span" sx={{ fontWeight: 400, mr: '1mm', flexShrink: 0 }}>
+        {label} :
+      </Box>
+      <Box
+        component="span"
+        sx={{
+          ...previewTextSx,
+          fontWeight: 600,
+          minWidth: 0,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+        title={value}
+      >
+        {value || 'N/A'}
+      </Box>
+    </Typography>
+  );
 
   const calculateDuration = (startDate, duration) => {
     if (!startDate || !duration) return 'N/A';
@@ -470,7 +527,7 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
         width: '100%',
         height: '100%',
         position: 'relative',
-        borderRadius: 2,
+        borderRadius: 0,
         overflow: 'hidden',
         boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
       }}
@@ -491,17 +548,16 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
       />
 
       {/* Contenu par-dessus */}
-      <Box sx={{ position: 'relative', p: 2, height: '100%' }}>
+      <Box sx={{ position: 'relative', height: '100%' }}>
         {/* Photo */}
         <Box
           sx={{
             position: 'absolute',
-            top: '23mm',
-            left: '6mm',
-            width: '22mm',
-            height: '28mm',
+            top: '22.8mm',
+            left: '4.5mm',
+            width: '23.7mm',
+            height: '34.4mm',
             bgcolor: 'white',
-            border: '1px solid #999',
             overflow: 'hidden',
             display: 'flex',
             alignItems: 'center',
@@ -520,32 +576,32 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
         </Box>
 
         {/* Informations */}
-        <Box sx={{ position: 'absolute', top: '21mm', left: '30mm', right: '10mm', gap: 0 }}>
-          <LabelValue label="NOM" value={permit?.last?.toUpperCase()} />
+        <Box sx={{ position: 'absolute', top: '22.6mm', left: '33.3mm', right: '11.9mm' }}>
+          <LabelValue label="N° IDENTITE " value={permit?.passport_number || 'N/A'} />
+          <LabelValue label="NOM " value={permit?.last?.toUpperCase()} />
 
           <LabelValue label=" PRÉNOM(S) " value={permit?.first?.toUpperCase()} />
-          <LabelValue label="N° IDENTIFIANT " value={permit?.passport_number || 'N/A'} />
-
           <LabelValue label="NÉ(E) LE" value={formatDate(permit?.birthday)} />
 
           <LabelValue label="À " value={permit?.birth_place?.toUpperCase() || 'N/A'} />
 
           <LabelValue label="NATIONALITE " value={permit?.nationality?.toUpperCase() || 'N/A'} />
 
-          <LabelValue label="SEXE " value={permit?.sexe === 'male' ? 'M' : 'F'} />
+          <LabelValue label="SEXE " value={permit?.sexe === 'male' ? 'HOMME' : 'FEMME'} />
         </Box>
 
         {/* Signature */}
         <Box
           sx={{
             position: 'absolute',
-            top: '52mm',
-            bottom: '4mm',
-            left: '5mm',
-            right: '10mm',
-            border: '1px solid #999',
-            width: '24mm',
-            height: '8mm',
+            top: '57mm',
+            left: '4.7mm',
+            width: '23.7mm',
+            height: '7.1mm',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
           }}
         >
           <Box
@@ -564,7 +620,7 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
                 style={{ height: '100%', objectFit: 'contain', alignSelf: 'center' }}
               />
             ) : (
-              <Typography sx={{ fontSize: '0.5rem', color: '#000', mb: 0.5 }}>
+              <Typography sx={{ ...previewTextSx, fontSize: '7pt', fontWeight: 600 }}>
                 SIGNATURE TITULAIRE
               </Typography>
             )}
@@ -575,10 +631,11 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
         <Typography
           sx={{
             position: 'absolute',
-            top: '15.5mm',
-            left: '59mm',
-            fontSize: '0.99rem',
-            fontWeight: 700,
+            top: '16.6mm',
+            left: '59.4mm',
+            ...previewTextSx,
+            fontSize: '12pt',
+            fontWeight: 600,
           }}
         >
           N° {permit?.card_number}
@@ -593,7 +650,7 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
         width: '100%',
         height: '100%',
         position: 'relative',
-        borderRadius: 2,
+        borderRadius: 0,
         overflow: 'hidden',
         boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
       }}
@@ -614,24 +671,23 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
       />
 
       {/* Contenu */}
-      <Box sx={{ position: 'relative', p: 2, height: '100%' }}>
+      <Box sx={{ position: 'relative', height: '100%' }}>
         {/* Photo miniature */}
         <Box
           sx={{
             position: 'absolute',
-            top: '9mm',
-            right: '33mm',
-            width: '10mm',
-            height: '15mm',
+            top: '8.3mm',
+            right: '32.6mm',
+            width: '9.5mm',
+            height: '14.2mm',
             bgcolor: 'white',
-            border: '1px solid #999',
             overflow: 'hidden',
           }}
         >
           {permit?.picture ? (
             <img
               src={permit.picture}
-              alt="Photo"
+              alt="Titulaire du permis"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           ) : (
@@ -649,7 +705,7 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
         </Box>
 
         {/* Informations */}
-        <Box sx={{ position: 'absolute', top: '4mm', left: '6mm', right: '28mm' }}>
+        <Box sx={{ position: 'absolute', top: '4.7mm', left: '5.9mm', right: '20.2mm' }}>
           <LabelValue label="EMPLOYEUR" value={permit?.company_sigle?.toUpperCase() || 'N/A'} />
 
           <LabelValue label="ADRESSE" value={permit?.company_address || 'N/A'} />
@@ -658,23 +714,30 @@ export function WorkPermitCard({ permit, onClose, open, onPrint }) {
             label="CATEGORIE "
             value={`TYPE ${getLabelPermit(permit?.category || permit?.job?.permit) || ''}`}
           />
-          <LabelValue
-            label="DUREE CONTRAT "
-            value={calculateDuration(permit?.contract_starts_at, permit?.contract_duration)}
-          />
-          <LabelValue label="VALIDITE " value={formatDate(permit?.card_expires_at)} />
+          <LabelValue label="DEBUT CONTRAT" value={formatDate(permit?.contract_starts_at)} />
+          <Box sx={{ display: 'flex', gap: '3.6mm', alignItems: 'baseline', width: '100%' }}>
+            <InlineLabelValue
+              label="DUREE CONTRAT "
+              value={calculateDuration(permit?.contract_starts_at, permit?.contract_duration)}
+              sx={{ flex: '0 0 50%', minWidth: 0 }}
+            />
+            <InlineLabelValue
+              label="VALIDITE "
+              value={formatDate(permit?.card_expires_at)}
+              sx={{ flex: 1, minWidth: 0, pl: '2.4mm' }}
+            />
+          </Box>
         </Box>
 
         {/* QR Code */}
         <Box
           sx={{
             position: 'absolute',
-            bottom: '10mm',
-            left: '8mm',
-            width: '20mm',
-            height: '20mm',
+            bottom: '9.5mm',
+            left: '7.1mm',
+            width: '20.2mm',
+            height: '20.2mm',
             bgcolor: 'white',
-            border: '1px solid #ccc',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

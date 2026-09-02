@@ -42,7 +42,7 @@ export function ReportPaiement() {
     payment_method: 'all',
     created_on_before: null,
     created_on_after: null,
-  });
+  }, { persistByPath: true });
 
   const dateError = fIsBetween(filters.state.created_on_after, filters.state.created_on_before);
 
@@ -316,3 +316,4 @@ export function ReportPaiement() {
     </DashboardContent>
   );
 }
+

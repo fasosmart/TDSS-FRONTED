@@ -33,6 +33,7 @@ import API from 'src/utils/api';
 import { Iconify } from 'src/components/iconify';
 import { useRouter } from 'src/routes/hooks';
 import { toast } from 'sonner';
+import { usePermissions } from 'src/auth/hooks';
 import { EmployeeQuickEditForm } from './employe-quick-edit-form';
 
 const fixedCategories = [
@@ -42,7 +43,13 @@ const fixedCategories = [
   { label: 'Ouvrier', value: 'Ouvrier' },
 ];
 
-const FilteredTable = ({ declaration, printMode = false, user }) => {
+const FilteredTable = ({ declaration, printMode = false }) => {
+  const { can, canAny } = usePermissions();
+  // Sélection d'employés = actions de déplacement/suppression (réservées à l'agent).
+  const canEditEmployees = canAny([
+    'can_delete_employees_from_declaration',
+    'can_move_employees_between_declarations',
+  ]);
   const [selected, setSelected] = useState([]);
   const [filter, setFilter] = useState('All');
   const [dense, setDense] = useState(false);
@@ -260,16 +267,20 @@ const FilteredTable = ({ declaration, printMode = false, user }) => {
 
         {selected.length > 0 && (
           <Stack direction="row" spacing={2}>
-            <Tooltip title="Déplacer">
-              <IconButton color="primary" onClick={() => setIsDialogOpen(true)}>
-                <Iconify icon="iconamoon:send-fill" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Supprimer">
-              <IconButton color="primary" onClick={() => setIsDialogSup(true)}>
-                <Iconify icon="solar:trash-bin-trash-bold" />
-              </IconButton>
-            </Tooltip>
+            {can('can_move_employees_between_declarations') && (
+              <Tooltip title="Déplacer">
+                <IconButton color="primary" onClick={() => setIsDialogOpen(true)}>
+                  <Iconify icon="iconamoon:send-fill" />
+                </IconButton>
+              </Tooltip>
+            )}
+            {can('can_delete_employees_from_declaration') && (
+              <Tooltip title="Supprimer">
+                <IconButton color="primary" onClick={() => setIsDialogSup(true)}>
+                  <Iconify icon="solar:trash-bin-trash-bold" />
+                </IconButton>
+              </Tooltip>
+            )}
           </Stack>
         )}
         {/* Boîte de dialogue */}
@@ -386,14 +397,13 @@ const FilteredTable = ({ declaration, printMode = false, user }) => {
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox">
-                {(user?.type_code === 'admin' || user?.type_code === 'agent') &&
-                  declaration?.status === 'unsubmitted' && (
-                    <Checkbox
-                      indeterminate={selected?.length > 0 && selected?.length < rows?.length}
-                      checked={rows?.length > 0 && selected.length === rows?.length}
-                      onChange={handleSelectAllClick}
-                    />
-                  )}
+                {canEditEmployees && declaration?.status === 'unsubmitted' && (
+                  <Checkbox
+                    indeterminate={selected?.length > 0 && selected?.length < rows?.length}
+                    checked={rows?.length > 0 && selected.length === rows?.length}
+                    onChange={handleSelectAllClick}
+                  />
+                )}
               </TableCell>
               <TableCell>Numéro du passeport</TableCell>
               <TableCell>Nom & Prénom</TableCell>
@@ -414,7 +424,7 @@ const FilteredTable = ({ declaration, printMode = false, user }) => {
                     style={{ cursor: 'pointer' }}
                   >
                     <TableCell padding="checkbox">
-                      {declaration?.status === 'unsubmitted' && (
+                      {canEditEmployees && declaration?.status === 'unsubmitted' && (
                         <Checkbox
                           color="primary"
                           checked={isSelected(row.slug)}

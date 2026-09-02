@@ -50,7 +50,7 @@ export function EmployeeTableRow({ row, selected, onViewRow }) {
         }}
       >
         <TableCell padding="checkbox"></TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.reference}</TableCell>
+        {/* <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.reference}</TableCell> */}
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.passport_number}</TableCell>
         <TableCell>
           <Stack spacing={2} direction="row" alignItems="center">

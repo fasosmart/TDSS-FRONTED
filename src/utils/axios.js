@@ -38,7 +38,16 @@ axiosInstance.interceptors.request.use(
 
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject((error.response && error.response.data) || 'Something went wrong!')
+  (error) => {
+    const data = error.response && error.response.data;
+    // On conserve toujours le status HTTP pour permettre aux vues de détecter les 404,
+    if (data && typeof data === 'object') {
+      // eslint-disable-next-line prefer-promise-reject-errors -- convention app : on rejette le corps de réponse, pas une Error
+      return Promise.reject({ ...data, status: error.response.status });
+    }
+    // eslint-disable-next-line prefer-promise-reject-errors -- convention app : on rejette le corps de réponse, pas une Error
+    return Promise.reject({ status: error.response.status, message: data || 'Something went wrong!' });
+  }
 );
 
 export default axiosInstance;

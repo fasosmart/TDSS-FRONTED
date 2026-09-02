@@ -66,7 +66,7 @@ export function OverviewAppView() {
   const [statistiquesCards, setStatistiquesCards] = useState();
   const [data, setData] = useState();
   const [lastData, setLastData] = useState(); // Utiliser les données mockées par défaut
-  const [currentYear, setCurrentYear] = useState('2025');
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear().toString());
   const [currentCompany, setCurrentCompany] = useState('all');
   const [currentCountry, setCurrentCountry] = useState('all');
 

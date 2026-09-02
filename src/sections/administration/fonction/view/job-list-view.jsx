@@ -55,7 +55,7 @@ export function JobListView() {
 
   const filters = useSetState({
     name: ''
-  });
+  }, { persistByPath: true });
 
 
   useEffect(() => {

@@ -4,6 +4,7 @@ import API from 'src/utils/api';
 
 const cache = {
   regions: null,
+  permits: null,
   categories: null,
   devises: null,
   profileTypes: null,
@@ -69,6 +70,7 @@ export const getEntreprisesSearch = async (params = {}) => {
 
 export const getRegions = () => fetchAndCache('regions', API.listRegions, 'results');
 export const getPermits = () => fetchAndCache('permits', API.listPermits, 'results');
+export const getPermis = getPermits;
 export const getCategories = () => fetchAndCache('categories', API.listCategories);
 export const getDevises = () => fetchAndCache('devises', API.Devises, 'results');
 export const getProfileTypes = () =>

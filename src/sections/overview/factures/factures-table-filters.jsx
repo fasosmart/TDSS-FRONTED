@@ -40,7 +40,7 @@ export function FactureTableFilters({ filters, totalResults, onResetPage, sx }) 
 
   const handleRemoveDate = useCallback(() => {
     onResetPage();
-    filters.setState({ startDate: null, endDate: null });
+    filters.setState({ date_before: null, date_after: null });
   }, [filters, onResetPage]);
 
   return (
@@ -62,11 +62,11 @@ export function FactureTableFilters({ filters, totalResults, onResetPage, sx }) 
 
       <FiltersBlock
         label="Date:"
-        isShow={Boolean(filters.state.startDate && filters.state.endDate)}
+        isShow={Boolean(filters.state.date_before && filters.state.date_after)}
       >
         <Chip
           {...chipProps}
-          label={fDateRangeShortLabel(filters.state.startDate, filters.state.endDate)}
+          label={fDateRangeShortLabel(filters.state.date_before, filters.state.date_after)}
           onDelete={handleRemoveDate}
         />
       </FiltersBlock>

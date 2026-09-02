@@ -1,43 +1,61 @@
-import Checkbox from '@mui/material/Checkbox';
-import FormControl from '@mui/material/FormControl';
+'use client';
+
+import Autocomplete from '@mui/material/Autocomplete';
+import CircularProgress from '@mui/material/CircularProgress';
 import { formHelperTextClasses } from '@mui/material/FormHelperText';
-import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
-import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
-import MenuList from '@mui/material/MenuList';
-import OutlinedInput from '@mui/material/OutlinedInput';
-import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-import { usePopover, CustomPopover } from 'src/components/custom-popover';
 import { Iconify } from 'src/components/iconify';
+
+import { PENALITE_TYPE_OPTIONS } from './penalite-filter-options';
 
 // ----------------------------------------------------------------------
 
-export function PenaliteTableToolbar({ filters, options, dateError, onResetPage }) {
-  const popover = usePopover();
+export function PenaliteTableToolbar({
+  filters,
+  dateError,
+  onResetPage,
+  companies = [],
+  loadingCompanies = false,
+}) {
+  const [companyInputValue, setCompanyInputValue] = useState(filters.state.company || '');
 
-  const handleFilterName = useCallback(
-    (event) => {
+  useEffect(() => {
+    setCompanyInputValue(filters.state.company || '');
+  }, [filters.state.company]);
+
+  const handleFilterCompany = useCallback(
+    (event, newValue) => {
       onResetPage();
-      filters.setState({ name: event.target.value });
+      filters.setState({ company: newValue?.label || '' });
+      setCompanyInputValue(newValue?.label || '');
     },
     [filters, onResetPage]
   );
 
-  const handleFilterService = useCallback(
-    (event) => {
-      const newValue =
-        typeof event.target.value === 'string' ? event.target.value.split(',') : event.target.value;
+  const handleCompanyInputChange = useCallback(
+    (event, newInputValue, reason) => {
+      setCompanyInputValue(newInputValue);
 
+      if (reason === 'clear') {
+        onResetPage();
+        filters.setState({ company: '' });
+      }
+    },
+    [filters, onResetPage]
+  );
+
+  const handleFilterType = useCallback(
+    (event) => {
       onResetPage();
-      filters.setState({ service: newValue });
+      filters.setState({ type: event.target.value });
     },
     [filters, onResetPage]
   );
@@ -45,7 +63,7 @@ export function PenaliteTableToolbar({ filters, options, dateError, onResetPage 
   const handleFilterStartDate = useCallback(
     (newValue) => {
       onResetPage();
-      filters.setState({ startDate: newValue });
+      filters.setState({ date_after: newValue });
     },
     [filters, onResetPage]
   );
@@ -53,129 +71,123 @@ export function PenaliteTableToolbar({ filters, options, dateError, onResetPage 
   const handleFilterEndDate = useCallback(
     (newValue) => {
       onResetPage();
-      filters.setState({ endDate: newValue });
+      filters.setState({ date_before: newValue });
     },
     [filters, onResetPage]
   );
 
+  const selectedCompany =
+    companies.find((option) => option.label === filters.state.company) || null;
+
   return (
-    <>
-      <Stack
-        spacing={2}
-        alignItems={{ xs: 'flex-end', md: 'center' }}
-        direction={{ xs: 'column', md: 'row' }}
-        sx={{ p: 2.5, pr: { xs: 2.5, md: 1 } }}
-      >
-        <FormControl sx={{ flexShrink: 0, width: { xs: 1, md: 180 } }}>
-          <InputLabel htmlFor="invoice-filter-service-select-label">Type</InputLabel>
-
-          <Select
-            multiple
-            value={filters.state.service} // Ajout de la prop `value`
-            onChange={handleFilterService}
-            input={<OutlinedInput label="service" />}
-            renderValue={(selected) => selected.join(', ')}
-            inputProps={{ id: 'invoice-filter-service-select-label' }}
-            sx={{ textTransform: 'capitalize' }}
-          >
-            {options?.services?.map((option) => (
-              <MenuItem key={option} value={option}>
-                <Checkbox checked={filters.state.service.includes(option)} disableRipple />
-                {option}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <DatePicker
-            label="Date debut"
-            value={filters.state.endDate}
-            onChange={handleFilterStartDate}
-            slotProps={{ textField: { fullWidth: true } }}
-            sx={{ maxWidth: { md: 180 } }}
-          />
-        </LocalizationProvider>
-
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <DatePicker
-            label="Date fin"
-            value={filters.state.endDate}
-            onChange={handleFilterEndDate}
-            slotProps={{
-              textField: {
-                fullWidth: true,
-                error: dateError,
-                helperText: dateError ? 'End date must be later than start date' : null,
-              },
-            }}
-            sx={{
-              maxWidth: { md: 180 },
-              [`& .${formHelperTextClasses.root}`]: {
-                bottom: { md: -40 },
-                position: { md: 'absolute' },
-              },
-            }}
-          />
-        </LocalizationProvider>
-        <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}>
+    <Stack
+      spacing={2}
+      alignItems={{ xs: 'stretch', md: 'center' }}
+      direction={{ xs: 'column', md: 'row' }}
+      sx={{ p: 2.5, pr: { xs: 2.5, md: 1 } }}
+    >
+      <Autocomplete
+        fullWidth
+        options={companies}
+        loading={loadingCompanies}
+        value={selectedCompany}
+        inputValue={companyInputValue}
+        onChange={handleFilterCompany}
+        onInputChange={handleCompanyInputChange}
+        onClose={() => setCompanyInputValue(selectedCompany?.label || '')}
+        getOptionLabel={(option) => option.label || ''}
+        isOptionEqualToValue={(option, value) => option.value === value?.value}
+        filterOptions={(options, state) =>
+          options.filter((option) =>
+            option.label.toLowerCase().includes(state.inputValue.toLowerCase())
+          )
+        }
+        renderInput={(params) => (
           <TextField
-            fullWidth
-            onChange={handleFilterName}
-            placeholder="rechercher par nom ou par numéro"
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
-                  </InputAdornment>
-                ),
-              }
+            {...params}
+            label="Entreprise"
+            placeholder="Rechercher une entreprise..."
+            InputProps={{
+              ...params.InputProps,
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Iconify icon="mingcute:building-2-line" sx={{ color: 'text.disabled' }} />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <>
+                  {loadingCompanies ? <CircularProgress color="inherit" size={20} /> : null}
+                  {params.InputProps.endAdornment}
+                </>
+              ),
             }}
           />
+        )}
+        renderOption={(props, option) => (
+          <MenuItem {...props} key={option.slug} value={option.value}>
+            {option.label}
+          </MenuItem>
+        )}
+        noOptionsText="Aucune entreprise trouvée"
+        loadingText="Chargement..."
+      />
 
-          <IconButton onClick={popover.onOpen}>
-            <Iconify icon="eva:more-vertical-fill" />
-          </IconButton>
-        </Stack>
-      </Stack>
-      <CustomPopover
-        open={popover.open}
-        anchorEl={popover.anchorEl}
-        onClose={popover.onClose}
-        slotProps={{ arrow: { placement: 'right-top' } }}
+      <TextField
+        fullWidth
+        select
+        label="Type"
+        value={filters.state.type}
+        onChange={handleFilterType}
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <Iconify icon="solar:tag-linear" sx={{ color: 'text.disabled' }} />
+              </InputAdornment>
+            ),
+          },
+        }}
       >
-        <MenuList>
-          <MenuList>
-            <MenuItem
-              onClick={() => {
-                popover.onClose();
-              }}
-            >
-              <Iconify icon="solar:printer-minimalistic-bold" />
-              Imprimer
-            </MenuItem>
+        {PENALITE_TYPE_OPTIONS.map((option) => (
+          <MenuItem key={option.value || 'all-types'} value={option.value}>
+            {option.label}
+          </MenuItem>
+        ))}
+      </TextField>
 
-            <MenuItem
-              onClick={() => {
-                popover.onClose();
-              }}
-            >
-              <Iconify icon="solar:import-bold" />
-              Importer
-            </MenuItem>
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <DatePicker
+          label="Date début"
+          value={filters.state.date_after}
+          onChange={handleFilterStartDate}
+          slotProps={{ textField: { fullWidth: true } }}
+          sx={{ minWidth: { md: 180 } }}
+        />
+      </LocalizationProvider>
 
-            <MenuItem
-              onClick={() => {
-                popover.onClose();
-              }}
-            >
-              <Iconify icon="solar:export-bold" />
-              Exporter
-            </MenuItem>
-          </MenuList>
-        </MenuList>
-      </CustomPopover>
-    </>
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <DatePicker
+          label="Date fin"
+          value={filters.state.date_before}
+          onChange={handleFilterEndDate}
+          slotProps={{
+            textField: {
+              fullWidth: true,
+              error: dateError,
+              helperText: dateError
+                ? 'La date de fin doit être postérieure à la date de début.'
+                : null,
+            },
+          }}
+          sx={{
+            minWidth: { md: 180 },
+            [`& .${formHelperTextClasses.root}`]: {
+              bottom: { md: -40 },
+              position: { md: 'absolute' },
+            },
+          }}
+        />
+      </LocalizationProvider>
+    </Stack>
   );
 }

@@ -11,7 +11,8 @@ import NoSsr from '@mui/material/NoSsr';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
-import { PDFViewer, PDFDownloadLink } from '@react-pdf/renderer';
+import { PDFViewer, pdf } from '@react-pdf/renderer';
+import { saveAs } from 'file-saver';
 import axios from 'src/utils/axios';
 import API from 'src/utils/api';
 import { useRef, useState, useCallback } from 'react';
@@ -28,7 +29,7 @@ import { Iconify } from 'src/components/iconify';
 import { DeclarationPDF } from './declaration-pdf';
 import DeclarationDetailsPrint from './declaration-print';
 
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { toast } from 'src/components/snackbar';
 
@@ -43,9 +44,7 @@ export function DeclarationToolbar({
 }) {
   const router = useRouter();
 
-  const { user } = useMockedUser();
-  const type = user?.type_code?.toLowerCase().trim();
-  const profil = user?.companies[0]?.type_name?.toLowerCase().trim();
+  const { can } = usePermissions();
 
   // const [logoData, setLogoData] = useState(null);
   const logoUrl = declaration?.company?.picture;
@@ -65,6 +64,7 @@ export function DeclarationToolbar({
   const [openRejetDialog, setOpenRejetDialog] = useState(false);
   const [motifRejet, setMotifRejet] = useState('');
   const [error, setError] = useState(null);
+  const [downloadLoading, setDownloadLoading] = useState(false);
 
   const handleEdit = useCallback(() => {
     router.push(paths.dashboard.declaration.edit(`${declaration?.slug}`));
@@ -77,6 +77,22 @@ export function DeclarationToolbar({
     documentTitle: `Declaration_${declaration?.reference}`,
     onAfterPrint: () => console.log('Impression terminée'),
   });
+
+  const handleDownload = useCallback(async () => {
+    if (!declaration) return;
+
+    setDownloadLoading(true);
+    try {
+      const blob = await pdf(
+        <DeclarationPDF declaration={declaration} employees={employees} logoUrl={proxiedLogoUrl} />
+      ).toBlob();
+      saveAs(blob, `${declaration?.number || 'declaration'}.pdf`);
+    } catch (err) {
+      toast.error('Impossible de télécharger la déclaration.');
+    } finally {
+      setDownloadLoading(false);
+    }
+  }, [declaration, employees, proxiedLogoUrl]);
 
   const handleSubmitRow = useCallback(async () => {
     try {
@@ -194,33 +210,17 @@ export function DeclarationToolbar({
   const renderDownload = (
     <NoSsr>
       {declaration && (
-        <PDFDownloadLink
-          document={
-            declaration ? (
-              <DeclarationPDF
-                declaration={declaration}
-                employees={employees}
-                logoUrl={proxiedLogoUrl}
-              />
-            ) : (
-              ''
-            )
-          }
-          fileName={declaration?.number}
-          style={{ textDecoration: 'none' }}
-        >
-          {({ loading }) => (
-            <Tooltip title="Telecharger">
-              <IconButton>
-                {loading ? (
-                  <CircularProgress size={24} color="inherit" />
-                ) : (
-                  <Iconify icon="eva:cloud-download-fill" />
-                )}
-              </IconButton>
-            </Tooltip>
-          )}
-        </PDFDownloadLink>
+        <Tooltip title="Telecharger">
+          <span>
+            <IconButton onClick={handleDownload} disabled={downloadLoading}>
+              {downloadLoading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                <Iconify icon="eva:cloud-download-fill" />
+              )}
+            </IconButton>
+          </span>
+        </Tooltip>
       )}
     </NoSsr>
   );
@@ -256,7 +256,7 @@ export function DeclarationToolbar({
             </IconButton>
           </Tooltip>
 
-          {(type === 'agent' || type === 'admin') && declaration?.status === 'unsubmitted' && (
+          {can('can_edit_declaration') && declaration?.status === 'unsubmitted' && (
             <Tooltip title="Modifier">
               <IconButton onClick={handleEdit}>
                 <Iconify icon="solar:pen-bold" />
@@ -264,15 +264,16 @@ export function DeclarationToolbar({
             </Tooltip>
           )}
 
-          {type === 'agent' && (currentStatus === 'rejected' || currentStatus === 'submitted') && (
-            <Tooltip title="Mettre en edition">
-              <IconButton onClick={() => unsubmitConfirm.onTrue()}>
-                <Iconify icon="solar:pen-bold" />
-              </IconButton>
-            </Tooltip>
-          )}
+          {can('can_unsubmit_declaration') &&
+            (currentStatus === 'rejected' || currentStatus === 'submitted') && (
+              <Tooltip title="Mettre en edition">
+                <IconButton onClick={() => unsubmitConfirm.onTrue()}>
+                  <Iconify icon="solar:pen-bold" />
+                </IconButton>
+              </Tooltip>
+            )}
 
-          {type === 'agent' && currentStatus === 'unsubmitted' && (
+          {can('can_submit_declaration') && currentStatus === 'unsubmitted' && (
             <Tooltip title="Soumettre">
               <IconButton onClick={() => submitConfirm.onTrue()}>
                 <Iconify icon="mdi:check-bold" />
@@ -280,23 +281,28 @@ export function DeclarationToolbar({
             </Tooltip>
           )}
 
-          {(type === 'aguipe' || type === 'accountant') && currentStatus === 'submitted' && (
-            <>
-              <Tooltip title="Valider">
-                <IconButton onClick={() => validateConfirm.onTrue()}>
-                  <Iconify icon="mdi:check-bold" />
-                </IconButton>
-              </Tooltip>
+          {currentStatus === 'submitted' &&
+            (can('can_validate_declaration') || can('can_reject_declaration')) && (
+              <>
+                {can('can_validate_declaration') && (
+                  <Tooltip title="Valider">
+                    <IconButton onClick={() => validateConfirm.onTrue()}>
+                      <Iconify icon="mdi:check-bold" />
+                    </IconButton>
+                  </Tooltip>
+                )}
 
-              <Tooltip title="Rejeter">
-                <IconButton onClick={() => setOpenRejetDialog(true)}>
-                  <Iconify icon="material-symbols:cancel" />
-                </IconButton>
-              </Tooltip>
-            </>
-          )}
+                {can('can_reject_declaration') && (
+                  <Tooltip title="Rejeter">
+                    <IconButton onClick={() => setOpenRejetDialog(true)}>
+                      <Iconify icon="material-symbols:cancel" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </>
+            )}
 
-          {type === 'accountant' && currentStatus === 'validated' && (
+          {can('can_invoice_declaration') && currentStatus === 'validated' && (
             <Tooltip title="Facturer">
               <IconButton onClick={() => factureConfirm.onTrue()}>
                 <Iconify icon="mdi:credit-card" />

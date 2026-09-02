@@ -4,7 +4,7 @@ import { paths } from 'src/routes/paths';
 
 import { SvgColor } from 'src/components/svg-color';
 
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 
 import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
@@ -52,14 +52,49 @@ const ICONS = {
   // sidebar icons
 };
 
+
+// Permissions des différents tableaux de bord
+const DASHBOARD_PERMS = [
+  'can_view_agent_dashboard',
+  'can_view_admin_dashboard',
+  'can_view_accountant_dashboard',
+  'can_view_treasurer_dashboard',
+  'can_view_aguipe_dashboard',
+  'can_view_supervisor_dashboard',
+  'can_view_permit_dashboard',
+];
+
+// Permissions ouvrant le bloc d'administration TDSS (référentiels & gestion métier).
+const ADMIN_MANAGE_PERMS = ['can_manage_jobs', 'can_manage_devises', 'can_manage_permits'];
+
 // ----------------------------------------------------------------------
 
 export function useNavData() {
-  const { user } = useMockedUser();
+  const { can, canAny } = usePermissions();
 
-  const type = user?.type_code?.toLowerCase().trim();
-
-  const profil = user?.companies[0]?.type_name.toLowerCase().trim();
+  // Rapports
+  const reportChildren = [
+    can('can_view_declaration_report') && {
+      title: 'Declaration',
+      path: paths.dashboard.analytics.declaration,
+    },
+    can('can_view_facture_report') && {
+      title: 'Facture',
+      path: paths.dashboard.analytics.facture,
+    },
+    can('can_view_payment_report') && {
+      title: 'Paiement',
+      path: paths.dashboard.analytics.paiement,
+    },
+    can('can_view_permit_report') && {
+      title: 'Permis de travail',
+      path: paths.dashboard.analytics.permis,
+    },
+    can('can_view_employee_report') && {
+      title: 'Employés',
+      path: paths.dashboard.analytics.employee,
+    },
+  ].filter(Boolean);
 
   return [
     /**
@@ -68,45 +103,37 @@ export function useNavData() {
     {
       subheader: "Vue d'ensemble",
       items: [
-        ...(type === 'admin' ||
-        type === 'treasurer' ||
-        type === 'accountant' ||
-        type === 'agent' ||
-        type === 'aguipe' ||
-        type === 'supervisor'
+        ...(canAny(DASHBOARD_PERMS)
           ? [{ title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard }]
           : []),
 
-        ...(type === 'admin' || type === 'aguipe' || type === 'supervisor' || type === 'ministère'
-          ? []
-          : []),
-
-        ...(type === 'accountant' ||
-        type === 'agent' ||
-        type === 'aguipe' ||
-        type === 'supervisor' ||
-        type === 'admin' ||
-        type === 'printer'
+        ...(can('can_view_declaration')
           ? [
               {
                 title: 'Déclarations',
                 path: paths.dashboard.declaration.list,
                 icon: ICONS.declaration,
               },
+              // {
+              //   title: 'Penalités',
+              //   path: paths.dashboard.penalite.list,
+              //   icon: ICONS.penalite,
+              // },
             ]
           : []),
 
-        ...(type === 'agent' ||
-        type === 'admin' ||
-        type === 'aguipe' ||
-        type === 'supervisor' ||
-        type === 'printer'
+        ...(can('can_view_declaration_employee')
           ? [
               {
-                title: 'Permits',
+                title: 'Permis',
                 path: paths.dashboard.permit.root,
                 icon: ICONS.permis,
               },
+            ]
+          : []),
+
+        ...(can('can_view_africanization_plan')
+          ? [
               {
                 title: "Plan d'Africanisation",
                 path: paths.dashboard.planAfricanisation.root,
@@ -115,11 +142,7 @@ export function useNavData() {
             ]
           : []),
 
-        ...(type === 'accountant' ||
-        type === 'treasurer' ||
-        type === 'admin' ||
-        type === 'aguipe' ||
-        type === 'supervisor'
+        ...(can('can_view_facture')
           ? [
               {
                 title: 'Factures',
@@ -128,11 +151,8 @@ export function useNavData() {
               },
             ]
           : []),
-        ...(type === 'treasurer' ||
-        type === 'admin' ||
-        type === 'aguipe' ||
-        type === 'accountant' ||
-        type === 'supervisor'
+
+        ...(can('can_view_payment')
           ? [
               {
                 title: 'Paiements',
@@ -141,7 +161,8 @@ export function useNavData() {
               },
             ]
           : []),
-        ...(type === 'agent' || type === 'admin'
+
+        ...(can('can_view_employee')
           ? [
               {
                 title: 'Employés',
@@ -151,24 +172,13 @@ export function useNavData() {
             ]
           : []),
 
-        ...(type === 'admin' ||
-        type === 'accountant' ||
-        type === 'agent' ||
-        type === 'aguipe' ||
-        type === 'supervisor'
+        ...(reportChildren.length > 0
           ? [
               {
                 title: 'Rapports',
                 path: paths.dashboard.analytics.root,
                 icon: ICONS.analytics,
-                children: [
-                  { title: 'Declaration', path: paths.dashboard.analytics.declaration },
-                  { title: 'Facture', path: paths.dashboard.analytics.facture },
-                  { title: 'Paiement', path: paths.dashboard.analytics.paiement },
-                  // { title: 'Penalité', path: paths.dashboard.group.root },
-                  { title: 'Permis de travail', path: paths.dashboard.analytics.permis },
-                  { title: 'Employés', path: paths.dashboard.analytics.employee },
-                ],
+                children: reportChildren,
               },
             ]
           : []),
@@ -177,101 +187,98 @@ export function useNavData() {
     /**
      * Management
      */
-    ...(type === 'admin'
+    ...(can('can_view_user') || canAny(ADMIN_MANAGE_PERMS)
       ? [
           {
             subheader: 'Administration',
             items: [
-              {
-                title: 'Utilisateurs',
-                path: paths.dashboard.user.list,
-                icon: ICONS.user,
-                // children: [
-                //   { title: 'Listes Utilisateurs', path: paths.dashboard.user.list },
-                //   { title: 'Nouveau', path: paths.dashboard.user.new },
-                // ],
-              },
-
-              ...(profil === 'tdss'
+              ...(can('can_view_user')
                 ? [
                     {
-                      title: 'Catégories Fonctions',
-                      path: paths.dashboard.jobCategory.root,
-                      icon: ICONS.fonction_category,
-                      // children: [
-                      //   { title: 'Listes Catégories Professionnelles', path: paths.dashboard.jobCategory.list },
-                      //   { title: 'Nouvelle', path: paths.dashboard.jobCategory.new },
-                      // ]
+                      title: 'Utilisateurs',
+                      path: paths.dashboard.user.list,
+                      icon: ICONS.user,
                     },
-                    {
-                      title: 'Fonctions',
-                      path: paths.dashboard.fonction.list,
-                      icon: ICONS.fonction,
-                      // children: [
-                      //   { title: 'Listes Fonctions', path: paths.dashboard.fonction.list },
-                      //   { title: 'Nouvelle', path: paths.dashboard.fonction.new },
-                      // ],
-                    },
-                    {
-                      title: 'Structures',
-                      path: paths.dashboard.client.root,
-                      icon: ICONS.tour,
-                    },
-                    {
-                      title: 'Agence',
-                      path: paths.dashboard.agence.root,
-                      icon: ICONS.company,
-                    },
-                    // {
-                    //   title: 'Permissions',
-                    //   path: paths.dashboard.permission.list,
-                    //   icon: ICONS.permission,
-                    // },
+                  ]
+                : []),
+
+              // Bloc TDSS : gestion métier & référentiels, réservé aux profils qui
+              // gèrent les jobs, devises ou permits, qui est l'admin TDSS.
+              ...(canAny(ADMIN_MANAGE_PERMS)
+                ? [
+                    ...(can('can_manage_jobs')
+                      ? [
+                          {
+                            title: 'Catégories Fonctions',
+                            path: paths.dashboard.jobCategory.root,
+                            icon: ICONS.fonction_category,
+                          },
+                          {
+                            title: 'Fonctions',
+                            path: paths.dashboard.fonction.list,
+                            icon: ICONS.fonction,
+                          },
+                        ]
+                      : []),
+                    ...(can('can_view_referentials')
+                      ? [
+                          {
+                            title: 'Structures',
+                            path: paths.dashboard.client.root,
+                            icon: ICONS.tour,
+                          },
+                          {
+                            title: 'Agence',
+                            path: paths.dashboard.agence.root,
+                            icon: ICONS.company,
+                          },
+                        ]
+                      : []),
                     {
                       title: 'Paramètres',
                       icon: ICONS.parameter,
                       children: [
-                        { title: 'Regions', path: paths.dashboard.region.root, icon: ICONS.region },
-                        {
-                          title: 'Type Structure',
-                          path: paths.dashboard.profilType.root,
-                          icon: ICONS.typeStruct,
-                        },
-                        {
-                          title: 'Type Utilisateur',
-                          path: paths.dashboard.userType.root,
-                          icon: ICONS.typeUser,
-                        },
-                        { title: 'Devises', path: paths.dashboard.devise.root, icon: ICONS.devise },
-                        {
-                          title: 'Type Permits',
-                          path: paths.dashboard.permitAdmin.root,
-                          icon: ICONS.permis,
-                        },
+                        ...(can('can_view_referentials')
+                          ? [
+                              {
+                                title: 'Regions',
+                                path: paths.dashboard.region.root,
+                                icon: ICONS.region,
+                              },
+                              {
+                                title: 'Type Structure',
+                                path: paths.dashboard.profilType.root,
+                                icon: ICONS.typeStruct,
+                              },
+                              {
+                                title: 'Type Utilisateur',
+                                path: paths.dashboard.userType.root,
+                                icon: ICONS.typeUser,
+                              },
+                            ]
+                          : []),
+                        ...(can('can_manage_devises')
+                          ? [
+                              {
+                                title: 'Devises',
+                                path: paths.dashboard.devise.root,
+                                icon: ICONS.devise,
+                              },
+                            ]
+                          : []),
+                        ...(can('can_manage_permits')
+                          ? [
+                              {
+                                title: 'Type Permis',
+                                path: paths.dashboard.permitAdmin.root,
+                                icon: ICONS.permis,
+                              },
+                            ]
+                          : []),
                       ],
                     },
                   ]
                 : []),
-              // {
-              //   title: 'Regions',
-              //   path: paths.dashboard.region.root,
-              //   icon: ICONS.region,
-              // },
-              // {
-              //   title: 'Type  Structure',
-              //   path: paths.dashboard.profilType.root,
-              //   icon: ICONS.typeStruct,
-              // },
-              // {
-              //   title: 'Type Utilisateur',
-              //   path: paths.dashboard.userType.root,
-              //   icon: ICONS.typeUser,
-              // },
-              // {
-              //   title: 'Devises',
-              //   path: paths.dashboard.devise.root,
-              //   icon: ICONS.devise,
-              // },
             ],
           },
         ]

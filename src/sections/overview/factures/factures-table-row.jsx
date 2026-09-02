@@ -23,6 +23,8 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 import { Iconify } from 'src/components/iconify';
 import { Label } from 'src/components/label';
 
+import { usePermissions } from 'src/auth/hooks';
+
 import { PayeurForm } from './form-factures';
 
 // import { fetchOptions, banks } from 'src/utils/options';
@@ -31,7 +33,6 @@ import { PayeurForm } from './form-factures';
 
 export function FactureTableRow({
   row,
-  user,
   selected,
   onSelectRow,
   onViewRow,
@@ -76,9 +77,7 @@ export function FactureTableRow({
 
   const popover = usePopover();
   const payeurForm = useBoolean();
-  const profil = user?.companies[0]?.type_code?.toLowerCase().trim();
-
-  const type = user?.type_code?.toLowerCase().trim();
+  const { can } = usePermissions();
 
   const handleViewDeclaration = (e) => {
     e.stopPropagation(); // Empêche la propagation de l'événement de clic
@@ -222,7 +221,7 @@ export function FactureTableRow({
             Modifier
           </MenuItem> */}
 
-          {(type === 'treasurer' || type === 'accountant') && row.status === 'unpaid' && (
+          {can('can_mark_facture_paid') && row.status === 'unpaid' && !row.has_payment && (
             <MenuItem
               color={payeurForm.value ? 'inherit' : 'default'}
               onClick={() => {

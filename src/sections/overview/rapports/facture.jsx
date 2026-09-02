@@ -41,7 +41,7 @@ export function Reportfacture() {
     status: 'all',
     created_on_before: null,
     created_on_after: null,
-  });
+  }, { persistByPath: true });
 
   const dateError = fIsBetween(filters.state.created_on_after, filters.state.created_on_before);
 
@@ -299,3 +299,4 @@ export function Reportfacture() {
     </DashboardContent>
   );
 }
+

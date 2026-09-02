@@ -48,26 +48,30 @@ export function AuthProvider({ children }) {
       if (access_token && isValidToken(access_token)) {
         setSession(access_token);
 
-        const res = await axios.get(API.me());
+        const [meRes, assignmentsRes] = await Promise.all([
+          axios.get(API.me()),
+          axios.get(API.myAssignments()).catch((err) => {
+            if (err?.response?.status !== 404) {
+              console.error('my-assignments error:', err);
+            }
+            return null;
+          }),
+        ]);
 
-        const user = res.data;
+        const permissions = assignmentsRes?.data ?? {};
 
-        // Sauvegarder l'utilisateur dans le localStorage
-        localStorage.setItem('user', JSON.stringify(user));
+        const user = { ...meRes.data, permissions };
+
+        // Le state (et les permissions) est réhydraté à chaque montage via
+        // /me + /my-assignments/ ; pas de persistance des permissions côté client.
         setState({ user: { ...user, access_token }, loading: false });
 
       } else {
         setState({ user: null, loading: false });
-
-        // Supprimer l'utilisateur du localStorage si la session est invalide
-        localStorage.removeItem('user');
       }
     } catch (error) {
       console.error(error);
       setState({ user: null, loading: false });
-
-      // Supprimer l'utilisateur du localStorage en cas d'erreur
-      localStorage.removeItem('user');
     }
   }, [setState]);
 
@@ -84,12 +88,7 @@ export function AuthProvider({ children }) {
 
   const memoizedValue = useMemo(
     () => ({
-      user: state.user
-        ? {
-          ...state.user,
-          role: state.user?.role ?? 'admin',
-        }
-        : null,
+      user: state.user ?? null,
       checkUserSession,
       loading: status === 'loading',
       authenticated: status === 'authenticated',

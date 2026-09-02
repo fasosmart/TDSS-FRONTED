@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import MonthSelect from './month-select';
 
 export function Filters({ onFilterChange }) {
-  const [year, setYear] = useState('2025');
+  const [year, setYear] = useState(new Date().getFullYear().toString());
   const [months, setMonths] = useState([]);
   const [type, setType] = useState('all');
   const [company, setCompany] = useState('Toutes');
@@ -120,6 +120,9 @@ export function Filters({ onFilterChange }) {
     'Afghanistan',
   ];
 
+  const currentYear = new Date().getFullYear();
+  const startYear = 2023;
+
   return (
     <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
       {/* Entreprise (TextField) */}
@@ -153,6 +156,7 @@ export function Filters({ onFilterChange }) {
       </FormControl> */}
 
       {/* Année */}
+
       <FormControl size="small">
         <InputLabel id="year-label">Année</InputLabel>
         <Select
@@ -161,9 +165,11 @@ export function Filters({ onFilterChange }) {
           onChange={(e) => setYear(e.target.value)}
           label="Année"
         >
-          <MenuItem value="2023">2023</MenuItem>
-          <MenuItem value="2024">2024</MenuItem>
-          <MenuItem value="2025">2025</MenuItem>
+          {Array.from({ length: currentYear - startYear + 1 }, (_, i) => startYear + i).map((y) => (
+            <MenuItem key={y} value={y.toString()}>
+              {y}
+            </MenuItem>
+          ))}
         </Select>
       </FormControl>
 

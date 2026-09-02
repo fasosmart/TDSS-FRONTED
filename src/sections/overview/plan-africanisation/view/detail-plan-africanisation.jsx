@@ -11,7 +11,6 @@ import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -23,172 +22,19 @@ import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { Iconify } from 'src/components/iconify';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { ConfirmDialog } from 'src/components/custom-dialog';
-import { usePopover, CustomPopover } from 'src/components/custom-popover';
 import API from 'src/utils/api';
 import axios from 'src/utils/axios';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { AfricanizationPlanNew } from '../new_plan-africanisation';
+import { DetailNotFoundView } from 'src/sections/error';
 
 // ----------------------------------------------------------------------
 
-export function AfricanizationPlanDetails({ slug }) {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-
-  const [permits, setPermits] = useState([]);
-  const [selectedPermit, setSelectedPermit] = useState(null);
-  const [loadingP, setLoadingP] = useState(false);
-
-  const [plan, setPlan] = useState(null);
-  const [error, setError] = useState(null);
-
-  const [openForm, setOpenForm] = useState(false);
-  const [isEdit, setIsEdit] = useState(false);
-
-  const editConfirm = useBoolean();
-  const reassignConfirm = useBoolean();
-
-  const handleOpenEdit = () => {
-    setIsEdit(true);
-    setOpenForm(true);
-  };
-
-  const handleCloseForm = () => {
-    setOpenForm(false);
-  };
-
-  useEffect(() => {
-    const fecthPermits = async () => {
-      setLoadingP(true);
-      try {
-        const resp1 = await axios.get(API.listPermitsEmployees(), {
-          params: { offset: 0, limit: 100, status: 'processing' },
-        });
-        if (resp1?.data) {
-          const permits = resp1?.data?.results
-            .filter((p) => p.reference !== plan?.associated_declarations[0]?.reference)
-            .map((p) => ({
-              value: p?.slug,
-              label: `${p?.job?.permit} - ${p?.first} ${p?.last} - ${p?.company_name}`,
-            }));
-          setPermits(permits);
-        }
-
-        const total = resp1?.data?.count;
-        if (total > 100) {
-          const resp2 = await axios.get(API.listPermitsEmployees(), {
-            params: { offset: 0, limit: total },
-          });
-          if (resp2?.data) {
-            const permits = resp2?.data?.results
-              .filter((p) => p.reference !== plan?.associated_declarations[0]?.reference)
-              .map((p) => ({
-                value: p?.slug,
-                label: `${p?.job?.permit} - ${p?.first} ${p?.last} - ${p?.company_name}`,
-              }));
-            setPermits(permits);
-          }
-        }
-      } catch (error) {
-        const errorMessage = error?.error || error?.details || error?.message || error?.detail;
-        setError(errorMessage);
-        console.error('Erreur réseau ou serveur:', error);
-        toast.error(errorMessage);
-      } finally {
-        setLoadingP(false);
-      }
-    };
-    if (reassignConfirm.value) {
-      fecthPermits();
-    }
-  }, [reassignConfirm?.value]);
-
-  const fetchPlans = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await axios.get(API.detailsAfricanizationPlan(slug));
-      setPlan(response?.data);
-    } catch (err) {
-      const errorMessage =
-        err?.error ||
-        err?.details ||
-        err?.message ||
-        err?.detail ||
-        'Erreur lors de la récupération des détails du plan';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, [slug]);
-
-  useEffect(() => {
-    fetchPlans();
-  }, [fetchPlans]);
-
-  const handleUpdate = () => {
-    fetchPlans();
-  };
-
-  const handleReassign = async (slug) => {
-    try {
-      const payload = {
-        new_declaration_employee_slug: selectedPermit?.value,
-      };
-      const response = await axios.post(API.reassign(slug), payload);
-      if (response?.data || response?.status === 201) {
-        toast.success('Réassignation de ce plan avec succès');
-        handleUpdate();
-      } else {
-        toast.error(`Erreur : ${response?.data?.error}`);
-      }
-    } catch (error) {
-      const errorMessage = error?.error || error?.details || error?.message || error?.detail;
-      setError(errorMessage);
-      console.error('Erreur réseau ou serveur:', error);
-      toast.error(error);
-    }
-  };
-
-  const handleDetailViewPermit = async (slug) => {
-    router?.push(paths?.dashboard?.permit?.details(slug));
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  const getStatusConfig = (status) => {
-    const configs = {
-      actif: { color: 'success', label: 'Actif', icon: 'mdi:check-circle' },
-      inactif: { color: 'default', label: 'Inactif', icon: 'mdi:cancel' },
-      termine: { color: 'info', label: 'Terminé', icon: 'mdi:check-all' },
-    };
-    return configs[status] || { color: 'default', label: status, icon: 'mdi:information' };
-  };
-
-  const getDeclarationStatusConfig = (status) => {
-    const configs = {
-      processing: { color: 'warning', label: 'En cours', icon: 'mdi:clock-outline' },
-      validated: { color: 'success', label: 'Validé', icon: 'mdi:check-circle' },
-      rejected: { color: 'error', label: 'Rejeté', icon: 'mdi:close-circle' },
-      submitted: { color: 'primary', label: 'Soumis', icon: 'mdi:package-variant-closed' },
-      delivered: { color: 'success', label: 'Délivré', icon: 'mdi:package-variant-closed' },
-      printed: { color: 'info', label: 'Imprimé', icon: 'mdi:printer' },
-    };
-    return configs[status] || { color: 'default', label: status, icon: 'mdi:information' };
-  };
-
-  // Composant InfoItem
-  const InfoItem = ({ icon, label, value, isLink = false, onClick, fullWidth = false }) => (
+// Composant InfoItem
+function InfoItem({ icon, label, value, isLink = false, onClick, fullWidth = false }) {
+  return (
     <Box
       sx={{
         minWidth: fullWidth
@@ -266,9 +112,11 @@ export function AfricanizationPlanDetails({ slug }) {
       </Box>
     </Box>
   );
+}
 
-  // Composant SectionTitle
-  const SectionTitle = ({ title, icon }) => (
+// Composant SectionTitle
+function SectionTitle({ title, icon }) {
+  return (
     <Typography
       variant="subtitle2"
       sx={{
@@ -294,6 +142,169 @@ export function AfricanizationPlanDetails({ slug }) {
       {title}
     </Typography>
   );
+}
+
+// ----------------------------------------------------------------------
+
+export function AfricanizationPlanDetails({ slug }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  const [permits, setPermits] = useState([]);
+  const [selectedPermit, setSelectedPermit] = useState(null);
+  const [loadingP, setLoadingP] = useState(false);
+
+  const [plan, setPlan] = useState(null);
+  const [error, setError] = useState(null);
+  const [notFound, setNotFound] = useState(false);
+
+  const [openForm, setOpenForm] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
+
+  const editConfirm = useBoolean();
+  const reassignConfirm = useBoolean();
+
+  const handleOpenEdit = () => {
+    setIsEdit(true);
+    setOpenForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setOpenForm(false);
+  };
+
+  useEffect(() => {
+    const fecthPermits = async () => {
+      setLoadingP(true);
+      try {
+        const resp1 = await axios.get(API.listPermitsEmployees(), {
+          params: { offset: 0, limit: 100, status: 'processing' },
+        });
+        if (resp1?.data) {
+          const permits = resp1?.data?.results
+            .filter((p) => p.reference !== plan?.associated_declarations[0]?.reference)
+            .map((p) => ({
+              value: p?.slug,
+              label: `${p?.job?.permit} - ${p?.first} ${p?.last} - ${p?.company_name}`,
+            }));
+          setPermits(permits);
+        }
+
+        const total = resp1?.data?.count;
+        if (total > 100) {
+          const resp2 = await axios.get(API.listPermitsEmployees(), {
+            params: { offset: 0, limit: total },
+          });
+          if (resp2?.data) {
+            const permits = resp2?.data?.results
+              .filter((p) => p.reference !== plan?.associated_declarations[0]?.reference)
+              .map((p) => ({
+                value: p?.slug,
+                label: `${p?.job?.permit} - ${p?.first} ${p?.last} - ${p?.company_name}`,
+              }));
+            setPermits(permits);
+          }
+        }
+      } catch (error) {
+        const errorMessage = error?.error || error?.details || error?.message || error?.detail;
+        setError(errorMessage);
+        console.error('Erreur réseau ou serveur:', error);
+        toast.error(errorMessage);
+      } finally {
+        setLoadingP(false);
+      }
+    };
+    if (reassignConfirm.value) {
+      fecthPermits();
+    }
+  }, [reassignConfirm?.value]);
+
+  const fetchPlans = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setNotFound(false);
+    try {
+      const response = await axios.get(API.detailsAfricanizationPlan(slug));
+      setPlan(response?.data);
+    } catch (err) {
+      if (err?.status === 404) {
+        setNotFound(true);
+      } else {
+        const errorMessage =
+          err?.error ||
+          err?.details ||
+          err?.message ||
+          err?.detail ||
+          'Erreur lors de la récupération des détails du plan';
+        setError(errorMessage);
+        toast.error(errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [slug]);
+
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
+
+  const handleUpdate = () => {
+    fetchPlans();
+  };
+
+  const handleReassign = async (slug) => {
+    try {
+      const payload = {
+        new_declaration_employee_slug: selectedPermit?.value,
+      };
+      const response = await axios.post(API.reassign(slug), payload);
+      if (response?.data || response?.status === 201) {
+        toast.success('Réassignation de ce plan avec succès');
+        handleUpdate();
+      } else {
+        toast.error(`Erreur : ${response?.data?.error}`);
+      }
+    } catch (error) {
+      const errorMessage = error?.error || error?.details || error?.message || error?.detail;
+      setError(errorMessage);
+      console.error('Erreur réseau ou serveur:', error);
+      toast.error(error);
+    }
+  };
+
+  const handleDetailViewPermit = async (slug) => {
+    router?.push(paths?.dashboard?.permit?.details(slug));
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const getStatusConfig = (status) => {
+    const configs = {
+      actif: { color: 'success', label: 'Actif', icon: 'mdi:check-circle' },
+      inactif: { color: 'default', label: 'Inactif', icon: 'mdi:cancel' },
+      termine: { color: 'info', label: 'Terminé', icon: 'mdi:check-all' },
+    };
+    return configs[status] || { color: 'default', label: status, icon: 'mdi:information' };
+  };
+
+  const getDeclarationStatusConfig = (status) => {
+    const configs = {
+      processing: { color: 'warning', label: 'En cours', icon: 'mdi:clock-outline' },
+      validated: { color: 'success', label: 'Validé', icon: 'mdi:check-circle' },
+      rejected: { color: 'error', label: 'Rejeté', icon: 'mdi:close-circle' },
+      submitted: { color: 'primary', label: 'Soumis', icon: 'mdi:package-variant-closed' },
+      delivered: { color: 'success', label: 'Délivré', icon: 'mdi:package-variant-closed' },
+      printed: { color: 'info', label: 'Imprimé', icon: 'mdi:printer' },
+    };
+    return configs[status] || { color: 'default', label: status, icon: 'mdi:information' };
+  };
 
   // Loading State
   if (loading) {
@@ -323,6 +334,17 @@ export function AfricanizationPlanDetails({ slug }) {
   }
 
   // Error State
+  if (notFound) {
+    return (
+      <DashboardContent>
+        <DetailNotFoundView
+          title="Plan d'africanisation introuvable"
+          href={paths.dashboard.planAfricanisation.root}
+        />
+      </DashboardContent>
+    );
+  }
+
   if (error) {
     return (
       <DashboardContent>
@@ -767,42 +789,40 @@ export function AfricanizationPlanDetails({ slug }) {
       <ConfirmDialog
         open={reassignConfirm.value}
         onClose={reassignConfirm.onFalse}
-        title="Reassigner ce plan à un autre permit"
+        title="Réassigner ce plan à un autre permis"
         content={
-          <>
-            <Autocomplete
-              size="small"
-              sx={{ mb: 2 }}
-              options={permits}
-              getOptionLabel={(opt) => opt?.label}
-              loading={loadingP}
-              fullWidth
-              value={selectedPermit}
-              onChange={(event, newValue) => setSelectedPermit(newValue)}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Rechercher ou selectionner un permit "
-                  placeholder="Taper pour rechercher"
-                  variant="outlined"
-                  size="small"
-                  sx={{ mt: 2 }}
-                  fullWidth
-                  slotProps={{
-                    input: {
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {loadingP ? <CircularProgress color="inherit" size={20} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    },
-                  }}
-                />
-              )}
-            />
-          </>
+          <Autocomplete
+            size="small"
+            sx={{ mb: 2 }}
+            options={permits}
+            getOptionLabel={(opt) => opt?.label}
+            loading={loadingP}
+            fullWidth
+            value={selectedPermit}
+            onChange={(event, newValue) => setSelectedPermit(newValue)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Rechercher ou sélectionner un permis "
+                placeholder="Taper pour rechercher"
+                variant="outlined"
+                size="small"
+                sx={{ mt: 2 }}
+                fullWidth
+                slotProps={{
+                  input: {
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingP ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  },
+                }}
+              />
+            )}
+          />
         }
         action={
           <Button

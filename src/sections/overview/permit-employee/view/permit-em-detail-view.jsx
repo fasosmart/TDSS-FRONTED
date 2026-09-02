@@ -12,18 +12,18 @@ import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
 import Tabs from '@mui/material/Tabs';
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 
 import { EmployeeCover } from '../../employee/employee-cover';
 
 import { PermitEmployeeDoc } from '../permit-employee-doc';
 import { PermitEmloyeeInfo } from '../permit-employee-info';
 import { PermitDeclaration } from '../permit-employee-dec';
-import { PermitJob } from '../permit-job';
 import { PermitInfo } from '../info-permit';
 import { PermitToolbar } from '../permit-toolbar';
 import { PlanAfricanisation } from '../plan-africanisation';
 import { BiometricData } from '../permit-biometrie';
+import { DetailNotFoundView } from 'src/sections/error';
 
 const TABS_PERMITS = [
   { value: 'info', label: 'Info Permit', icon: <Iconify icon="solar:user-id-bold" width={24} /> },
@@ -54,16 +54,19 @@ const TABS_PERMITS = [
 
 export function PermitDetailView({ slug }) {
   const tabs = useTabs('info');
-  const { user } = useMockedUser();
-  const type = user?.type_code?.toLowerCase().trim();
+  const { can } = usePermissions();
+  const canCorrect = can('can_correct_declaration_employee');
   const [loading, setLoading] = useState(true);
 
   const [permit, setPermit] = useState();
+  // ABIS désactivé 
+  // const [abis, setAbis] = useState();
   const [documents, setDocuments] = useState([]);
   const [status, setStatus] = useState();
   const [job, setJob] = useState();
   const [declarations, setDeclarations] = useState([]);
   const [error, setError] = useState(null);
+  const [notFound, setNotFound] = useState(false);
 
   const displayedTabs = TABS_PERMITS;
 
@@ -76,9 +79,13 @@ export function PermitDetailView({ slug }) {
       setDocuments(response.data.documents);
       setDeclarations(response.data.declarations);
     } catch (error) {
-      const errorMessage = error.data || error.details || error.message || error.detail;
-      setError(errorMessage);
-      toast.error(error);
+      if (error?.status === 404) {
+        setNotFound(true);
+      } else {
+        const errorMessage = error.data || error.details || error.message || error.detail;
+        setError(errorMessage);
+        toast.error(error);
+      }
     } finally {
       setLoading(false);
     }
@@ -112,14 +119,36 @@ export function PermitDetailView({ slug }) {
   };
 
   const handleUpdate = (updatedData) => {
-    console.log('Données mises à jour:', updatedData);
-    setPermit((prev) => ({
-      ...prev,
-      picture: updatedData.picture,
-      signature: updatedData.signature,
-      fingerprints_picture: updatedData.fingerprints_picture,
-    }));
+    setPermit((prev) => ({ ...prev, ...updatedData }));
   };
+
+  const [rejectReasons, setRejectReasons] = useState([]);
+
+  useEffect(() => {
+    if (!canCorrect) return;
+
+    const fetchRejectReasons = async () => {
+      try {
+        const response = await axios.get(API.listRejectReasons());
+        setRejectReasons(response.data.results);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchRejectReasons();
+  }, [canCorrect]);
+
+  const handleChangeStatus = useCallback((newStatus) => {
+    setStatus(newStatus);
+  }, []);
+
+  if (notFound) {
+    return (
+      <DashboardContent>
+        <DetailNotFoundView title="Permis introuvable" href={paths.dashboard.permit.root} />
+      </DashboardContent>
+    );
+  }
 
   return (
     <DashboardContent>
@@ -134,7 +163,12 @@ export function PermitDetailView({ slug }) {
           sx={{ mb: { xs: 3, md: 5 } }}
         />
 
-        <PermitToolbar permit={permit} currentStatus={status} />
+        <PermitToolbar
+          permit={permit}
+          currentStatus={status}
+          rejectReasons={rejectReasons}
+          onChangeStatus={handleChangeStatus}
+        />
       </Box>
       <Card sx={{ mb: 3, height: 290, position: 'relative' }}>
         <EmployeeCover
@@ -162,7 +196,9 @@ export function PermitDetailView({ slug }) {
           </Tabs>
         </Box>
       </Card>
-      {tabs.value === 'details' && <PermitEmloyeeInfo info={permit} />}
+      {tabs.value === 'details' && (
+        <PermitEmloyeeInfo info={permit} onSyncSuccess={fecthPermit} />
+      )}
 
       {tabs.value === 'doc' && (
         <PermitEmployeeDoc
@@ -170,6 +206,7 @@ export function PermitDetailView({ slug }) {
           employee={permit}
           onDocumentUploaded={handleDocumentUploaded}
           onDocumentUpdated={handleDocumentUpdated}
+          type={permit?.type}
         />
       )}
 
@@ -187,13 +224,13 @@ export function PermitDetailView({ slug }) {
           created_at={permit?.created_on}
           expired_at={permit?.card_expires_at}
           status={status}
+          permits={permit}
         />
       )}
       {tabs.value === 'plan' && (
         <PlanAfricanisation
           info={permit?.africanization_plan}
           employeeId={permit?.slug}
-          type={type}
           employeeName={`${permit?.first} ${permit?.last}`}
           isExpatriate={
             permit &&
@@ -208,13 +245,14 @@ export function PermitDetailView({ slug }) {
 
       {tabs?.value === 'biometrie' && (
         <BiometricData
-          employeeSlug={permit?.slug}
-          declarationSlug={permit?.declaration_slug}
           picture={permit?.picture}
           signature={permit?.signature}
-          slug={permit?.slug}
+          employee_slug={permit?.employee_slug}
           fingerprints_picture={permit?.fingerprints_picture}
           onUpdate={handleUpdate}
+          status={permit?.status}
+          // ABIS désactivé 
+          // abisLastRetrievedAt={permit?.abis_last_retrieved_at}
         />
       )}
     </DashboardContent>

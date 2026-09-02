@@ -81,7 +81,7 @@ export function PlanTableRow({ row, user, selected, onSelectRow, onViewRow }) {
           />
         </TableCell>
 
-        <TableCell>
+        {/* <TableCell>
           <Stack spacing={2} direction="row" alignItems="center">
             <ListItemText
               disableTypography
@@ -92,7 +92,7 @@ export function PlanTableRow({ row, user, selected, onSelectRow, onViewRow }) {
               }
             />
           </Stack>
-        </TableCell>
+        </TableCell> */}
         <TableCell>{row.full_name}</TableCell>
         <TableCell>{row.email}</TableCell>
         <TableCell>{row.phone_number}</TableCell>

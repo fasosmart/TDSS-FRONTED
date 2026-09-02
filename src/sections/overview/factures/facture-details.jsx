@@ -1,43 +1,46 @@
-import React from 'react';
-import { useRouter } from 'src/routes/hooks';
-import { paths } from 'src/routes/paths';
-import { toast } from 'src/components/snackbar';
+import { useCallback, useEffect, useState } from 'react';
+
+import { Autocomplete, CircularProgress } from '@mui/material';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
+import Checkbox from '@mui/material/Checkbox';
 import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
-import { styled } from '@mui/material/styles';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
-import Checkbox from '@mui/material/Checkbox';
-import { Autocomplete } from '@mui/material';
-import { CircularProgress } from '@mui/material';
-import { useState, useEffect, useCallback } from 'react';
-import { ConfirmDialog } from 'src/components/custom-dialog';
-import { fCurrency, fGNF, fEuro } from 'src/utils/format-number';
-import { fDate } from 'src/utils/format-time';
-import Tooltip from '@mui/material/Tooltip';
-import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import { styled } from '@mui/material/styles';
 
-import { usePopover } from 'src/components/custom-popover';
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
+
+import { useBoolean } from 'src/hooks/use-boolean';
+
+import { ConfirmDialog } from 'src/components/custom-dialog';
+import { Iconify } from 'src/components/iconify';
 import { Label } from 'src/components/label';
 import { Scrollbar } from 'src/components/scrollbar';
+import { toast } from 'src/components/snackbar';
 
-import { FactureToolbar } from './facture-toolbar';
-import { Iconify } from 'src/components/iconify';
-import { useBoolean } from 'src/hooks/use-boolean';
 import API from 'src/utils/api';
 import axios from 'src/utils/axios';
+import { fDate } from 'src/utils/format-time';
 
-// ----------------------------------------------------------------------
+import { getPenaltyTypeLabel } from '../penalite/penalite-filter-options';
 
-// ----------------------------------------------------------------------
+import { FactureToolbar } from './facture-toolbar';
+import {
+  formatFactureAmount,
+  getFactureCurrencySign,
+  hasDeclarationFactureItems,
+  isPenaltyFacture,
+  parseFactureAmount,
+} from './facture-utils';
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
   [`& .${tableCellClasses.root}`]: {
@@ -48,194 +51,210 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
+const CenteredTableCell = styled(TableCell)(({ theme }) => ({
+  textAlign: 'center',
+  paddingTop: theme.spacing(1.5),
+  paddingBottom: theme.spacing(1.1),
+  paddingLeft: theme.spacing(1),
+  paddingRight: theme.spacing(1),
+}));
+
 export function FactureDetails({ facture, user, setFacture }) {
+  const router = useRouter();
+  const confirm = useBoolean();
+  const confirmRemove = useBoolean();
+
   const [currentStatus, setCurrentStatus] = useState('');
   const [devise, setDevise] = useState('GNF');
-  const [error, setError] = useState('');
   const [declarations, setDeclarations] = useState([]);
   const [selectedDeclarations, setSelectedDeclarations] = useState([]);
   const [declarationsToAdd, setDeclarationsToAdd] = useState([]);
   const [filteredDeclarations, setFilteredDeclarations] = useState([]);
   const [loadDec, setLoadDec] = useState(false);
 
+  const isPenaltyInvoice = isPenaltyFacture(facture);
+  const hasDeclarationItems = hasDeclarationFactureItems(facture);
+  const penalty = facture?.penalty;
+  const filteredPermits =
+    facture?.permits?.filter((item) => parseFactureAmount(item?.count) > 0) || [];
+
+  const afficherMontant = useCallback((montant) => formatFactureAmount(montant, devise), [devise]);
+
   useEffect(() => {
-    if (!facture?.client_name) return;
+    if (facture?.status) {
+      setCurrentStatus(facture.status);
+    }
+  }, [facture?.status]);
+
+  useEffect(() => {
+    setDevise(getFactureCurrencySign(facture?.devise));
+  }, [facture?.devise]);
+
+  useEffect(() => {
+    setFilteredDeclarations(Array.isArray(facture?.declarations) ? facture.declarations : []);
+  }, [facture?.declarations]);
+
+  useEffect(() => {
+    if (!facture?.client_name || isPenaltyInvoice || facture?.status !== 'unpaid') {
+      setDeclarations([]);
+      setLoadDec(false);
+      return;
+    }
+
     const fetchDeclarations = async () => {
       setLoadDec(true);
+
       try {
-        const resp1 = await axios.get(API.listDeclarations(), {
-          params: { offset: 0, limit: 1, company: facture?.client_name, status: 'validated' },
-        });
-        const total = resp1?.data?.count;
-
-        const resp2 = await axios.get(API.listDeclarations(), {
-          params: { offset: 0, limit: total, company: facture?.client_name, status: 'validated' },
+        const firstResponse = await axios.get(API.listDeclarations(), {
+          params: { offset: 0, limit: 1, company: facture.client_name, status: 'validated' },
         });
 
-        setDeclarations(resp2?.data?.results || []);
+        const total = firstResponse?.data?.count || 0;
+
+        const secondResponse = await axios.get(API.listDeclarations(), {
+          params: {
+            offset: 0,
+            limit: total || 1,
+            company: facture.client_name,
+            status: 'validated',
+          },
+        });
+
+        setDeclarations(secondResponse?.data?.results || []);
       } catch (error) {
-        toast.error('Erreur du chargement des déclarations');
+        toast.error('Erreur du chargement des declarations');
       } finally {
         setLoadDec(false);
       }
     };
+
     fetchDeclarations();
-  }, [facture]);
-
-  const router = useRouter();
-
-  const popover = usePopover();
-
-  const confirm = useBoolean();
-  const confirmRemove = useBoolean();
-
-  const afficherMontant = (montant) => {
-    if (devise === 'GNF') {
-      return fGNF(montant);
-    } else if (devise === 'USD') {
-      return fCurrency(montant / 9200); // Exemple: 1 USD = 9200 GNF
-    } else if (devise === 'EUR') {
-      return fEuro(montant / 10000); // Exemple: 1 EUR = 10000 GNF
-    }
-  };
+  }, [facture?.client_name, facture?.status, isPenaltyInvoice]);
 
   const handleAdd = useCallback(async () => {
+    if (!declarationsToAdd.length) {
+      toast.error('Veuillez selectionner au moins une declaration.');
+      return;
+    }
+
     try {
-      const requestBody = {
+      const response = await axios.post(API.ajouterDeclaration(facture?.slug), {
         declarations: declarationsToAdd,
-      };
-      const response = await axios.post(API.ajouterDeclaration(facture?.slug), requestBody);
+      });
 
       if (response.data || response.status === 200) {
-        toast.success('Déclaration ajoutée avec succès');
+        toast.success('Declaration ajoutee avec succes');
 
-        // Mise à jour de la liste affichée
         setFacture((prev) => ({
           ...prev,
-          declarations: response?.data?.declarations,
+          declarations: response?.data?.declarations || [],
           amount: response?.data?.amount,
         }));
 
         setDeclarationsToAdd([]);
       } else {
-        console.error('Erreur inattendue:', response.data);
         toast.error('Une erreur est survenue.');
       }
     } catch (error) {
       const errorMessage =
         error?.response?.data?.message || error?.message || 'Erreur lors de la facturation.';
-      setError(errorMessage);
-      console.error('Erreur réseau ou serveur:', error);
       toast.error(errorMessage);
     }
-  });
+  }, [declarationsToAdd, facture?.slug, setFacture]);
 
   const handleRemove = useCallback(async () => {
+    if (!selectedDeclarations.length) {
+      toast.error('Veuillez selectionner au moins une declaration.');
+      return;
+    }
+
     try {
-      // Construction du corps de la requête
-      const requestBody = {
+      const response = await axios.post(API.retirerDeclaration(facture?.slug), {
         declarations: selectedDeclarations,
-      };
+      });
 
-      // Appel de la route (attention à bien exécuter la fonction)
-      const response = await axios.post(API.retirerDeclaration(facture?.slug), requestBody);
-
-      // En cas de succès
       if (response.data || response.status === 201) {
-        toast.success('Déclaration retirée avec succès !');
-        // Mise à jour locale
+        toast.success('Declaration retiree avec succes');
+        setSelectedDeclarations([]);
         setFilteredDeclarations((prevData) =>
           prevData.filter((item) => !selectedDeclarations.includes(item.slug))
         );
         setFacture((prev) => ({
           ...prev,
-          declarations: response.data.declarations, // mettre a jour les déclarations
-          amount: response?.data?.amount, // mettre a jour le montant
+          declarations: response?.data?.declarations || [],
+          amount: response?.data?.amount,
         }));
       } else {
-        console.error('Erreur inattendue:', response.data);
         toast.error('Une erreur est survenue.');
       }
     } catch (error) {
       const errorMessage =
         error?.response?.data?.message || error?.message || 'Erreur lors de la facturation.';
-      setError(errorMessage);
-      console.error('Erreur réseau ou serveur:', error);
       toast.error(errorMessage);
     }
-  });
+  }, [facture?.slug, selectedDeclarations, setFacture]);
 
   const handleChange = (event, newValue) => {
-    if (newValue) {
-      setDeclarationsToAdd(newValue.map((item) => item?.slug));
+    setDeclarationsToAdd((newValue || []).map((item) => item?.slug).filter(Boolean));
+  };
+
+  const handleDetailsDeclaration = (declarationSlug) => {
+    if (!declarationSlug) {
+      toast.error('Le slug de la declaration est manquant.');
+      return;
     }
+
+    router.push(paths.dashboard.declaration.details(declarationSlug));
+  };
+
+  const handleDetailsPenalty = (penaltySlug) => {
+    if (!penaltySlug) {
+      toast.error('Le slug de la penalite est manquant.');
+      return;
+    }
+
+    router.push(paths.dashboard.penalite.details(penaltySlug));
   };
 
   const qrData = encodeURIComponent(`Facture N° ${facture?.number} - ${facture?.amount} ${devise}`);
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${qrData}&size=100x100`;
 
-  const renderTotal = (
-    <StyledTableRow>
-      <TableCell colSpan={3} />
-      <TableCell sx={{ color: 'text.primary', fontWeight: 'bold' }}>
-        <Box sx={{ mt: 2 }} />
-        TOTAL
-      </TableCell>
-      <TableCell width={120} sx={{ typography: 'subtitle2' }}>
-        <Box sx={{ mt: 2 }} />
-        {afficherMontant(facture?.amount)}
-      </TableCell>
-    </StyledTableRow>
-  );
-
-  const CenteredTableCell = styled(TableCell)(({ theme }) => ({
-    textAlign: 'center',
-    paddingTop: theme.spacing(1.5),
-    paddingBottom: theme.spacing(1.1),
-    paddingLeft: theme.spacing(1),
-    paddingRight: theme.spacing(1),
-  }));
-
-  useEffect(() => {
-    if (facture?.declarations) {
-      setFilteredDeclarations(facture.declarations);
-    }
-  }, [facture?.declarations]);
-
-  const renderList = (
+  const renderDeclarationList = (
     <Scrollbar sx={{ mt: 5 }}>
       <Table sx={{ minWidth: 960 }}>
         <TableHead>
           <TableRow>
             {currentStatus === 'unpaid' && <CenteredTableCell width={40}> </CenteredTableCell>}
             <CenteredTableCell width={40}>#</CenteredTableCell>
-            <CenteredTableCell width={250}>Déclarations</CenteredTableCell>
-            <CenteredTableCell width={250}>Date Déclaration</CenteredTableCell>
+            <CenteredTableCell width={250}>Declarations</CenteredTableCell>
+            <CenteredTableCell width={250}>Date declaration</CenteredTableCell>
             <CenteredTableCell width={250}>Montant</CenteredTableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {filteredDeclarations.map((row, index) => (
             <TableRow
-              key={index}
+              key={row?.slug || index}
               sx={{
-                backgroundColor: selectedDeclarations.includes(row.number)
-                  ? 'rgba(0, 171, 85, 0.08)' // légère surbrillance
+                backgroundColor: selectedDeclarations.includes(row?.slug)
+                  ? 'rgba(0, 171, 85, 0.08)'
                   : 'transparent',
               }}
             >
               {currentStatus === 'unpaid' && (
                 <CenteredTableCell>
                   <Checkbox
-                    checked={selectedDeclarations.includes(row.slug)}
-                    onChange={(e) => {
+                    checked={selectedDeclarations.includes(row?.slug)}
+                    onChange={(event) => {
                       const selected = [...selectedDeclarations];
-                      if (e.target.checked) {
-                        selected.push(row.slug);
+
+                      if (event.target.checked) {
+                        selected.push(row?.slug);
                       } else {
-                        const index = selected.indexOf(row.slug);
-                        if (index > -1) selected.splice(index, 1);
+                        const selectedIndex = selected.indexOf(row?.slug);
+                        if (selectedIndex > -1) selected.splice(selectedIndex, 1);
                       }
+
                       setSelectedDeclarations(selected);
                     }}
                     inputProps={{ 'aria-label': `select declaration ${index + 1}` }}
@@ -253,67 +272,17 @@ export function FactureDetails({ facture, user, setFacture }) {
                     '&:hover': { color: 'primary.main', textDecoration: 'underline' },
                     fontSize: '0.85rem',
                   }}
-                  onClick={() => handleDetailsDeclaration(row.slug)}
+                  onClick={() => handleDetailsDeclaration(row?.slug)}
                 >
-                  {row.number}
+                  {row?.number || '-'}
                 </Typography>
               </CenteredTableCell>
 
-              <CenteredTableCell>{fDate(row.created_on)}</CenteredTableCell>
-
-              <CenteredTableCell>{afficherMontant(row.montant)}</CenteredTableCell>
+              <CenteredTableCell>{fDate(row?.created_on) || '-'}</CenteredTableCell>
+              <CenteredTableCell>{afficherMontant(row?.montant)}</CenteredTableCell>
             </TableRow>
           ))}
 
-          {/* Total général */}
-          <StyledTableRow>
-            <CenteredTableCell colSpan={3} />
-            <CenteredTableCell sx={{ fontWeight: 'bold' }}>TOTAL</CenteredTableCell>
-            <CenteredTableCell sx={{ fontWeight: 'bold' }}>
-              {afficherMontant(facture?.amount)}
-            </CenteredTableCell>
-          </StyledTableRow>
-        </TableBody>
-      </Table>
-    </Scrollbar>
-  );
-
-  // Filtrer les permis avec count > 0
-  const filteredPermits = facture?.permits.filter((item) => item.count > 0) || [];
-
-  const renderListPermis = (
-    <Scrollbar sx={{ mt: 5 }}>
-      <Table sx={{ minWidth: 960 }}>
-        <TableHead>
-          <TableRow>
-            <CenteredTableCell width={40}>#</CenteredTableCell>
-            <CenteredTableCell width={150}>Categorie de permis</CenteredTableCell>
-            <CenteredTableCell width={150}>Quantité</CenteredTableCell>
-            <CenteredTableCell width={150}>Prix Unitaire</CenteredTableCell>
-            <CenteredTableCell width={150}>Total</CenteredTableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {filteredPermits.map((row, index) => (
-            <TableRow key={index}>
-              <CenteredTableCell>{index + 1}</CenteredTableCell>
-
-              <CenteredTableCell>
-                <Typography variant="subtitle2">{row.category}</Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
-                  Permis {row.type}
-                </Typography>
-              </CenteredTableCell>
-
-              <CenteredTableCell>{row.count}</CenteredTableCell>
-
-              <CenteredTableCell>{afficherMontant(row.price)}</CenteredTableCell>
-
-              <CenteredTableCell>{afficherMontant(row.total_price)}</CenteredTableCell>
-            </TableRow>
-          ))}
-
-          {/* Total général */}
           <StyledTableRow>
             <CenteredTableCell colSpan={currentStatus === 'unpaid' ? 3 : 2} />
             <CenteredTableCell sx={{ fontWeight: 'bold' }}>TOTAL</CenteredTableCell>
@@ -326,10 +295,96 @@ export function FactureDetails({ facture, user, setFacture }) {
     </Scrollbar>
   );
 
+  const renderPenaltyList = (
+    <Scrollbar sx={{ mt: 5 }}>
+      <Table sx={{ width: '100%', tableLayout: 'fixed' }}>
+        <TableHead>
+          <TableRow>
+            <CenteredTableCell width="25%">Reference penalite</CenteredTableCell>
+            <CenteredTableCell width="35%">Type</CenteredTableCell>
+            <CenteredTableCell width="25%">Date infraction</CenteredTableCell>
+            <CenteredTableCell width="15%">Montant</CenteredTableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          <TableRow>
+            <CenteredTableCell>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  cursor: penalty?.slug ? 'pointer' : 'default',
+                  '&:hover': penalty?.slug
+                    ? { color: 'primary.main', textDecoration: 'underline' }
+                    : undefined,
+                }}
+                onClick={() => handleDetailsPenalty(penalty?.slug)}
+              >
+                {penalty?.reference || '-'}
+              </Typography>
+            </CenteredTableCell>
+            <CenteredTableCell>{getPenaltyTypeLabel(penalty?.type) || '-'}</CenteredTableCell>
+            <CenteredTableCell>{fDate(penalty?.infraction_date) || '-'}</CenteredTableCell>
+            <CenteredTableCell>{afficherMontant(facture?.amount)}</CenteredTableCell>
+          </TableRow>
+          <StyledTableRow>
+            <CenteredTableCell colSpan={2} />
+            <CenteredTableCell sx={{ fontWeight: 'bold' }}>TOTAL</CenteredTableCell>
+            <CenteredTableCell sx={{ fontWeight: 'bold' }}>
+              {afficherMontant(facture?.amount)}
+            </CenteredTableCell>
+          </StyledTableRow>
+        </TableBody>
+      </Table>
+    </Scrollbar>
+  );
+
+  const renderPermitList = (
+    <Scrollbar sx={{ mt: 5 }}>
+      <Table sx={{ minWidth: 960 }}>
+        <TableHead>
+          <TableRow>
+            <CenteredTableCell width={40}>#</CenteredTableCell>
+            <CenteredTableCell width={150}>Categorie de permis</CenteredTableCell>
+            <CenteredTableCell width={150}>Quantite</CenteredTableCell>
+            <CenteredTableCell width={150}>Prix unitaire</CenteredTableCell>
+            <CenteredTableCell width={150}>Total</CenteredTableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {filteredPermits.map((row, index) => (
+            <TableRow key={`${row?.category || 'permit'}-${index}`}>
+              <CenteredTableCell>{index + 1}</CenteredTableCell>
+
+              <CenteredTableCell>
+                <Typography variant="subtitle2">{row?.category || '-'}</Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
+                  Permis {row?.type || '-'}
+                </Typography>
+              </CenteredTableCell>
+
+              <CenteredTableCell>{parseFactureAmount(row?.count)}</CenteredTableCell>
+              <CenteredTableCell>{afficherMontant(row?.price)}</CenteredTableCell>
+              <CenteredTableCell>{afficherMontant(row?.total_price)}</CenteredTableCell>
+            </TableRow>
+          ))}
+
+          <StyledTableRow>
+            <CenteredTableCell colSpan={3} />
+            <CenteredTableCell sx={{ fontWeight: 'bold' }}>TOTAL</CenteredTableCell>
+            <CenteredTableCell sx={{ fontWeight: 'bold' }}>
+              {afficherMontant(facture?.amount)}
+            </CenteredTableCell>
+          </StyledTableRow>
+        </TableBody>
+      </Table>
+    </Scrollbar>
+  );
+
   const statusLabels = {
-    paid: 'Payée',
+    paid: 'Payee',
     unpaid: 'En attente',
   };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'unpaid':
@@ -341,38 +396,24 @@ export function FactureDetails({ facture, user, setFacture }) {
     }
   };
 
-  useEffect(() => {
-    if (facture?.status) {
-      setCurrentStatus(facture?.status);
-    }
-  }, [facture?.status]);
-
-  const handleDetailsDeclaration = (declarationSlug) => {
-    if (!declarationSlug) {
-      toast.error('Le slug de la déclaration est manquant.');
-      return;
-    }
-    router.push(paths.dashboard.declaration.details(declarationSlug));
-  };
-
   return (
     <>
       <FactureToolbar
         facture={facture}
         user={user}
         currentStatus={currentStatus || ''}
-        onChangeStatus={(e) => {
-          const value = typeof e === 'string' ? e : e.target.value;
+        onChangeStatus={(event) => {
+          const value = typeof event === 'string' ? event : event.target.value;
           setCurrentStatus(value);
         }}
         devise={devise}
       />
 
-      {currentStatus === 'unpaid' && (
+      {currentStatus === 'unpaid' && !isPenaltyInvoice && (
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: { xs: 1, md: 2 } }}>
           <Button
             variant="contained"
-            onClick={() => confirm.onTrue()}
+            onClick={confirm.onTrue}
             startIcon={<Iconify icon="mingcute:add-line" />}
             sx={{
               mb: { xs: 1, md: 1 },
@@ -407,7 +448,7 @@ export function FactureDetails({ facture, user, setFacture }) {
               <Box
                 component="select"
                 value={devise}
-                onChange={(e) => setDevise(e.target.value)}
+                onChange={(event) => setDevise(event.target.value)}
                 sx={{
                   px: 1.5,
                   py: 0.5,
@@ -426,22 +467,49 @@ export function FactureDetails({ facture, user, setFacture }) {
             <Label variant="soft" color={getStatusColor(currentStatus)}>
               {statusLabels[currentStatus] || 'Inconnue'}
             </Label>
-            <Typography variant="h6"> {`FACTURE N° ${facture?.number}`}</Typography>
+
+            <Typography variant="h6">{`FACTURE N° ${facture?.number || '-'}`}</Typography>
+
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Date facture :{fDate(facture?.created_on)}
+              Date facture : {fDate(facture?.created_on) || '-'}
             </Typography>
-            {facture?.declaration_number && (
-              <Typography
-                variant="subtitle2"
-                sx={{
-                  mb: 1,
-                  cursor: 'pointer',
-                  '&:hover': { color: 'primary.main', textDecoration: 'underline' },
-                }}
-                onClick={() => handleDetailsDeclaration(facture?.declaration_slug)}
-              >
-                Declaration N :{facture?.declaration_number}
-              </Typography>
+
+            {isPenaltyInvoice ? (
+              <>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    mb: 1,
+                    cursor: penalty?.slug ? 'pointer' : 'default',
+                    '&:hover': penalty?.slug
+                      ? { color: 'primary.main', textDecoration: 'underline' }
+                      : undefined,
+                  }}
+                  onClick={() => handleDetailsPenalty(penalty?.slug)}
+                >
+                  Penalite : {penalty?.reference || '-'}
+                </Typography>
+                {/* <Typography variant="subtitle2">
+                  Type : {getPenaltyTypeLabel(penalty?.type) || '-'}
+                </Typography> */}
+                {/* <Typography variant="subtitle2">
+                  Date infraction : {fDate(penalty?.infraction_date) || '-'}
+                </Typography> */}
+              </>
+            ) : (
+              facture?.declaration_number && (
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    mb: 1,
+                    cursor: 'pointer',
+                    '&:hover': { color: 'primary.main', textDecoration: 'underline' },
+                  }}
+                  onClick={() => handleDetailsDeclaration(facture?.declaration_slug)}
+                >
+                  Declaration N : {facture?.declaration_number}
+                </Typography>
+              )
             )}
           </Stack>
 
@@ -450,13 +518,13 @@ export function FactureDetails({ facture, user, setFacture }) {
               CLIENT
             </Typography>
             <br />
-            <Typography variant="h6">{facture?.client_name}</Typography>
+            <Typography variant="h6">{facture?.client_name || '-'}</Typography>
             <br />
-            Tél : {facture?.client_contact}
+            Tel : {facture?.client_contact || '-'}
             <br />
-            Adresse : {facture?.client_adresse}
+            Adresse : {facture?.client_adresse || '-'}
             <br />
-            Région : {facture?.client_location}
+            Region : {facture?.client_location || '-'}
           </Stack>
 
           <Stack
@@ -467,89 +535,94 @@ export function FactureDetails({ facture, user, setFacture }) {
               justifyContent: 'flex-end',
             }}
           >
-            <Box sx={{ width: 90, height: 90 }} component="img" alt="logo" src={qrUrl} />
+            <Box sx={{ width: 90, height: 90 }} component="img" alt="qrCode" src={qrUrl} />
           </Stack>
         </Box>
+
         <Divider sx={{ mt: 5, borderStyle: 'dashed' }} mb={4} />
-        {selectedDeclarations.length > 0 && currentStatus === 'unpaid' && (
+
+        {selectedDeclarations.length > 0 && currentStatus === 'unpaid' && hasDeclarationItems && (
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
             <Button
               variant="outlined"
               color="error"
               startIcon={<Iconify icon="mdi:trash-can-outline" />}
-              onClick={() => {
-                confirmRemove.onTrue();
-              }}
+              onClick={confirmRemove.onTrue}
             >
               Retirer
             </Button>
           </Box>
         )}
 
-        {facture?.declarations.length > 0 ? renderList : renderListPermis}
+        {isPenaltyInvoice
+          ? renderPenaltyList
+          : hasDeclarationItems
+            ? renderDeclarationList
+            : renderPermitList}
 
         <Divider sx={{ mt: 5, borderStyle: 'dashed' }} />
       </Card>
 
-      <ConfirmDialog
-        open={confirm.value}
-        onClose={confirm.onFalse} // Ferme la deuxième boîte de dialogue
-        title="Veuillez selectionner la declaration que vous voulez ajouter"
-        content={
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 2, mt: 3 }}>
-            <Autocomplete
-              multiple
-              options={declarations}
-              getOptionLabel={(declaration) => declaration.number}
-              loading={loadDec}
-              // value={selectedBanque || null}
-              onChange={handleChange}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Rechercher ou sélectionner une déclaration"
-                  placeholder="Taper pour rechercher"
-                  variant="outlined"
-                  fullWidth
-                  slotProps={{
-                    input: {
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {loadDec ? <CircularProgress size={20} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    },
-                  }}
-                />
-              )}
-              sx={{ width: '100%' }}
-            />
-          </Box>
-        }
-        action={
-          <Button
-            variant="contained"
-            color="success"
-            onClick={() => {
-              handleAdd(); // Action pour "Ajouter une nouvelle déclaration"
-              confirm.onFalse();
-            }}
-          >
-            Ajouter
-          </Button>
-        }
-      />
+      {!isPenaltyInvoice && (
+        <ConfirmDialog
+          open={confirm.value}
+          onClose={confirm.onFalse}
+          title="Veuillez selectionner la declaration que vous voulez ajouter"
+          content={
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mb: 2, mt: 3 }}>
+              <Autocomplete
+                multiple
+                options={declarations}
+                getOptionLabel={(declaration) => declaration?.number || ''}
+                loading={loadDec}
+                onChange={handleChange}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Rechercher ou selectionner une declaration"
+                    placeholder="Taper pour rechercher"
+                    variant="outlined"
+                    fullWidth
+                    slotProps={{
+                      input: {
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {loadDec ? <CircularProgress size={20} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      },
+                    }}
+                  />
+                )}
+                sx={{ width: '100%' }}
+              />
+            </Box>
+          }
+          action={
+            <Button
+              variant="contained"
+              color="success"
+              onClick={() => {
+                handleAdd();
+                confirm.onFalse();
+              }}
+            >
+              Ajouter
+            </Button>
+          }
+        />
+      )}
 
       <ConfirmDialog
         open={confirmRemove.value}
         onClose={confirmRemove.onFalse}
-        title="Retirer des déclarations"
+        title="Retirer des declarations"
         content={
           <>
-            Etes vous sûr de vouloir retirer <strong> {selectedDeclarations.length} </strong>{' '}
-            declarations?
+            Etes vous sur de vouloir retirer <strong>{selectedDeclarations.length}</strong>{' '}
+            declarations ?
           </>
         }
         action={

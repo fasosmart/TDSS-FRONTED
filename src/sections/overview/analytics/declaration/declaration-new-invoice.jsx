@@ -158,7 +158,8 @@ function DynamicRow({ row, headLabel }) {
 
   const formatValue = (id, value) => {
     if (id === 'amount') return fGNF(value);
-    if (id === 'createDate' || id === 'created_on') return fDateTime(value);
+    if (id === 'createDate' || id === 'created_on' || id === 'printed_at')
+      return fDateTime(value) || '-';
     if (id === 'status') {
       return (
         <Label variant="soft" color={getStatusColor(value)}>

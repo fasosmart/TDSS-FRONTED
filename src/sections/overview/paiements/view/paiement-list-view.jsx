@@ -12,7 +12,7 @@ import TableRow from '@mui/material/TableRow';
 import { CircularProgress } from '@mui/material';
 import Tabs from '@mui/material/Tabs';
 import axios from 'src/utils/axios';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { varAlpha } from 'src/theme/styles';
@@ -24,7 +24,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useSetState } from 'src/hooks/use-set-state';
 
 import API from 'src/utils/api';
-import { fIsAfter, fIsBetween } from 'src/utils/format-time';
+import { fIsBetween } from 'src/utils/format-time';
 import { sumBy } from 'src/utils/helper';
 
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
@@ -49,7 +49,6 @@ import { PaiementTableToolbar } from '../paiement-table-toolbar';
 import { fCurrency, fGNF } from 'src/utils/format-number';
 
 import dayjs from 'dayjs';
-import { useMockedUser } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
@@ -71,8 +70,6 @@ const TABLE_HEAD = [
 export function PaiementListView() {
   const theme = useTheme();
 
-  const { user } = useMockedUser();
-  const type_user = user?.type_code.trim();
 
   const router = useRouter();
 
@@ -90,6 +87,7 @@ export function PaiementListView() {
     next: null,
     previous: null,
   });
+  const fetchRequestIdRef = useRef(0);
 
   const [summary, setSummary] = useState({
     totalCount: 0,
@@ -101,38 +99,22 @@ export function PaiementListView() {
     const fetchSummary = async () => {
       try {
         setLoader(true);
-        // --- 1) Récupérer le count global ---
-        const countRes = await axios.get(API.listPaiments(), {
-          params: { limit: 1 },
-        });
-        const totalCount = countRes.data.count;
+        const res = await axios.get(API.statsPaiements());
 
-        // --- 2) Récupérer tous les paiements en une seule requête ---
-        const allRes = await axios.get(API.listPaiments(), {
-          params: { limit: totalCount },
-        });
-        const allPaiements = allRes.data.results;
-
-        // --- 3) Somme des montants en GNF ---
-        const totalAmountGnf = sumBy(allPaiements, (p) => p.amount);
-        // console.log('montant total', totalAmountGnf);
-
-        // --- 4) Conversion GNF → USD (taux fixe ici) ---
+        const totalAmountGnf = res.data.total_amount_gnf;
+        // Conversion GNF -> USD (taux fixe)
         const GNF_PER_USD = 9200;
-        const totalAmountUsd = totalAmountGnf / GNF_PER_USD;
 
-        // --- 5) On met à jour le state ---
         setSummary({
-          totalCount,
+          totalCount: res.data.total_count,
           totalAmountGnf,
-          totalAmountUsd,
+          totalAmountUsd: totalAmountGnf / GNF_PER_USD,
         });
-        setLoader(false);
-        // console.log('montant en gnf', summary.totalAmountGnf);
-        // console.log('montant en USD', summary.totalAmountUsd)
       } catch (err) {
         console.error('Erreur summary paiements', err);
         toast.error('Impossible de charger le total des paiements');
+      } finally {
+        setLoader(false);
       }
     };
 
@@ -149,9 +131,9 @@ export function PaiementListView() {
     payment_method: [],
     facture_number: '',
     number: '',
-  });
+  }, { persistByPath: true });
 
-  const dateError = fIsAfter(filters.state.date_before, filters.state.date_after);
+  const dateError = fIsBetween(filters.state.date_before, filters.state.date_after);
 
   const dataFiltered = applyFilter({
     inputData: tableData,
@@ -163,7 +145,6 @@ export function PaiementListView() {
   const dataInPage = rowInPage(dataFiltered, table.page, table.rowsPerPage);
 
   const canReset =
-    !!filters.state.name ||
     !!filters.state.name ||
     filters?.state?.payment_method?.length > 0 ||
     (!!filters.state.date_before && !!filters.state.date_after) ||
@@ -244,6 +225,11 @@ export function PaiementListView() {
   }, []);
 
   useEffect(() => {
+    if (!filters.isHydrated) return;
+
+    const requestId = fetchRequestIdRef.current + 1;
+    fetchRequestIdRef.current = requestId;
+
     // Fonction pour récupérer les données
     const fetchPaiements = async () => {
       setLoading(true);
@@ -255,8 +241,8 @@ export function PaiementListView() {
           limit,
           ...(filters.state.date_before && filters.state.date_after && !dateError
             ? {
-                date_before: dayjs(filters.state.date_before).format('YYYY-MM-DD '),
-                date_after: dayjs(filters.state.date_after).format('YYYY-MM-DD '),
+                date_before: dayjs(filters.state.date_before).format('YYYY-MM-DD'),
+                date_after: dayjs(filters.state.date_after).format('YYYY-MM-DD'),
               }
             : {}),
           ...(filters.state.payment_method.length > 0 && {
@@ -267,6 +253,9 @@ export function PaiementListView() {
           ...(filters.state.number && { number: filters.state.number }),
         };
         const response = await axios.get(API.listPaiments(), { params }); // Remplacez l'URL par celle de votre backend
+
+        if (requestId !== fetchRequestIdRef.current) return;
+
         setTableData(response.data.results);
         setPagination({
           count: response.data.count,
@@ -274,17 +263,22 @@ export function PaiementListView() {
           previous: response.data.previous,
         });
       } catch (err) {
+        if (requestId !== fetchRequestIdRef.current) return;
+
         setError(
           err.message || err.details || err.error || 'Erreur lors du chargement des données.'
         );
         toast.error(error);
       } finally {
-        setLoading(false);
+        if (requestId === fetchRequestIdRef.current) {
+          setLoading(false);
+        }
       }
     };
 
     fetchPaiements();
   }, [
+    filters.isHydrated,
     table.page,
     table.rowsPerPage,
     filters.state.date_before,
@@ -441,8 +435,6 @@ export function PaiementListView() {
                     <PaiementTableRow
                       key={row.slug}
                       row={row}
-                      user={user}
-                      type_user={type_user}
                       selected={table.selected.includes(row.slug)}
                       onViewRow={() => handleViewRow(row.slug)}
                       onValidateRow={() => handleValidate(row.slug)}
@@ -477,7 +469,7 @@ export function PaiementListView() {
 }
 
 function applyFilter({ inputData, comparator, filters, dateError }) {
-  const { name, startDate, endDate } = filters;
+  const { name, date_before, date_after } = filters;
 
   const stabilizedThis = inputData.map((el, index) => [el, index]);
 
@@ -499,12 +491,13 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
   }
 
   if (!dateError) {
-    if (startDate && endDate) {
+    if (date_before && date_after) {
       inputData = inputData.filter((paiement) =>
-        fIsBetween(paiement.date_paiement, startDate, endDate)
+        fIsBetween(paiement.date_paiement, date_before, date_after)
       );
     }
   }
 
   return inputData;
 }
+

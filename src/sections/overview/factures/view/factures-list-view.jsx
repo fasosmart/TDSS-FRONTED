@@ -16,7 +16,7 @@ import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import axios from 'src/utils/axios';
 import { CircularProgress } from '@mui/material';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { pdf } from '@react-pdf/renderer';
@@ -30,7 +30,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { useSetState } from 'src/hooks/use-set-state';
 import TextField from '@mui/material/TextField';
 import API from 'src/utils/api';
-import { fIsAfter, fIsBetween } from 'src/utils/format-time';
+import { fIsBetween } from 'src/utils/format-time';
 import { sumBy } from 'src/utils/helper';
 import { PDFDocument } from 'pdf-lib';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
@@ -55,9 +55,9 @@ import { FactureTableFilters } from '../factures-table-filters';
 import { FactureTableRow } from '../factures-table-row';
 import { FactureTableToolbar } from '../factures-table-toolbar';
 import { PayeurForm } from '../form-factures';
-import { generateFacturePDF } from '../facture-pdf';
+import { generateFactureDocument } from '../facture-pdf-service';
 
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 
 import dayjs from 'src/utils/format-time'; // Ensure this imports the correct dayjs instance
 
@@ -89,8 +89,7 @@ const TABLE_HEAD = [
 export function FactureListView() {
   const theme = useTheme();
 
-  const { user } = useMockedUser();
-  const type_user = user?.type_code.toLowerCase().trim();
+  const { can } = usePermissions();
 
   const router = useRouter();
 
@@ -122,22 +121,26 @@ export function FactureListView() {
     next: null,
     previous: null,
   });
+  const fetchRequestIdRef = useRef(0);
 
   /** @type {[Summary, Function]} */
   const [summary, setSummary] = useState({ totalCount: 0, countByStatus: {} });
   // …
 
-  const filters = useSetState({
-    number: '',
-    declaration_number: '',
-    company: '',
-    service: [],
-    status: 'all',
-    date_before: null,
-    date_after: null,
-  });
+  const filters = useSetState(
+    {
+      number: '',
+      declaration_number: '',
+      company: '',
+      service: [],
+      status: 'all',
+      date_before: null,
+      date_after: null,
+    },
+    { persistByPath: true }
+  );
 
-  const dateError = fIsAfter(filters.state.date_before, filters.state.date_after);
+  const dateError = fIsBetween(filters.state.date_before, filters.state.date_after);
 
   const dataFiltered = applyFilter({
     inputData: tableData,
@@ -283,6 +286,11 @@ export function FactureListView() {
   };
 
   useEffect(() => {
+    if (!filters.isHydrated) return;
+
+    const requestId = fetchRequestIdRef.current + 1;
+    fetchRequestIdRef.current = requestId;
+
     // Fonction pour récupérer les données
     const fetchFactures = async () => {
       setLoading(true);
@@ -291,15 +299,7 @@ export function FactureListView() {
         const params = {
           limit: table.rowsPerPage,
           offset: offset,
-          ...(filters.state.number
-            ? { number: filters.state.number }
-            : filters.state.declaration_number
-              ? { declaration_number: filters.state.declaration_number }
-              : filters.state.company
-                ? { company: filters.state.company }
-                : {}),
           ...(filters.state.status !== 'all' ? { status: filters.state.status } : {}),
-
           ...(filters.state.number ? { number: filters.state.number } : {}),
           ...(filters.state.company ? { company: filters.state.company } : {}),
           ...(filters.state.declaration_number
@@ -315,6 +315,9 @@ export function FactureListView() {
         };
 
         const response = await axios.get(API.listFactures(), { params });
+
+        if (requestId !== fetchRequestIdRef.current) return;
+
         setTableData(response.data.results);
         setPagination({
           count: response.data.count,
@@ -322,14 +325,18 @@ export function FactureListView() {
           previous: response.data.previous,
         });
       } catch (err) {
+        if (requestId !== fetchRequestIdRef.current) return;
         setError(err.message || 'Erreur lors du chargement des données.');
       } finally {
-        setLoading(false);
+        if (requestId === fetchRequestIdRef.current) {
+          setLoading(false);
+        }
       }
     };
 
     fetchFactures();
   }, [
+    filters.isHydrated,
     table.page,
     table.rowsPerPage,
     filters.state.status,
@@ -358,7 +365,7 @@ export function FactureListView() {
       const factures = await fetchFactures(slugs);
 
       for (const facture of factures) {
-        await generateFacturePDF(facture, facture.devise, { download: true });
+        await generateFactureDocument(facture, facture.devise, { download: true });
       }
 
       table.onSelectAllRows(false, []);
@@ -386,7 +393,7 @@ export function FactureListView() {
       const zip = new JSZip();
 
       for (const facture of factures) {
-        const blob = await generateFacturePDF(facture, facture.devise, {
+        const blob = await generateFactureDocument(facture, facture.devise, {
           download: false, // Ne pas télécharger individuellement
         });
 
@@ -424,7 +431,7 @@ export function FactureListView() {
 
       for (const facture of factures) {
         // 2. Génération du PDF de cette facture (sous forme de bytes)
-        const singlePdfBytes = await generateFacturePDF(facture, facture.devise, {
+        const singlePdfBytes = await generateFactureDocument(facture, facture.devise, {
           download: false,
         });
 
@@ -456,6 +463,7 @@ export function FactureListView() {
       if (selectedSlugs.includes(row.slug)) {
         return { ...row, status: 'paid' }; // Mettre à jour le statut à 'paid'
       }
+      return row;
     });
     setTableData(updatedData);
   }, []);
@@ -625,7 +633,7 @@ export function FactureListView() {
                     </IconButton>
                   </Tooltip>
 
-                  {(type_user === 'treasurer' || type_user === 'accountant') && (
+                  {can('can_mark_facture_paid') && (
                     <Tooltip title="Payer">
                       <IconButton
                         color="primary"
@@ -680,7 +688,6 @@ export function FactureListView() {
                     {tableData.map((row) => (
                       <FactureTableRow
                         key={row.slug}
-                        user={user}
                         row={row}
                         selected={table.selected.includes(row.slug)}
                         onSelectRow={() => table.onSelectRow(row.slug)}
@@ -870,7 +877,10 @@ export function FactureListView() {
         }
       />
       <PayeurForm
-        slug={table.selected}
+        slug={table.selected.filter((s) => {
+          const selectedRow = tableData.find((row) => row.slug === s);
+          return selectedRow && selectedRow.status === 'unpaid' && !selectedRow.has_payment;
+        })}
         open={payeurForm.value}
         onclose={payeurForm.onFalse}
         onSuccess={() => {
@@ -883,7 +893,7 @@ export function FactureListView() {
 }
 
 function applyFilter({ inputData, comparator, filters, dateError }) {
-  const { name, status, service, startDate, endDate } = filters;
+  const { name, status, service, date_before, date_after } = filters;
 
   const stabilizedThis = inputData.map((el, index) => [el, index]);
 
@@ -914,8 +924,10 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
   }
 
   if (!dateError) {
-    if (startDate && endDate) {
-      inputData = inputData.filter((facture) => fIsBetween(facture.created_at, startDate, endDate));
+    if (date_before && date_after) {
+      inputData = inputData.filter((facture) =>
+        fIsBetween(facture.created_at, date_before, date_after)
+      );
     }
   }
 

@@ -1,4 +1,5 @@
-import { useRef } from 'react';
+// ABIS désactivé
+// import { useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
@@ -8,33 +9,99 @@ import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid2';
+// import Button from '@mui/material/Button';
 
 import { Iconify } from 'src/components/iconify';
 import { fDate } from 'src/utils/format-time';
 
+// import { useBoolean } from 'src/hooks/use-boolean';
+
+// import { ConfirmDialog } from 'src/components/custom-dialog';
+// import { toast } from 'src/components/snackbar';
+
+// ABIS désactivé
+// import API from 'src/utils/api';
+// import axios from 'src/utils/axios';
+
 // ----------------------------------------------------------------------
 
-export function EmployeeInfo({ info, posts }) {
-  const fileRef = useRef(null);
+export function EmployeeInfo({ info, type, onSyncSuccess }) {
+  // ABIS désactivé
+  // const syncOpen = useBoolean();
+  // const [syncing, setSyncing] = useState(false);
 
-  const handleAttach = () => {
-    if (fileRef.current) {
-      fileRef.current.click();
-    }
-  };
+  // const hasRetrievedABIS = Boolean(info?.abis_last_retrieved_at || info?.is_registered_in_abis);
+  // const canSendToABIS = !hasRetrievedABIS;
+  // const abisActionLabel = "Envoyer a l'enrollement";
+  // const abisActionTitle = "Envoyer les donnees a l'enrollement";
+  // const abisActionContent =
+  //   "Etes-vous sur de vouloir envoyer les donnees de cet employe a l'enrollement ?";
 
   const getStatusConfig = (status) => {
     const configs = {
-      unenrolled: { color: 'warning', label: 'Non Enrôlé', icon: 'mdi:clock-outline' },
-      enrolled: { color: 'success', label: 'Enrôlé', icon: 'mdi:check-circle' },
-      rejected: { color: 'error', label: 'Rejeté', icon: 'mdi:close-circle' },
+      unenrolled: { color: 'warning', label: 'Non Enrole', icon: 'mdi:clock-outline' },
+      enrolled: { color: 'success', label: 'Enrole', icon: 'mdi:check-circle' },
+      rejected: { color: 'error', label: 'Rejete', icon: 'mdi:close-circle' },
     };
     return configs[status] || { color: 'default', label: status, icon: 'mdi:information' };
   };
 
   const statusConfig = getStatusConfig(info?.status);
 
-  // Composant réutilisable pour les items d'information
+  // ABIS désactivé
+  // const handleSync = async () => {
+  //   const employeeSlug = info?.slug || info?.employee_slug;
+
+  //   if (!employeeSlug) {
+  //     toast.error("Impossible d'envoyer à l'enrollement: employé introuvable.");
+  //     return false;
+  //   }
+
+  //   if (!canSendToABIS) {
+  //     toast.info("Mise à jour de l'envoi de l'employé à l'enrollement temporairement désactivée.");
+  //     return false;
+  //   }
+
+  //   setSyncing(true);
+  //   try {
+  //     // TEMP: backend issue on ABIS update endpoint.
+  //     // const response = await axios.put(API.updateABISEmployee(employeeSlug));
+  //     const response = await axios.post(API.saveEmployeeToABIS(employeeSlug));
+
+  //     const isSuccess =
+  //       response?.status === 200 || response?.status === 201 || response?.data?.success;
+
+  //     const message =
+  //       response?.data?.message ||
+  //       (isSuccess ? "Employé envoyé à l'enrollement avec succès" : null);
+
+  //     if (isSuccess) {
+  //       toast.success(message);
+  //       if (onSyncSuccess) {
+  //         await onSyncSuccess();
+  //       }
+  //       return true;
+  //     }
+
+  //     toast.error(response?.data?.message || "Echec lors de l'envoi à l'enrollement");
+  //     return false;
+  //   } catch (error) {
+  //     const errorMessage =
+  //       error?.response?.data?.message ||
+  //       error?.response?.data?.detail ||
+  //       error?.response?.data?.error ||
+  //       error?.response?.data?.details ||
+  //       error?.response?.data?.non_field_errors?.[0] ||
+  //       error?.message ||
+  //       'Erreur inconnue';
+  //     toast.error(`Echec lors de l'envoi à l'enrollement: ${errorMessage}`);
+  //     return false;
+  //   } finally {
+  //     setSyncing(false);
+  //   }
+  // };
+
+  // Composant reutilisable pour les items d'information
   const InfoItem = ({ icon, label, value, isLink = false }) => (
     <Box
       sx={{
@@ -169,27 +236,108 @@ export function EmployeeInfo({ info, posts }) {
             }}
           >
             <Iconify icon="mdi:account-details" width={{ xs: 24, sm: 28 }} sx={{ mr: 1.5 }} />
-            Informations Employé
+            Informations Employe
           </Typography>
 
-          <Chip
-            icon={<Iconify icon={statusConfig.icon} width={18} />}
-            label={statusConfig.label}
-            color={statusConfig.color}
-            sx={{
-              fontWeight: 600,
-              px: 1,
-              height: { xs: 28, sm: 32 },
-              '& .MuiChip-icon': { ml: 0.5 },
-              '& .MuiChip-label': {
+          <Stack direction="row" spacing={1}>
+            <Chip
+              icon={<Iconify icon={statusConfig.icon} width={18} />}
+              label={statusConfig.label}
+              color={statusConfig.color}
+              sx={{
+                fontWeight: 600,
                 px: 1,
-                fontSize: { xs: '0.75rem', sm: '0.8125rem' },
-              },
-            }}
-          />
+                height: { xs: 28, sm: 32 },
+                '& .MuiChip-icon': { ml: 0.5 },
+                '& .MuiChip-label': {
+                  px: 1,
+                  fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                },
+              }}
+            />
+            {/* <Chip
+              icon={
+                <Iconify
+                  icon={info?.is_registered_in_abis ? 'mdi:check-circle' : 'mdi:close-circle'}
+                  width={16}
+                />
+              }
+              label={
+                info?.is_registered_in_abis
+                  ? "Envoye a l'enrollement"
+                  : "Non envoye a l'enrollement"
+              }
+              color={info?.is_registered_in_abis ? 'success' : 'error'}
+              size="small"
+              sx={{
+                fontWeight: 600,
+                px: 1,
+                height: { xs: 28, sm: 32 },
+                '& .MuiChip-icon': { ml: 0.5 },
+                '& .MuiChip-label': {
+                  px: 1,
+                  fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                },
+              }}
+            /> */}
+            {/* {type === 'agent' && canSendToABIS && (
+              <Chip
+                icon={<Iconify icon="solar:refresh-bold" width={18} />}
+                label={abisActionLabel}
+                color="default"
+                onClick={syncOpen.onTrue}
+                disabled={syncing}
+                size="small"
+                sx={{
+                  fontWeight: 600,
+                  px: 1,
+                  height: { xs: 28, sm: 32 },
+                  '& .MuiChip-icon': { ml: 0.5 },
+                  '& .MuiChip-label': {
+                    px: 1,
+                    fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                  },
+                }}
+              />
+            )} */}
+          </Stack>
         </Box>
 
         <Divider sx={{ mb: 3 }} />
+
+        {/* ================== Section Suivi ABIS ================== */}
+        {/* ABIS désactivé  */}
+        {/* {(info?.abis_last_sync_at || info?.abis_last_retrieved_at) && (
+          <>
+            <Box sx={{ mb: 3 }}>
+              <SectionTitle title="Suivi Enrollement" />
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 2,
+                }}
+              >
+                {info?.abis_last_sync_at && (
+                  <InfoItem
+                    icon="solar:refresh-bold"
+                    label="Derniere envoie a l'enrollement"
+                    value={new Date(info?.abis_last_sync_at).toLocaleString('fr-FR')}
+                  />
+                )}
+                {info?.abis_last_retrieved_at && (
+                  <InfoItem
+                    icon="mdi:download-circle"
+                    label="Derniere recuperation depuis l'enrollement"
+                    value={new Date(info?.abis_last_retrieved_at).toLocaleString('fr-FR')}
+                  />
+                )}
+              </Box>
+            </Box>
+
+            <Divider sx={{ my: 3 }} />
+          </>
+        )} */}
 
         {/* ================== Section Identification ================== */}
         <Box sx={{ mb: 3 }}>
@@ -201,21 +349,16 @@ export function EmployeeInfo({ info, posts }) {
               gap: 2,
             }}
           >
-            <InfoItem icon="mdi:identifier" label="Référence" value={info?.reference} />
+            <InfoItem icon="mdi:identifier" label="Reference" value={info?.reference} />
             <InfoItem icon="mdi:passport" label="Passeport" value={info?.passport_number} />
-            {/* <InfoItem
-              icon="mdi:account"
-              label="Nom Complet"
-              value={`${info?.first || ''} ${info?.last || ''}`.trim()}
-            /> */}
             <InfoItem
               icon={info?.sexe === 'male' ? 'mdi:gender-male' : 'mdi:gender-female'}
               label="Sexe"
-              value={info?.sexe === 'male' ? 'Masculin' : 'Féminin'}
+              value={info?.sexe === 'male' ? 'Masculin' : 'Feminin'}
             />
             <InfoItem icon="mdi:calendar" label="Date de naissance" value={fDate(info?.birthday)} />
             <InfoItem icon="mdi:map-marker" label="Lieu de naissance" value={info?.birth_place} />
-            <InfoItem icon="mdi:flag" label="Nationalité" value={info?.country} />
+            <InfoItem icon="mdi:flag" label="Nationalite" value={info?.country} />
           </Box>
         </Box>
 
@@ -231,7 +374,7 @@ export function EmployeeInfo({ info, posts }) {
               gap: 2,
             }}
           >
-            <InfoItem icon="ic:baseline-phone" label="Téléphone" value={info?.phone} />
+            <InfoItem icon="ic:baseline-phone" label="Telephone" value={info?.phone} />
             <InfoItem icon="ic:baseline-email" label="Email" value={info?.email} />
             <InfoItem icon="mdi:home" label="Adresse" value={info?.address} />
           </Box>
@@ -251,23 +394,43 @@ export function EmployeeInfo({ info, posts }) {
           >
             <InfoItem
               icon="mdi:calendar-start"
-              label="Date de Début"
+              label="Date de debut"
               value={fDate(info?.contract_starts_at)}
             />
             <InfoItem
               icon="mdi:calendar-clock"
-              label="Durée"
+              label="Duree"
               value={
-                info?.contract_duration
-                  ? `${info?.contract_duration} an${info?.contract_duration > 1 ? 's' : ''}`
-                  : '-'
+                info?.contract_duration ? `${info?.contract_duration} mois` : '-'
               }
             />
             {info?.motif_rejet && (
-              <InfoItem icon="mdi:alert-circle" label="Motif de Rejet" value={info?.motif_rejet} />
+              <InfoItem icon="mdi:alert-circle" label="Motif de rejet" value={info?.motif_rejet} />
             )}
           </Box>
         </Box>
+
+        {/* ABIS désactivé  */}
+        {/* <ConfirmDialog
+          open={syncOpen.value}
+          onClose={syncOpen.onFalse}
+          title={abisActionTitle}
+          content={abisActionContent}
+          action={
+            <Button
+              variant="contained"
+              disabled={syncing}
+              onClick={async () => {
+                const isSynced = await handleSync();
+                if (isSynced) {
+                  syncOpen.onFalse();
+                }
+              }}
+            >
+              {syncing ? 'Synchronisation...' : abisActionLabel}
+            </Button>
+          }
+        /> */}
       </Box>
     </Card>
   );

@@ -64,9 +64,8 @@ export function EmployeeDoc({ documents = [], employee, onDocumentUploaded }) {
   }, [getDocuments]);
 
   // Trouver un document existant chez l'employé
-  const getDocumentBySlug = (name) => {
-    return documents?.find((doc) => doc.type === name || doc.name === name);
-  };
+  const getDocumentBySlug = (name) =>
+    documents?.find((doc) => doc.type === name || doc.name === name);
 
   const handleAddDocument = (docType) => {
     setSelectedDocType(docType);

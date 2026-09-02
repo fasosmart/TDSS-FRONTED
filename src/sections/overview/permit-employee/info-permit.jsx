@@ -11,10 +11,11 @@ import Chip from '@mui/material/Chip';
 import { Iconify } from 'src/components/iconify';
 
 import { fDate } from 'src/utils/format-time';
+import { da } from 'date-fns/locale';
 
 // ----------------------------------------------------------------------
 
-export function PermitInfo({ created_at, permit, expired_at, status }) {
+export function PermitInfo({ created_at, permit, expired_at, status, permits }) {
   const fileRef = useRef(null);
 
   const handleAttach = () => {
@@ -42,6 +43,10 @@ export function PermitInfo({ created_at, permit, expired_at, status }) {
       printed: { color: 'info', label: 'Imprimé', icon: 'mdi:printer' },
       delivered: { color: 'primary', label: 'Délivré', icon: 'mdi:package-variant-closed' },
       submitted: { color: 'success', label: 'Soumis', icon: 'mdi:check-circle' },
+      billed: { color: 'info', label: 'Facturé', icon: 'mdi:receipt' },
+      paid: { color: 'success', label: 'Payé', icon: 'mdi:check-circle' },
+      correction: { color: 'error', label: 'En correction', icon: 'mdi:pen' },
+      expired: { color: 'error', label: 'Expiré', icon: 'mdi:calendar-alert' },
     };
     return configs[status] || { color: 'default', label: status, icon: 'mdi:information' };
   };
@@ -151,50 +156,81 @@ export function PermitInfo({ created_at, permit, expired_at, status }) {
   const getRelevantDates = () => {
     const dates = [];
 
-    if (permit?.validated_at) {
+    if (permits?.validated_at) {
       dates.push({
         icon: 'mdi:check-decagram',
         label: 'Date de Validation',
-        value: formatDate(permit.validated_at),
+        value: formatDate(permits.validated_at),
       });
     }
 
-    if (permit?.printed_at) {
+    if (permits?.printed_at) {
       dates.push({
         icon: 'mdi:printer-check',
         label: "Date d'Impression",
-        value: formatDate(permit.printed_at),
+        value: formatDate(permits.printed_at),
       });
     }
 
-    if (permit?.delivered_at) {
+    if (permits?.delivered_at) {
       dates.push({
         icon: 'mdi:package-variant-closed-check',
         label: 'Date de Livraison',
-        value: formatDate(permit.delivered_at),
+        value: formatDate(permits.delivered_at),
       });
     }
 
-    if (permit?.card_issued_at) {
+    if (permits?.card_issued_at) {
       dates.push({
         icon: 'mdi:card-account-details',
         label: "Date d'Émission",
-        value: formatDate(permit.card_issued_at),
-      });
-    }
-
-    if (permit?.card_expires_at) {
-      dates.push({
-        icon: 'mdi:calendar-alert',
-        label: "Date d'Expiration",
-        value: formatDate(permit.card_expires_at),
+        value: formatDate(permits.card_issued_at),
       });
     }
 
     return dates;
   };
 
+  const getResponsibles = () => {
+    const responsibles = [];
+
+    if (permits?.created_by) {
+      responsibles.push({
+        icon: 'mdi:account-plus',
+        label: 'Créé par',
+        value: permits.created_by,
+      });
+    }
+
+    if (permits?.submitted_by) {
+      responsibles.push({
+        icon: 'mdi:account-arrow-up',
+        label: 'Soumis par',
+        value: permits.submitted_by,
+      });
+    }
+
+    if (permits?.validated_by) {
+      responsibles.push({
+        icon: 'mdi:account-check',
+        label: 'Validé par',
+        value: permits.validated_by,
+      });
+    }
+
+    if (permits?.rejected_by) {
+      responsibles.push({
+        icon: 'mdi:account-cancel',
+        label: 'Rejeté par',
+        value: permits.rejected_by,
+      });
+    }
+
+    return responsibles;
+  };
+
   const relevantDates = getRelevantDates();
+  const responsibles = getResponsibles();
 
   const renderAbout = (
     <Card
@@ -249,15 +285,67 @@ export function PermitInfo({ created_at, permit, expired_at, status }) {
                 },
               }}
             />
+            {/* ABIS désactivé  */}
+            {/* <Chip
+              icon={
+                <Iconify
+                  icon={permits?.is_registered_in_abis ? 'mdi:check-circle' : 'mdi:close-circle'}
+                  width={16}
+                />
+              }
+              label={
+                permits?.is_registered_in_abis
+                  ? "Envoyé à l'enrollement"
+                  : "Non envoyé à l'enrollement"
+              }
+              color={permits?.is_registered_in_abis ? 'success' : 'error'}
+              size="small"
+              sx={{
+                fontWeight: 600,
+                px: 1,
+                height: { xs: 28, sm: 32 },
+                '& .MuiChip-icon': { ml: 0.5 },
+                '& .MuiChip-label': {
+                  px: 1,
+                  fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                },
+              }}
+            /> */}
           </Stack>
         </Box>
+
+        {/* ================== Section ABIS ================== */}
+        {/* ABIS désactivé  */}
+        {/* <Divider sx={{ my: 3 }} />
+        <Box>
+          <SectionTitle title="Statut Enrollement" />
+          <Box
+            sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', mb: 2 }}
+          ></Box>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            {permits?.abis_last_sync_at && (
+              <InfoItem
+                icon="solar:refresh-bold"
+                label="Dernière envoie à l'enrollement"
+                value={new Date(permits?.abis_last_sync_at).toLocaleString('fr-FR')}
+              />
+            )}
+            {permits?.abis_last_retrieved_at && (
+              <InfoItem
+                icon="mdi:download-circle"
+                label="Dernière récupération"
+                value={new Date(permits?.abis_last_retrieved_at).toLocaleString('fr-FR')}
+              />
+            )}
+          </Box>
+        </Box> */}
 
         <Divider sx={{ mb: 3 }} />
 
         {/* ================== Informations ================== */}
         <Box
           sx={{
-            mb: relevantDates.length > 0 ? 3 : 0,
+            mb: relevantDates.length > 0 || responsibles.length > 0 ? 3 : 0,
           }}
         >
           <SectionTitle title="informations" />
@@ -280,6 +368,20 @@ export function PermitInfo({ created_at, permit, expired_at, status }) {
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                 {relevantDates.map((date, index) => (
                   <InfoItem key={index} icon={date.icon} label={date.label} value={date.value} />
+                ))}
+              </Box>
+            </Box>
+          </>
+        )}
+        {/* ================== Section Responsables ================== */}
+        {responsibles.length > 0 && (
+          <>
+            <Divider sx={{ my: 3 }} />
+            <Box>
+              <SectionTitle title="Responsables" />
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                {responsibles.map((item, index) => (
+                  <InfoItem key={index} icon={item.icon} label={item.label} value={item.value} />
                 ))}
               </Box>
             </Box>
