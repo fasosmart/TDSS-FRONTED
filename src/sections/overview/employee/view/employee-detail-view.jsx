@@ -156,7 +156,8 @@ export function EmployeeDetailsView({ slug }) {
           employee_slug={employee?.slug}
           status={employee?.status}
           onUpdate={fetchEmployee}
-          abisLastRetrievedAt={employee?.abis_last_retrieved_at}
+          // ABIS désactivé 
+          // abisLastRetrievedAt={employee?.abis_last_retrieved_at}
         />
       )}
     </DashboardContent>

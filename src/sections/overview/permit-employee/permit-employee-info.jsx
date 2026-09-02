@@ -1,4 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
+// ABIS désactivé  (useState retiré de l'import ci-dessus)
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
@@ -8,7 +9,7 @@ import Grid from '@mui/material/Grid2';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
-import Button from '@mui/material/Button';
+// import Button from '@mui/material/Button';
 
 import { Iconify } from 'src/components/iconify';
 import { paths } from 'src/routes/paths';
@@ -18,11 +19,11 @@ import { usePermissions } from 'src/auth/hooks';
 
 import { EmployeeQuickEditForm } from '../declaration/components/employe-quick-edit-form';
 
-import { ConfirmDialog } from 'src/components/custom-dialog';
-import { toast } from 'src/components/snackbar';
+// import { ConfirmDialog } from 'src/components/custom-dialog';
+// import { toast } from 'src/components/snackbar';
 
-import API from 'src/utils/api';
-import axios from 'src/utils/axios';
+// import API from 'src/utils/api';
+// import axios from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
@@ -33,15 +34,16 @@ export function PermitEmloyeeInfo({ info, onSyncSuccess }) {
 
   const editOpen = useBoolean();
 
-  const syncOpen = useBoolean();
-  const [syncing, setSyncing] = useState(false);
+  // ABIS désactivé 
+  // const syncOpen = useBoolean();
+  // const [syncing, setSyncing] = useState(false);
 
-  const hasRetrievedABIS = Boolean(info?.abis_last_retrieved_at || info?.is_registered_in_abis);
-  const canSendToABIS = !hasRetrievedABIS;
-  const abisActionLabel = "Envoyer à l'enrollement";
-  const abisActionTitle = "Envoyer les données à l'enrollement";
-  const abisActionContent =
-    "Êtes-vous sûr de vouloir envoyer les données de cet employé à l'enrollement ?";
+  // const hasRetrievedABIS = Boolean(info?.abis_last_retrieved_at || info?.is_registered_in_abis);
+  // const canSendToABIS = !hasRetrievedABIS;
+  // const abisActionLabel = "Envoyer à l'enrollement";
+  // const abisActionTitle = "Envoyer les données à l'enrollement";
+  // const abisActionContent =
+  //   "Êtes-vous sûr de vouloir envoyer les données de cet employé à l'enrollement ?";
 
   // TEMP: update flow disabled until backend issue is fixed.
   // const abisActionLabel = hasRetrievedABIS ? 'Mise à jour des données' : "Envoyer à l'enrollement";
@@ -73,53 +75,54 @@ export function PermitEmloyeeInfo({ info, onSyncSuccess }) {
     });
   };
 
-  const handleSync = async () => {
-    const employeeSlug = info?.employee_slug;
+  // ABIS désactivé 
+  // const handleSync = async () => {
+  //   const employeeSlug = info?.employee_slug;
 
-    if (!employeeSlug) {
-      toast.error('Impossible de synchroniser: employé introuvable.');
-      return false;
-    }
+  //   if (!employeeSlug) {
+  //     toast.error('Impossible de synchroniser: employé introuvable.');
+  //     return false;
+  //   }
 
-    if (!canSendToABIS) {
-      toast.info('Mise à jour ABIS temporairement désactivée.');
-      return false;
-    }
+  //   if (!canSendToABIS) {
+  //     toast.info('Mise à jour ABIS temporairement désactivée.');
+  //     return false;
+  //   }
 
-    setSyncing(true);
-    try {
-      // TEMP: backend issue on ABIS update endpoint.
-      // const response = await axios.put(API.updateABISEmployee(employeeSlug));
-      const response = await axios.post(API.saveEmployeeToABIS(employeeSlug));
+  //   setSyncing(true);
+  //   try {
+  //     // TEMP: backend issue on ABIS update endpoint.
+  //     // const response = await axios.put(API.updateABISEmployee(employeeSlug));
+  //     const response = await axios.post(API.saveEmployeeToABIS(employeeSlug));
 
-      const isSuccess =
-        response?.status === 200 || response?.status === 201 || response?.data?.success;
+  //     const isSuccess =
+  //       response?.status === 200 || response?.status === 201 || response?.data?.success;
 
-      if (isSuccess) {
-        toast.success('Synchronisation réussie avec ABIS');
-        if (onSyncSuccess) {
-          await onSyncSuccess();
-        }
-        return true;
-      }
+  //     if (isSuccess) {
+  //       toast.success('Synchronisation réussie avec ABIS');
+  //       if (onSyncSuccess) {
+  //         await onSyncSuccess();
+  //       }
+  //       return true;
+  //     }
 
-      toast.error(response?.data?.message || 'Échec de la synchronisation avec ABIS');
-      return false;
-    } catch (error) {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.response?.data?.detail ||
-        error?.response?.data?.error ||
-        error?.response?.data?.details ||
-        error?.response?.data?.non_field_errors?.[0] ||
-        error?.message ||
-        'Erreur inconnue';
-      toast.error(`Échec de la synchronisation avec ABIS: ${errorMessage}`);
-      return false;
-    } finally {
-      setSyncing(false);
-    }
-  };
+  //     toast.error(response?.data?.message || 'Échec de la synchronisation avec ABIS');
+  //     return false;
+  //   } catch (error) {
+  //     const errorMessage =
+  //       error?.response?.data?.message ||
+  //       error?.response?.data?.detail ||
+  //       error?.response?.data?.error ||
+  //       error?.response?.data?.details ||
+  //       error?.response?.data?.non_field_errors?.[0] ||
+  //       error?.message ||
+  //       'Erreur inconnue';
+  //     toast.error(`Échec de la synchronisation avec ABIS: ${errorMessage}`);
+  //     return false;
+  //   } finally {
+  //     setSyncing(false);
+  //   }
+  // };
 
   const getStatusConfig = (status) => {
     const configs = {
@@ -390,7 +393,8 @@ export function PermitEmloyeeInfo({ info, onSyncSuccess }) {
                   },
                 }}
               />
-              <Chip
+              {/* ABIS désactivé  */}
+              {/* <Chip
                 icon={
                   <Iconify
                     icon={info?.is_registered_in_abis ? 'mdi:check-circle' : 'mdi:close-circle'}
@@ -438,7 +442,7 @@ export function PermitEmloyeeInfo({ info, onSyncSuccess }) {
                       },
                     }}
                   />
-                )}
+                )} */}
 
               {info?.status === 'correction' && can('can_edit_declaration_employee') && (
                 <Chip
@@ -596,7 +600,8 @@ export function PermitEmloyeeInfo({ info, onSyncSuccess }) {
             dec_slug={info?.declaration_slug}
           />
 
-          <ConfirmDialog
+          {/* ABIS désactivé  */}
+          {/* <ConfirmDialog
             open={syncOpen.value}
             onClose={syncOpen.onFalse}
             title={abisActionTitle}
@@ -615,7 +620,7 @@ export function PermitEmloyeeInfo({ info, onSyncSuccess }) {
                 {syncing ? 'Synchronisation...' : abisActionLabel}
               </Button>
             }
-          />
+          /> */}
         </Box>
       </Card>
     </Grid>

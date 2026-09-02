@@ -59,7 +59,8 @@ export function PermitDetailView({ slug }) {
   const [loading, setLoading] = useState(true);
 
   const [permit, setPermit] = useState();
-  const [abis, setAbis] = useState();
+  // ABIS désactivé 
+  // const [abis, setAbis] = useState();
   const [documents, setDocuments] = useState([]);
   const [status, setStatus] = useState();
   const [job, setJob] = useState();
@@ -250,7 +251,8 @@ export function PermitDetailView({ slug }) {
           fingerprints_picture={permit?.fingerprints_picture}
           onUpdate={handleUpdate}
           status={permit?.status}
-          abisLastRetrievedAt={permit?.abis_last_retrieved_at}
+          // ABIS désactivé 
+          // abisLastRetrievedAt={permit?.abis_last_retrieved_at}
         />
       )}
     </DashboardContent>

@@ -242,9 +242,10 @@ const API = {
   reportsEmployees: () => `${BASE_URL}/reports/employees/`,
 
   // Endpoint ABIS
-  saveEmployeeToABIS: (slug) => `${BASE_URL}/abis/employees/${slug}/enroll/`,
-  getEmployeeFromABIS: (slug) => `${BASE_URL}/abis/employees/${slug}`,
-  updateABISEmployee: (slug) => `${BASE_URL}/abis/employees/${slug}/update/`,
+  // ABIS désactivé 
+  // saveEmployeeToABIS: (slug) => `${BASE_URL}/abis/employees/${slug}/enroll/`,
+  // getEmployeeFromABIS: (slug) => `${BASE_URL}/abis/employees/${slug}`,
+  // updateABISEmployee: (slug) => `${BASE_URL}/abis/employees/${slug}/update/`,
 };
 
 export default API;

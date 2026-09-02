@@ -31,7 +31,8 @@ export function BiometricData({
   onUpdate,
   employee_slug,
   status,
-  abisLastRetrievedAt,
+  // ABIS désactivé 
+  // abisLastRetrievedAt,
 }) {
   const { can } = usePermissions();
   const [openPreview, setOpenPreview] = useState(false);
@@ -53,15 +54,16 @@ export function BiometricData({
   const [loadingPicture, setLoadingPicture] = useState(false);
   const [loadingSignature, setLoadingSignature] = useState(false);
   const [loadingFingerprints, setLoadingFingerprints] = useState(false);
-  const [loadingABIS, setLoadingABIS] = useState(false);
-  const abisActionLabel = 'Récupérer les données';
+  // ABIS désactivé 
+  // const [loadingABIS, setLoadingABIS] = useState(false);
+  // const abisActionLabel = 'Récupérer les données';
 
   // L'utilisateur peut-il déclencher la récupération des données ABIS ?
-  const canRetrieveABIS =
-    can('can_retrieve_abis_data') &&
-    status !== 'printed' &&
-    status !== 'delivered' &&
-    status !== 'enrolled';
+  // const canRetrieveABIS =
+  //   can('can_retrieve_abis_data') &&
+  //   status !== 'printed' &&
+  //   status !== 'delivered' &&
+  //   status !== 'enrolled';
 
   const handleOpenPreview = (type, url) => {
     setPreviewData({ type, url });
@@ -80,48 +82,49 @@ export function BiometricData({
     }
   };
 
-  const handleFetchABIS = useCallback(async () => {
-    setLoadingABIS(true);
-    try {
-      const response = await axios.get(API.getEmployeeFromABIS(employee_slug));
-      const data = response.data; // 👈 très important
+  // ABIS désactivé 
+  // const handleFetchABIS = useCallback(async () => {
+  //   setLoadingABIS(true);
+  //   try {
+  //     const response = await axios.get(API.getEmployeeFromABIS(employee_slug));
+  //     const data = response.data; // 👈 très important
 
-      if (data.success) {
-        toast.success(data.message || 'Données biométriques récupérées avec succès');
+  //     if (data.success) {
+  //       toast.success(data.message || 'Données biométriques récupérées avec succès');
 
-        // Exemple : afficher infos utiles
-        if (data?.biometrics_status && !data.biometrics_status.is_complete) {
-          toast.warning(
-            `Biométrie incomplète :
-           Face: ${data.biometrics_status.has_face ? '✔' : '❌'},
-           Empreintes: ${data.biometrics_status.fingerprints_count}`
-          );
-        }
+  //       // Exemple : afficher infos utiles
+  //       if (data?.biometrics_status && !data.biometrics_status.is_complete) {
+  //         toast.warning(
+  //           `Biométrie incomplète :
+  //          Face: ${data.biometrics_status.has_face ? '✔' : '❌'},
+  //          Empreintes: ${data.biometrics_status.fingerprints_count}`
+  //         );
+  //       }
 
-        if (data?.biometrics_status && !data.biometrics_status.has_signature) {
-          toast.info("La signature n'est pas récupérée depuis ABIS, ajoutez-la manuellement.");
-        }
+  //       if (data?.biometrics_status && !data.biometrics_status.has_signature) {
+  //         toast.info("La signature n'est pas récupérée depuis ABIS, ajoutez-la manuellement.");
+  //       }
 
-        if (!data.is_enrolled) {
-          toast.info('Employé non encore enrôlé ');
-        }
+  //       if (!data.is_enrolled) {
+  //         toast.info('Employé non encore enrôlé ');
+  //       }
 
-        window.location.reload();
-      } else {
-        toast.error(data.message || 'Échec de récupération des données biométriques');
-      }
-    } catch (error) {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.response?.data?.detail ||
-        error?.message ||
-        'Erreur inconnue';
+  //       window.location.reload();
+  //     } else {
+  //       toast.error(data.message || 'Échec de récupération des données biométriques');
+  //     }
+  //   } catch (error) {
+  //     const errorMessage =
+  //       error?.response?.data?.message ||
+  //       error?.response?.data?.detail ||
+  //       error?.message ||
+  //       'Erreur inconnue';
 
-      toast.error(errorMessage);
-    } finally {
-      setLoadingABIS(false);
-    }
-  }, [employee_slug]);
+  //     toast.error(errorMessage);
+  //   } finally {
+  //     setLoadingABIS(false);
+  //   }
+  // }, [employee_slug]);
 
   // Fonction générique pour sauvegarder un fichier
   const handleSaveFile = useCallback(
@@ -494,7 +497,8 @@ export function BiometricData({
             <Iconify icon="mdi:fingerprint" width={{ xs: 24, sm: 28 }} />
             Données Biométriques
           </Typography>
-          <Stack direction="row" spacing={1}>
+          {/* ABIS désactivé  */}
+          {/* <Stack direction="row" spacing={1}>
             {abisLastRetrievedAt && (
               <Chip
                 icon={<Iconify icon="solar:refresh-bold" width={14} />}
@@ -540,7 +544,7 @@ export function BiometricData({
                   }}
                 />
               )}
-          </Stack>
+          </Stack> */}
         </Box>
 
         <Divider sx={{ mb: 3 }} />
@@ -580,11 +584,20 @@ export function BiometricData({
           </Grid>
         </Grid>
 
-        {canRetrieveABIS && !picturePreview && !signaturePreview && !fingerprintsPreview && (
+        {/* ABIS désactivé  */}
+        {/* {canRetrieveABIS && !picturePreview && !signaturePreview && !fingerprintsPreview && (
           <Alert severity="info" sx={{ mt: 3 }}>
             <Typography variant="body2">
               Aucune donnée biométrique n'a été enregistrée. Cliquez sur "{abisActionLabel}" pour
               obtenir les fichiers.
+            </Typography>
+          </Alert>
+        )} */}
+        {!picturePreview && !signaturePreview && !fingerprintsPreview && (
+          <Alert severity="info" sx={{ mt: 3 }}>
+            <Typography variant="body2">
+              Aucune donnée biométrique n'a été enregistrée. Utilisez les boutons "Ajouter" pour
+              téléverser la photo, la signature et les empreintes.
             </Typography>
           </Alert>
         )}

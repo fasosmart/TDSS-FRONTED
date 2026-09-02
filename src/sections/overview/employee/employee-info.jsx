@@ -1,4 +1,5 @@
-import { useState } from 'react';
+// ABIS désactivé
+// import { useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
@@ -8,31 +9,33 @@ import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid2';
-import Button from '@mui/material/Button';
+// import Button from '@mui/material/Button';
 
 import { Iconify } from 'src/components/iconify';
 import { fDate } from 'src/utils/format-time';
 
-import { useBoolean } from 'src/hooks/use-boolean';
+// import { useBoolean } from 'src/hooks/use-boolean';
 
-import { ConfirmDialog } from 'src/components/custom-dialog';
-import { toast } from 'src/components/snackbar';
+// import { ConfirmDialog } from 'src/components/custom-dialog';
+// import { toast } from 'src/components/snackbar';
 
-import API from 'src/utils/api';
-import axios from 'src/utils/axios';
+// ABIS désactivé
+// import API from 'src/utils/api';
+// import axios from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
 export function EmployeeInfo({ info, type, onSyncSuccess }) {
-  const syncOpen = useBoolean();
-  const [syncing, setSyncing] = useState(false);
+  // ABIS désactivé
+  // const syncOpen = useBoolean();
+  // const [syncing, setSyncing] = useState(false);
 
-  const hasRetrievedABIS = Boolean(info?.abis_last_retrieved_at || info?.is_registered_in_abis);
-  const canSendToABIS = !hasRetrievedABIS;
-  const abisActionLabel = "Envoyer a l'enrollement";
-  const abisActionTitle = "Envoyer les donnees a l'enrollement";
-  const abisActionContent =
-    "Etes-vous sur de vouloir envoyer les donnees de cet employe a l'enrollement ?";
+  // const hasRetrievedABIS = Boolean(info?.abis_last_retrieved_at || info?.is_registered_in_abis);
+  // const canSendToABIS = !hasRetrievedABIS;
+  // const abisActionLabel = "Envoyer a l'enrollement";
+  // const abisActionTitle = "Envoyer les donnees a l'enrollement";
+  // const abisActionContent =
+  //   "Etes-vous sur de vouloir envoyer les donnees de cet employe a l'enrollement ?";
 
   const getStatusConfig = (status) => {
     const configs = {
@@ -45,57 +48,58 @@ export function EmployeeInfo({ info, type, onSyncSuccess }) {
 
   const statusConfig = getStatusConfig(info?.status);
 
-  const handleSync = async () => {
-    const employeeSlug = info?.slug || info?.employee_slug;
+  // ABIS désactivé
+  // const handleSync = async () => {
+  //   const employeeSlug = info?.slug || info?.employee_slug;
 
-    if (!employeeSlug) {
-      toast.error("Impossible d'envoyer à l'enrollement: employé introuvable.");
-      return false;
-    }
+  //   if (!employeeSlug) {
+  //     toast.error("Impossible d'envoyer à l'enrollement: employé introuvable.");
+  //     return false;
+  //   }
 
-    if (!canSendToABIS) {
-      toast.info("Mise à jour de l'envoi de l'employé à l'enrollement temporairement désactivée.");
-      return false;
-    }
+  //   if (!canSendToABIS) {
+  //     toast.info("Mise à jour de l'envoi de l'employé à l'enrollement temporairement désactivée.");
+  //     return false;
+  //   }
 
-    setSyncing(true);
-    try {
-      // TEMP: backend issue on ABIS update endpoint.
-      // const response = await axios.put(API.updateABISEmployee(employeeSlug));
-      const response = await axios.post(API.saveEmployeeToABIS(employeeSlug));
+  //   setSyncing(true);
+  //   try {
+  //     // TEMP: backend issue on ABIS update endpoint.
+  //     // const response = await axios.put(API.updateABISEmployee(employeeSlug));
+  //     const response = await axios.post(API.saveEmployeeToABIS(employeeSlug));
 
-      const isSuccess =
-        response?.status === 200 || response?.status === 201 || response?.data?.success;
+  //     const isSuccess =
+  //       response?.status === 200 || response?.status === 201 || response?.data?.success;
 
-      const message =
-        response?.data?.message ||
-        (isSuccess ? "Employé envoyé à l'enrollement avec succès" : null);
+  //     const message =
+  //       response?.data?.message ||
+  //       (isSuccess ? "Employé envoyé à l'enrollement avec succès" : null);
 
-      if (isSuccess) {
-        toast.success(message);
-        if (onSyncSuccess) {
-          await onSyncSuccess();
-        }
-        return true;
-      }
+  //     if (isSuccess) {
+  //       toast.success(message);
+  //       if (onSyncSuccess) {
+  //         await onSyncSuccess();
+  //       }
+  //       return true;
+  //     }
 
-      toast.error(response?.data?.message || "Echec lors de l'envoi à l'enrollement");
-      return false;
-    } catch (error) {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.response?.data?.detail ||
-        error?.response?.data?.error ||
-        error?.response?.data?.details ||
-        error?.response?.data?.non_field_errors?.[0] ||
-        error?.message ||
-        'Erreur inconnue';
-      toast.error(`Echec lors de l'envoi à l'enrollement: ${errorMessage}`);
-      return false;
-    } finally {
-      setSyncing(false);
-    }
-  };
+  //     toast.error(response?.data?.message || "Echec lors de l'envoi à l'enrollement");
+  //     return false;
+  //   } catch (error) {
+  //     const errorMessage =
+  //       error?.response?.data?.message ||
+  //       error?.response?.data?.detail ||
+  //       error?.response?.data?.error ||
+  //       error?.response?.data?.details ||
+  //       error?.response?.data?.non_field_errors?.[0] ||
+  //       error?.message ||
+  //       'Erreur inconnue';
+  //     toast.error(`Echec lors de l'envoi à l'enrollement: ${errorMessage}`);
+  //     return false;
+  //   } finally {
+  //     setSyncing(false);
+  //   }
+  // };
 
   // Composant reutilisable pour les items d'information
   const InfoItem = ({ icon, label, value, isLink = false }) => (
@@ -302,7 +306,8 @@ export function EmployeeInfo({ info, type, onSyncSuccess }) {
         <Divider sx={{ mb: 3 }} />
 
         {/* ================== Section Suivi ABIS ================== */}
-        {(info?.abis_last_sync_at || info?.abis_last_retrieved_at) && (
+        {/* ABIS désactivé  */}
+        {/* {(info?.abis_last_sync_at || info?.abis_last_retrieved_at) && (
           <>
             <Box sx={{ mb: 3 }}>
               <SectionTitle title="Suivi Enrollement" />
@@ -332,7 +337,7 @@ export function EmployeeInfo({ info, type, onSyncSuccess }) {
 
             <Divider sx={{ my: 3 }} />
           </>
-        )}
+        )} */}
 
         {/* ================== Section Identification ================== */}
         <Box sx={{ mb: 3 }}>
@@ -405,7 +410,8 @@ export function EmployeeInfo({ info, type, onSyncSuccess }) {
           </Box>
         </Box>
 
-        <ConfirmDialog
+        {/* ABIS désactivé  */}
+        {/* <ConfirmDialog
           open={syncOpen.value}
           onClose={syncOpen.onFalse}
           title={abisActionTitle}
@@ -424,7 +430,7 @@ export function EmployeeInfo({ info, type, onSyncSuccess }) {
               {syncing ? 'Synchronisation...' : abisActionLabel}
             </Button>
           }
-        />
+        /> */}
       </Box>
     </Card>
   );

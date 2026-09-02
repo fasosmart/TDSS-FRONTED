@@ -285,7 +285,8 @@ export function PermitInfo({ created_at, permit, expired_at, status, permits }) 
                 },
               }}
             />
-            <Chip
+            {/* ABIS désactivé  */}
+            {/* <Chip
               icon={
                 <Iconify
                   icon={permits?.is_registered_in_abis ? 'mdi:check-circle' : 'mdi:close-circle'}
@@ -309,12 +310,13 @@ export function PermitInfo({ created_at, permit, expired_at, status, permits }) 
                   fontSize: { xs: '0.75rem', sm: '0.8125rem' },
                 },
               }}
-            />
+            /> */}
           </Stack>
         </Box>
 
         {/* ================== Section ABIS ================== */}
-        <Divider sx={{ my: 3 }} />
+        {/* ABIS désactivé  */}
+        {/* <Divider sx={{ my: 3 }} />
         <Box>
           <SectionTitle title="Statut Enrollement" />
           <Box
@@ -336,7 +338,7 @@ export function PermitInfo({ created_at, permit, expired_at, status, permits }) 
               />
             )}
           </Box>
-        </Box>
+        </Box> */}
 
         <Divider sx={{ mb: 3 }} />
 
