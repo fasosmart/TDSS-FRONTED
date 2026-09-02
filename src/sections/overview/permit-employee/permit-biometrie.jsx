@@ -290,8 +290,6 @@ export function BiometricData({
                 Voir
               </Button>
             )}
-            {/* Seule la signature reste peut etre modifier manuellement : la photo et les
-                empreintes proviennent d'ABIS (onEdit n'est fourni que pour la signature). */}
             {onEdit && can('can_update_employee_file') && (
               <Button
                 variant={hasData ? 'outlined' : 'contained'}
@@ -555,8 +553,7 @@ export function BiometricData({
               icon="mdi:camera"
               url={picturePreview}
               color="primary"
-              // Photo recuperee depuis ABIS
-              // onEdit={() => setPictureDialog(true)}
+              onEdit={() => setPictureDialog(true)}
             />
           </Grid>
 
@@ -578,8 +575,7 @@ export function BiometricData({
               icon="mdi:fingerprint"
               url={fingerprintsPreview}
               color="info"
-              // Empreintes recuperees depuis ABIS
-              // onEdit={() => setFingerprintsDialog(true)}
+              onEdit={() => setFingerprintsDialog(true)}
             />
           </Grid>
         </Grid>
@@ -595,7 +591,7 @@ export function BiometricData({
       </Card>
 
       {/* Dialog pour Photo */}
-      {/* <UploadDialog
+      <UploadDialog
         open={pictureDialog}
         onClose={() => setPictureDialog(false)}
         title="Photo d'Identité"
@@ -614,7 +610,7 @@ export function BiometricData({
           setPictureFile(null);
           setPicturePreview(picture || '');
         }}
-      /> */}
+      />
 
       {/* Dialog pour Signature */}
       <UploadDialog
@@ -645,7 +641,7 @@ export function BiometricData({
       />
 
       {/* Dialog pour Empreintes */}
-      {/* <UploadDialog
+      <UploadDialog
         open={fingerprintsDialog}
         onClose={() => setFingerprintsDialog(false)}
         title="Empreintes Digitales"
@@ -675,7 +671,7 @@ export function BiometricData({
           setFingerprintsFile(null);
           setFingerprintsPreview(fingerprints_picture || '');
         }}
-      /> */}
+      />
 
       {/* Dialog de prévisualisation */}
       <Dialog open={openPreview} onClose={() => setOpenPreview(false)} maxWidth="md" fullWidth>
