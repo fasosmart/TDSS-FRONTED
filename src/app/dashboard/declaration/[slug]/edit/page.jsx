@@ -1,4 +1,5 @@
 import { CONFIG } from 'src/config-global';
+import { PermissionGuard } from 'src/auth/guard';
 
 import { DeclarationEditView } from 'src/sections/overview/declaration/view';
 
@@ -9,7 +10,7 @@ export const metadata = { title: `Modifier Declarations | Dashboard - ${CONFIG.a
 export default async function Page({ params }) {
   const { slug } = await params;
 
-  return <DeclarationEditView slug={slug} />;
+  return <PermissionGuard permission="can_edit_declaration"><DeclarationEditView slug={slug} /></PermissionGuard>;
 }
 
 export const dynamic = 'force-dynamic';

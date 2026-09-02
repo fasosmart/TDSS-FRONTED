@@ -82,7 +82,7 @@ export function PenaliteListView() {
     status: 'all',
     startDate: null,
     endDate: null,
-  });
+  }, { persistByPath: true });
 
   const dateError = fIsAfter(filters.state.startDate, filters.state.endDate);
 
@@ -456,3 +456,4 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
 
   return inputData;
 }
+

@@ -9,6 +9,7 @@ import Stack from '@mui/material/Stack';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
+import Checkbox from '@mui/material/Checkbox';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { ConfirmDialog } from 'src/components/custom-dialog';
@@ -16,8 +17,10 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 import { Iconify } from 'src/components/iconify';
 import { Label } from 'src/components/label';
 
+import { fDate } from 'src/utils/format-time';
+import { usePermissions } from 'src/auth/hooks';
+
 export function TableRowComPermit({
-  type,
   row,
   selected,
   onEditRow,
@@ -31,10 +34,13 @@ export function TableRowComPermit({
   onDeliverRow,
   onPrintRow,
   visibleColumns,
+  rejectReasons,
 }) {
   const confirm = useBoolean();
 
   const popover = usePopover();
+
+  const { can } = usePermissions();
 
   const quickEdit = useBoolean();
 
@@ -47,12 +53,33 @@ export function TableRowComPermit({
   const deliverConfirm = useBoolean();
 
   const printConfirm = useBoolean();
+  const isSelectable = can('can_mark_as_printed') && Boolean(onSelectRow);
 
-  const [motifRejet, setMotifRejet] = useState('');
+  const [rejectForm, setRejectForm] = useState({
+    reject_reason_type: '',
+    reject_reason_description: '',
+  });
+
+  // Remplace handleConfirmRejet par ceci :
 
   const handleConfirmRejet = () => {
-    onRejetRow(motifRejet); // On passe le motif en paramètre
-    setMotifRejet('');
+    if (!rejectForm.reject_reason_type) {
+      toast.error('Veuillez sélectionner un type de rejet');
+      return;
+    }
+
+    if (!rejectForm.reject_reason_description.trim()) {
+      toast.error('Veuillez ajouter une description');
+      return;
+    }
+
+    onRejetRow(rejectForm);
+
+    setRejectForm({
+      reject_reason_type: '',
+      reject_reason_description: '',
+    });
+
     rejetConfirm.onFalse();
   };
 
@@ -77,6 +104,15 @@ export function TableRowComPermit({
         return 'success';
       case 'processing':
         return 'warning';
+      case 'billed':
+        return 'info';
+      case 'paid':
+        return 'success';
+      case 'correction':
+        return 'warning';
+      case 'expired':
+        return 'error';
+
       default:
         return 'default';
     }
@@ -97,17 +133,26 @@ export function TableRowComPermit({
           },
         }}
       >
-        <TableCell padding="checkbox">
-          {/* <Checkbox id={row.slug} checked={selected} onClick={onSelectRow} /> */}
-        </TableCell>
+        {isSelectable && (
+          <TableCell padding="checkbox">
+            <Checkbox
+              id={row.slug}
+              checked={selected}
+              onClick={(e) => {
+                e.stopPropagation(); // Empêche le clic sur la checkbox de se propager au TableRow
+                onSelectRow(e);
+              }}
+            />
+          </TableCell>
+        )}
 
         {/* {visibleColumns.includes('number') && (
           <TableCell sx={{ whiteSpace: 'nowrap' }}>{row?.number}</TableCell>
         )} */}
 
-        {visibleColumns.includes('reference') && (
+        {/* {visibleColumns.includes('reference') && (
           <TableCell sx={{ whiteSpace: 'nowrap' }}>{row?.reference}</TableCell>
-        )}
+        )} */}
 
         {visibleColumns.includes('passport') && (
           <TableCell sx={{ whiteSpace: 'nowrap' }}>{row?.passport_number}</TableCell>
@@ -135,9 +180,22 @@ export function TableRowComPermit({
 
         {visibleColumns.includes('entreprise') && <TableCell>{row.company_name}</TableCell>}
 
+        {visibleColumns.includes('contract_starts_at') && (
+          <TableCell>{fDate(row.contract_starts_at)}</TableCell>
+        )}
+
+        {visibleColumns.includes('contract_duration') && (
+          <TableCell>{row.contract_duration} mois</TableCell>
+        )}
+
         {visibleColumns.includes('type') && <TableCell>{row.job?.permit}</TableCell>}
 
         {visibleColumns.includes('typedec') && <TableCell>{row.type_display}</TableCell>}
+        {visibleColumns.includes('created_on') && <TableCell>{fDate(row.created_on)}</TableCell>}
+
+        {visibleColumns.includes('card_expires_at') && (
+          <TableCell>{fDate(row.card_expires_at)}</TableCell>
+        )}
 
         {visibleColumns.includes('statut') && (
           <TableCell>
@@ -168,21 +226,22 @@ export function TableRowComPermit({
         slotProps={{ arrow: { placement: 'right-top' } }}
       >
         <MenuList>
-          {type === 'agent' && row.status === 'processing' && (
-            <MenuItem
-              onClick={() => {
-                submitConfirm.onTrue();
-                popover.onClose();
-              }}
-              sx={{ color: 'success.main' }}
-            >
-              <Iconify icon="mdi:check-bold" />
-              Soumettre
-            </MenuItem>
-          )}
+          {can('can_submit_declaration_employee') &&
+            (row.status === 'paid' || row.status === 'correction') && (
+              <MenuItem
+                onClick={() => {
+                  submitConfirm.onTrue();
+                  popover.onClose();
+                }}
+                sx={{ color: 'success.main' }}
+              >
+                <Iconify icon="mdi:check-bold" />
+                Soumettre
+              </MenuItem>
+            )}
 
-          {type === 'supervisor' && row.status === 'submitted' && (
-            <>
+          {row.status === 'submitted' &&
+            can('can_validate_declaration_employee') && (
               <MenuItem
                 onClick={() => {
                   validateConfirm.onTrue();
@@ -193,6 +252,10 @@ export function TableRowComPermit({
                 <Iconify icon="solar:check-bold" />
                 Valider
               </MenuItem>
+            )}
+
+          {row.status === 'submitted' &&
+            can('can_correct_declaration_employee') && (
               <MenuItem
                 onClick={() => {
                   rejetConfirm.onTrue();
@@ -203,36 +266,32 @@ export function TableRowComPermit({
                 <Iconify icon="solar:check-bold" />
                 Rejeter
               </MenuItem>
-            </>
+            )}
+
+          {can('can_mark_as_printed') && row.status === 'validated' && (
+            <MenuItem
+              onClick={() => {
+                printConfirm.onTrue();
+                popover.onClose();
+              }}
+              sx={{ color: 'success.main' }}
+            >
+              <Iconify icon="solar:printer-minimalistic-bold" />
+              imprimer le permis
+            </MenuItem>
           )}
 
-          {type === 'printer' && (
-            <>
-              {row.status === 'validated' && (
-                <MenuItem
-                  onClick={() => {
-                    printConfirm.onTrue();
-                    popover.onClose();
-                  }}
-                  sx={{ color: 'success.main' }}
-                >
-                  <Iconify icon="mdi:truck-delivery" />
-                  imprimer le permis
-                </MenuItem>
-              )}
-              {row.status === 'printed' && (
-                <MenuItem
-                  onClick={() => {
-                    deliverConfirm.onTrue();
-                    popover.onClose();
-                  }}
-                  sx={{ color: 'success.main' }}
-                >
-                  <Iconify icon="mdi:truck-delivery" />
-                  délivrer le permis
-                </MenuItem>
-              )}
-            </>
+          {can('can_deliver_permit') && row.status === 'printed' && (
+            <MenuItem
+              onClick={() => {
+                deliverConfirm.onTrue();
+                popover.onClose();
+              }}
+              sx={{ color: 'success.main' }}
+            >
+              <Iconify icon="mdi:check-bold" />
+              Livrer
+            </MenuItem>
           )}
 
           <MenuItem
@@ -357,22 +416,55 @@ export function TableRowComPermit({
 
       <ConfirmDialog
         open={rejetConfirm.value}
-        onClose={rejetConfirm.onFalse}
-        title="Rejeter"
+        onClose={() => {
+          rejetConfirm.onFalse();
+          setRejectForm({
+            reject_reason_type: '',
+            reject_reason_description: '',
+          });
+        }}
+        title="Rejeter le permis"
         content={
-          <TextField
-            fullWidth
-            label="Motif du rejet"
-            multiline
-            rows={3}
-            value={motifRejet}
-            onChange={(e) => setMotifRejet(e.target.value)}
-            sx={{ mt: 1 }}
-          />
+          <>
+            <TextField
+              select
+              fullWidth
+              label="Type de rejet"
+              value={rejectForm.reject_reason_type}
+              onChange={(e) =>
+                setRejectForm((prev) => ({
+                  ...prev,
+                  reject_reason_type: e.target.value,
+                }))
+              }
+              sx={{ mb: 2, mt: 1 }}
+            >
+              {rejectReasons?.map((reason) => (
+                <MenuItem key={reason.slug} value={reason.slug}>
+                  {reason.name}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Description"
+              placeholder="Ajouter la raison détaillée du rejet"
+              value={rejectForm.reject_reason_description}
+              onChange={(e) =>
+                setRejectForm((prev) => ({
+                  ...prev,
+                  reject_reason_description: e.target.value,
+                }))
+              }
+            />
+          </>
         }
         action={
           <Button variant="contained" color="error" onClick={handleConfirmRejet}>
-            Rejeter
+            Confirmer le rejet
           </Button>
         }
       />

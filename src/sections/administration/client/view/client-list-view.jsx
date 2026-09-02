@@ -88,7 +88,7 @@ export function ClientListView() {
         previous: null,
     });
 
-    const filters = useSetState({ name: '', type: [], location:'', status: 'all' });
+    const filters = useSetState({ name: '', type: [], location:'', status: 'all' }, { persistByPath: true });
 
     const dataFiltered = applyFilter({
         inputData: tableData,
@@ -193,6 +193,7 @@ export function ClientListView() {
                     ...(filters.state.name && { name: filters.state.name }),
                     ...(filters.state.type.length && { type: filters.state.type.join(',') }),
                     ...(filters.state.location && { location: filters.state.location }),
+                    ...(filters.state.status !== 'all' && { status: filters.state.status }),
                 }
                 const response = await axios.get(API.listProfiles(), { params });
                 setTableData(response.data.results); // Assurez-vous que votre API renvoie un tableau
@@ -209,12 +210,12 @@ export function ClientListView() {
         };
 
         fetchClient();
-    }, [table.page, table.rowsPerPage , filters.state.name, filters.state.type, filters.state.location]); // La dépendance vide signifie que cette fonction est appelée une fois au montage
+    }, [table.page, table.rowsPerPage, filters.state.name, filters.state.type, filters.state.location, filters.state.status]); // La dépendance vide signifie que cette fonction est appelée une fois au montage
 
 useEffect(() => {
     getRegions().then((data) => setRegions(data));
     getProfileTypes().then((data) => setProfileTypes(data));
-})
+}, [])
 
     if (loading) {
         console.info('Loading ...');

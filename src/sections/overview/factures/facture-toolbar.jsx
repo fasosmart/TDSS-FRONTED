@@ -1,118 +1,194 @@
 'use client';
 
+import { useState } from 'react';
+
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
 import IconButton from '@mui/material/IconButton';
-// import NoSsr from '@mui/material/NoSsr';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
-// import { BlobProvider } from '@react-pdf/renderer';
-// import { saveAs } from 'file-saver';
-import { PDFViewer } from '@react-pdf/renderer';
-// import axios from 'src/utils/axios';
-import { useRef, useState } from 'react';
-
-import { useReactToPrint } from 'react-to-print';
-
-import { useRouter } from 'src/routes/hooks';
-// import { paths } from 'src/routes/paths';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { Iconify } from 'src/components/iconify';
+import { toast } from 'src/components/snackbar';
+
+import { usePermissions } from 'src/auth/hooks';
+
 import { PayeurForm } from './form-factures';
+import { generateFactureDocument } from './facture-pdf-service';
 
-import { generateFacturePDF } from './facture-pdf';
-import { generateFacturePDFInit } from './facture-pdf-init';
-// import { FactureDetails } from './facture-details';
+function extractErrorMessage(error) {
+  if (!error) return 'Une erreur est survenue.';
 
-// ----------------------------------------------------------------------
+  if (typeof error === 'string') return error;
+
+  const responseData = error.response?.data;
+
+  if (typeof responseData === 'string') return responseData;
+  if (Array.isArray(responseData)) return responseData.join(' ');
+
+  if (responseData && typeof responseData === 'object') {
+    return (
+      responseData.detail ||
+      responseData.error ||
+      responseData.message ||
+      responseData.details ||
+      responseData.non_field_errors?.join(' ') ||
+      'Une erreur est survenue.'
+    );
+  }
+
+  return error.message || 'Une erreur est survenue.';
+}
+
+function openPdfInNewTab(pdfBytes) {
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const openedWindow = window.open(url, '_blank', 'noopener,noreferrer');
+
+  if (!openedWindow) {
+    URL.revokeObjectURL(url);
+    throw new Error("Impossible d'ouvrir l'apercu PDF.");
+  }
+}
+
+function openPrintWindow() {
+  const printWindow = window.open('', '_blank');
+
+  if (!printWindow) {
+    throw new Error("Impossible d'ouvrir la fenetre d'impression.");
+  }
+
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Impression facture</title>
+        <style>
+          html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #111827;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+          }
+          .loading {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+          }
+          iframe {
+            border: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="loading">Preparation du document...</div>
+        <iframe id="facture-print-frame" title="Impression facture"></iframe>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+
+  return printWindow;
+}
+
+function loadPdfInPrintWindow(printWindow, pdfBytes) {
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const frame = printWindow.document.getElementById('facture-print-frame');
+  const loading = printWindow.document.querySelector('.loading');
+
+  if (!frame) {
+    URL.revokeObjectURL(url);
+    throw new Error("Impossible de preparer l'impression du PDF.");
+  }
+
+  frame.onload = () => {
+    if (loading) {
+      loading.style.display = 'none';
+    }
+
+    frame.style.display = 'block';
+
+    window.setTimeout(() => {
+      printWindow.focus();
+      printWindow.print();
+    }, 300);
+
+    window.setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 60000);
+  };
+
+  frame.src = url;
+}
 
 export function FactureToolbar({ facture, user, currentStatus, onChangeStatus, devise }) {
-  const router = useRouter();
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const view = useBoolean();
+  const payeurForm = useBoolean();
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [downloadLoading, setDownloadLoading] = useState(false);
+  const [printLoading, setPrintLoading] = useState(false);
 
-  const type = user?.type_code?.toLowerCase().trim();
-  //  const profil = user?.companies?.[0]?.type_name?.toLowerCase().trim() ;
+  const { can } = usePermissions();
+  const canUsePdfActions = !!facture;
 
   const handlePreview = async () => {
-    setLoading(true);
+    if (!facture) return;
+
+    setPreviewLoading(true);
 
     try {
-      // 1. génération (aucun onglet n’est encore ouvert)
-      const pdfBytes = await generateFacturePDF(facture, devise, { download: false });
-
-      // 2. création de l’URL blob
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-
-      // 3. ouverture du nouvel onglet une fois prêt
-      window.open(url, '_blank', 'noopener,noreferrer');
+      const pdfBytes = await generateFactureDocument(facture, devise, { download: false });
+      openPdfInNewTab(pdfBytes);
     } catch (error) {
-      console.error('Erreur génération PDF :', error);
-      // → facultatif : afficher un snackbar / toast d’erreur ici
+      toast.error(extractErrorMessage(error) || "Impossible d'afficher l'apercu PDF.");
     } finally {
-      setLoading(false);
+      setPreviewLoading(false);
     }
   };
 
-  const handlePreviewInit = async () => {
-    setLoading(true);
+  const handleDownload = async () => {
+    if (!facture) return;
+
+    setDownloadLoading(true);
 
     try {
-      // 1. génération (aucun onglet n’est encore ouvert)
-      const pdfBytes = await generateFacturePDFInit(facture, devise, { download: false });
-
-      // 2. création de l’URL blob
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-
-      // 3. ouverture du nouvel onglet une fois prêt
-      window.open(url, '_blank', 'noopener,noreferrer');
+      await generateFactureDocument(facture, devise, { download: true });
     } catch (error) {
-      console.error('Erreur génération PDF :', error);
-      // → facultatif : afficher un snackbar / toast d’erreur ici
+      toast.error(extractErrorMessage(error) || 'Impossible de telecharger la facture.');
     } finally {
-      setLoading(false);
+      setDownloadLoading(false);
     }
   };
 
-  const payeurForm = useBoolean();
-  const componentRef = useRef(null);
+  const handlePrint = async () => {
+    if (!facture) return;
 
-  const handlePrint = useReactToPrint({
-    contentRef: componentRef,
-    documentTitle: `Declaration_${facture?.numero}`,
-    onAfterPrint: () => console.log('Impression terminée'),
-  });
+    let printWindow;
+    setPrintLoading(true);
 
-  // const renderDownload = (
-  //   <NoSsr>
-  //     {facture && (
-  //       <BlobProvider document={<FacturePDF facture={facture} devise={devise} />}>
-  //         {({ blob, url, loading, error }) => (
-  //           <Tooltip title="Télécharger">
-  //             <span>
-  //               <IconButton
-  //                 onClick={() => {
-  //                   if (blob) saveAs(blob, `Facture_${facture.number}.pdf`);
-  //                 }}
-  //                 disabled={loading || error}
-  //               >
-  //                 {loading ? <CircularProgress size={24} /> : <Iconify icon="eva:cloud-download-fill" />}
-  //               </IconButton>
-  //             </span>
-  //           </Tooltip>
-  //         )}
-  //       </BlobProvider>
-  //     )}
-  //   </NoSsr>
-  // );
+    try {
+      printWindow = openPrintWindow();
+      const pdfBytes = await generateFactureDocument(facture, devise, { download: false });
+      loadPdfInPrintWindow(printWindow, pdfBytes);
+    } catch (error) {
+      if (printWindow && !printWindow.closed) {
+        printWindow.close();
+      }
+      toast.error(extractErrorMessage(error) || "Impossible d'imprimer la facture.");
+    } finally {
+      setPrintLoading(false);
+    }
+  };
 
   return (
     <>
@@ -122,49 +198,53 @@ export function FactureToolbar({ facture, user, currentStatus, onChangeStatus, d
         alignItems={{ xs: 'flex-end', sm: 'center' }}
         sx={{ mb: { xs: 3, md: 5 } }}
       >
-        <Stack direction="row" spacing={1} flexGrow={1} sx={{ width: 1 }}>
-          {/* Bouton d'aperçu PDF */}
+        <Stack direction="row" spacing={1} flexGrow={1} sx={{ width: 1, flexWrap: 'wrap' }}>
+          <Tooltip title="Apercu PDF">
+            <span>
+              <IconButton
+                onClick={handlePreview}
+                disabled={!canUsePdfActions || previewLoading || printLoading || downloadLoading}
+              >
+                {previewLoading ? <CircularProgress size={24} /> : <Iconify icon="eva:eye-fill" />}
+              </IconButton>
+            </span>
+          </Tooltip>
 
-          {facture && facture.declarations ? (
-            facture.declarations.length > 0 ? (
-              <Tooltip title="Aperçu PDF">
-                <span>
-                  <IconButton onClick={handlePreview} disabled={loading}>
-                    {loading ? <CircularProgress size={24} /> : <Iconify icon="eva:eye-fill" />}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            ) : (
-              <Tooltip title="Aperçu PDF">
-                <span>
-                  <IconButton onClick={handlePreviewInit} disabled={loading}>
-                    {loading ? <CircularProgress size={24} /> : <Iconify icon="eva:eye-fill" />}
-                  </IconButton>
-                </span>
-              </Tooltip>
-            )
-          ) : null}
-          {facture?.declarations.length > 0 ? (
-            <IconButton onClick={() => generateFacturePDF(facture, devise)}>
-              <Iconify icon="eva:cloud-download-fill" />
-            </IconButton>
-          ) : (
-            <IconButton onClick={() => generateFacturePDFInit(facture, devise)}>
-              <Iconify icon="eva:cloud-download-fill" />
-            </IconButton>
-          )}
+          <Tooltip title="Telecharger">
+            <span>
+              <IconButton
+                onClick={handleDownload}
+                disabled={!canUsePdfActions || downloadLoading || previewLoading || printLoading}
+              >
+                {downloadLoading ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  <Iconify icon="eva:cloud-download-fill" />
+                )}
+              </IconButton>
+            </span>
+          </Tooltip>
 
-          {/* {renderDownload} */}
-          <Box sx={{ display: 'none' }}>{/* <FactureDetails ref={componentRef}  /> */}</Box>
+          <Tooltip title="Imprimer">
+            <span>
+              <IconButton
+                onClick={handlePrint}
+                disabled={!canUsePdfActions || printLoading || previewLoading || downloadLoading}
+              >
+                {printLoading ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  <Iconify icon="solar:printer-minimalistic-bold" />
+                )}
+              </IconButton>
+            </span>
+          </Tooltip>
 
-          {/* <Tooltip title="Imprimer">
-            <IconButton onClick={handlePrint}>
-              <Iconify icon="solar:printer-minimalistic-bold" />
-            </IconButton>
-          </Tooltip> */}
-          {(type === 'treasurer' || type === 'accountant') && currentStatus === 'unpaid' && (
+          <Box sx={{ flexGrow: 1 }} />
+
+          {can('can_mark_facture_paid') && currentStatus === 'unpaid' && !facture?.has_payment && (
             <Tooltip title="Payer la facture">
-              <IconButton onClick={() => payeurForm.onTrue()}>
+              <IconButton onClick={payeurForm.onTrue}>
                 <Iconify icon="mdi:credit-card" />
               </IconButton>
             </Tooltip>
@@ -172,35 +252,13 @@ export function FactureToolbar({ facture, user, currentStatus, onChangeStatus, d
         </Stack>
       </Stack>
 
-      <Dialog
-        fullScreen
-        open={view.value}
-        onClose={view.onFalse}
-        sx={{ '& .MuiDialog-paper': { width: '100%', height: '100%' } }}
-      >
-        <Box sx={{ height: 1, display: 'flex', flexDirection: 'column' }}>
-          <DialogActions sx={{ p: 1.5 }}>
-            <Button color="inherit" variant="contained" onClick={view.onFalse}>
-              Fermer
-            </Button>
-          </DialogActions>
-
-          <Box sx={{ flexGrow: 1, height: 1, overflow: 'hidden' }}>
-            <iframe
-              src={previewUrl ?? ''}
-              style={{ width: '100%', height: '100%', border: 'none' }}
-            />
-          </Box>
-        </Box>
-      </Dialog>
-
       <PayeurForm
         slug={[facture?.slug]}
         open={payeurForm.value}
         onclose={payeurForm.onFalse}
         onSuccess={() => {
-          onChangeStatus('paid'); // Met à jour le statut local de la facture
-          payeurForm.onFalse(); // Ferme la boîte de dialogue de paiement
+          onChangeStatus('paid');
+          payeurForm.onFalse();
         }}
       />
     </>

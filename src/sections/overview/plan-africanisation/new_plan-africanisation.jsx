@@ -22,6 +22,7 @@ import {
   Alert,
   AlertTitle,
 } from '@mui/material';
+import LoadingButton from '@mui/lab/LoadingButton';
 
 import {
   Add as AddIcon,
@@ -422,9 +423,13 @@ export function AfricanizationPlanNew({ employeeId, plan, open, onClose, isEdit,
 
           <DialogActions>
             <Button onClick={onClose}>Annuler</Button>
-            <Button type="submit" variant="contained" disabled={isSubmitting || loadingSend.value}>
+            <LoadingButton
+              type="submit"
+              variant="contained"
+              loading={isSubmitting || loadingSend.value}
+            >
               {plan ? 'Mettre à jour' : 'Créer'}
-            </Button>
+            </LoadingButton>
           </DialogActions>
         </Form>
       </Dialog>

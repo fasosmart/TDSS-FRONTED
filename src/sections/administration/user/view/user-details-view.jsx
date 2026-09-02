@@ -34,11 +34,13 @@ import { getEntreprises, getEntreprisesSearch } from 'src/utils/options';
 import API from 'src/utils/api';
 import axios from 'src/utils/axios';
 import { paths } from 'src/routes/paths';
+import { DetailNotFoundView } from 'src/sections/error';
 import debounce from 'lodash.debounce';
 
 export function UserDetailsView({ slug }) {
     const [user, setUser] = useState(null);
     const [error, setError] = useState(null);
+    const [notFound, setNotFound] = useState(false);
     const [loading, setLoading] = useState(true);
     const [tabIndex, setTabIndex] = useState(0);
     const [showSelect, setShowSelect] = useState(false);
@@ -57,7 +59,11 @@ export function UserDetailsView({ slug }) {
                 const { data } = await axios.get(API.userDetails(slug));
                 setUser(data);
             } catch (err) {
-                setError(err.message || 'Erreur lors du chargement');
+                if (err?.status === 404) {
+                    setNotFound(true);
+                } else {
+                    setError(err.message || 'Erreur lors du chargement');
+                }
             } finally {
                 setLoading(false);
             }
@@ -129,6 +135,12 @@ export function UserDetailsView({ slug }) {
     const handleChange = (_, newIndex) => setTabIndex(newIndex);
 
     if (loading) return <Typography>Chargement...</Typography>;
+    if (notFound)
+        return (
+            <DashboardContent sx={{ py: 4 }}>
+                <DetailNotFoundView title="Utilisateur introuvable" href={paths.dashboard.user.list} />
+            </DashboardContent>
+        );
     if (error) return <Typography color="error">{error}</Typography>;
 
     const iconWrapperStyle = {

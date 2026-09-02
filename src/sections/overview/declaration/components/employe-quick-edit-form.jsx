@@ -44,7 +44,14 @@ export const employeQuickEditSchema = zod.object({
 
 // ----------------------------------------------------------------------
 
-export function EmployeeQuickEditForm({ currentEmployee, open, onClose, onUpdateRow, dec_slug }) {
+export function EmployeeQuickEditForm({
+  currentEmployee,
+  open,
+  onClose,
+  onUpdateRow,
+  dec_slug,
+  isPermit,
+}) {
   const user = useMockedUser();
   const [options, setOptions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -111,9 +118,7 @@ export function EmployeeQuickEditForm({ currentEmployee, open, onClose, onUpdate
             params: { offset: 0, limit: total },
           });
           if (isMounted) setCountries(resp2.data.results);
-        } else {
-          if (isMounted) setCountries(resp1.data.results);
-        }
+        } else if (isMounted) setCountries(resp1.data.results);
       } catch (error) {
         console.error('Erreur lors du chargement des pays :', error);
       } finally {
@@ -147,7 +152,6 @@ export function EmployeeQuickEditForm({ currentEmployee, open, onClose, onUpdate
     );
     if (byName) {
       setValue('country', byName.slug);
-      return;
     }
 
     // Sinon on laisse la valeur telle quelle (backend utilise peut-être des noms non trouvés)
@@ -323,7 +327,7 @@ export function EmployeeQuickEditForm({ currentEmployee, open, onClose, onUpdate
       });
 
       // Ne pas définir manuellement le Content-Type pour laisser le navigateur gérer les délimitations
-      const response = await axios.put(API.UpdateEmploye(dec_slug, currentEmployee?.slug), data);
+      const response = await axios.patch(API.UpdateEmploye(dec_slug, currentEmployee?.slug), data);
 
       if (response) {
         toast.success('Mise à jour réussie !');
@@ -331,7 +335,7 @@ export function EmployeeQuickEditForm({ currentEmployee, open, onClose, onUpdate
 
         // Fusionner les données modifiées avec le client courant pour obtenir la version à jour
         const updatedEmployee = { ...currentEmployee, ...modifiedData };
-        onUpdateRow(updatedEmployee);
+        onUpdateRow?.(updatedEmployee);
         reset();
         onClose();
       }
@@ -437,6 +441,7 @@ export function EmployeeQuickEditForm({ currentEmployee, open, onClose, onUpdate
               getOptionLabel={(opt) => opt.label}
               loading={loading}
               fullWidth
+              disabled={isPermit}
               value={currentJobOption || null}
               filterOptions={(opts, state) =>
                 opts.filter((o) =>

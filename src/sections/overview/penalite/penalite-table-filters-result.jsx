@@ -5,23 +5,20 @@ import { fDateRangeShortLabel } from 'src/utils/format-time';
 
 import { chipProps, FiltersBlock, FiltersResult } from 'src/components/filters-result';
 
+import { getPenaltyStatusLabel, getPenaltyTypeLabel } from './penalite-filter-options';
+
 // ----------------------------------------------------------------------
 
 export function PenaliteTableFiltersResult({ filters, totalResults, onResetPage, sx }) {
-  const handleRemoveKeyword = useCallback(() => {
+  const handleRemoveCompany = useCallback(() => {
     onResetPage();
-    filters.setState({ name: '' });
+    filters.setState({ company: '' });
   }, [filters, onResetPage]);
 
-  const handleRemoveService = useCallback(
-    (inputValue) => {
-      const newValue = filters.state.service.filter((item) => item !== inputValue);
-
-      onResetPage();
-      filters.setState({ service: newValue });
-    },
-    [filters, onResetPage]
-  );
+  const handleRemoveType = useCallback(() => {
+    onResetPage();
+    filters.setState({ type: '' });
+  }, [filters, onResetPage]);
 
   const handleRemoveStatus = useCallback(() => {
     onResetPage();
@@ -30,39 +27,40 @@ export function PenaliteTableFiltersResult({ filters, totalResults, onResetPage,
 
   const handleRemoveDate = useCallback(() => {
     onResetPage();
-    filters.setState({ startDate: null, endDate: null });
+    filters.setState({ date_after: null, date_before: null });
   }, [filters, onResetPage]);
 
   return (
     <FiltersResult totalResults={totalResults} onReset={filters.onResetState} sx={sx}>
-      <FiltersBlock label="Service:" isShow={!!filters.state.service.length}>
-        {filters.state.service.map((item) => (
-          <Chip {...chipProps} key={item} label={item} onDelete={() => handleRemoveService(item)} />
-        ))}
+      <FiltersBlock label="Entreprise:" isShow={!!filters.state.company}>
+        <Chip {...chipProps} label={filters.state.company} onDelete={handleRemoveCompany} />
       </FiltersBlock>
 
-      <FiltersBlock label="Status:" isShow={filters.state.status !== 'all'}>
+      <FiltersBlock label="Type:" isShow={!!filters.state.type}>
         <Chip
           {...chipProps}
-          label={filters.state.status}
+          label={getPenaltyTypeLabel(filters.state.type)}
+          onDelete={handleRemoveType}
+        />
+      </FiltersBlock>
+
+      <FiltersBlock label="Statut:" isShow={filters.state.status !== 'all'}>
+        <Chip
+          {...chipProps}
+          label={getPenaltyStatusLabel(filters.state.status)}
           onDelete={handleRemoveStatus}
-          sx={{ textTransform: 'capitalize' }}
         />
       </FiltersBlock>
 
       <FiltersBlock
-        label="Date:"
-        isShow={Boolean(filters.state.startDate && filters.state.endDate)}
+        label="Période:"
+        isShow={Boolean(filters.state.date_after && filters.state.date_before)}
       >
         <Chip
           {...chipProps}
-          label={fDateRangeShortLabel(filters.state.startDate, filters.state.endDate)}
+          label={fDateRangeShortLabel(filters.state.date_after, filters.state.date_before)}
           onDelete={handleRemoveDate}
         />
-      </FiltersBlock>
-
-      <FiltersBlock label="Keyword:" isShow={!!filters.state.name}>
-        <Chip {...chipProps} label={filters.state.name} onDelete={handleRemoveKeyword} />
       </FiltersBlock>
     </FiltersResult>
   );

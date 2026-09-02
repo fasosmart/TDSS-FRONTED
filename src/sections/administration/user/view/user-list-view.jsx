@@ -48,7 +48,7 @@ import { UserTableToolbar } from '../user-table-toolbar';
 import { CircularProgress } from '@mui/material'
 
 import { getUserTypes } from 'src/utils/options';
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 // ----------------------------------------------------------------------
 
 const STATUS_OPTIONS = [
@@ -76,16 +76,14 @@ export function UserListView() {
 
   const confirm = useBoolean();
 
- const { user } = useMockedUser();
-
-  const company = user?.companies[0]?.type_code?.toLowerCase().trim();
+  const { can } = usePermissions();
 
   const [tableData, setTableData] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true); // État pour indiquer le chargement
   const [error, setError] = useState(null); // État pour gérer les erreurs
 
-  const filters = useSetState({ name: '', type: '', status: 'all' });
+  const filters = useSetState({ name: '', type: '', status: 'all' }, { persistByPath: true });
 
   const [pagination, setPagination] = useState({
     count: 0,
@@ -186,6 +184,7 @@ export function UserListView() {
         offset: offset,
         ...(filters.state.name && { name: filters.state.name }),
         ...(filters.state.type && { type: filters.state.type }),
+        ...(filters.state.status !== 'all' && { status: filters.state.status }),
       };
       const response = await axios.get(url, { params });
       setTableData(response.data.results);
@@ -209,7 +208,7 @@ export function UserListView() {
   // Chargement initial
   useEffect(() => {
     fetchUtilisateurs();
-  }, [table.page, table.rowsPerPage , filters.state.name, filters.state.type]);
+  }, [table.page, table.rowsPerPage, filters.state.name, filters.state.type, filters.state.status]);
 
   if (loading) {
     console.info('Loading utilisateurs...');
@@ -219,9 +218,9 @@ export function UserListView() {
     console.error(`Error: ${error}`);
   }
 
-useEffect(() => {
-  getUserTypes().then(data => setRoles(data));
-})
+  useEffect(() => {
+    getUserTypes().then((data) => setRoles(data));
+  }, []);
 
 
   return (
@@ -236,17 +235,17 @@ useEffect(() => {
           ]}
           
           action={
-           company === 'tdss' && (
-            <Button
-              component={RouterLink}
-              href={paths.dashboard.user.new}
-              variant="contained"
-              startIcon={<Iconify icon="mingcute:add-line" />}
-            >
-              Nouvel Utilisateur
-            </Button>
-          )
-        }
+            can('can_create_user') && (
+              <Button
+                component={RouterLink}
+                href={paths.dashboard.user.new}
+                variant="contained"
+                startIcon={<Iconify icon="mingcute:add-line" />}
+              >
+                Nouvel Utilisateur
+              </Button>
+            )
+          }
         
           sx={{ mb: { xs: 3, md: 5 } }}
         />

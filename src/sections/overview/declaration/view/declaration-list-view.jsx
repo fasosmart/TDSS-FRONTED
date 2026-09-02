@@ -17,7 +17,7 @@ import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import CircularProgress from '@mui/material/CircularProgress';
 import axios from 'src/utils/axios';
-import { useState, useEffect, useCallback, use } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { varAlpha } from 'src/theme/styles';
 import { Label } from 'src/components/label';
@@ -58,9 +58,10 @@ import { DeclarationTableRow } from '../declaration-table-row';
 import { DeclarationTableToolbar } from '../declaration-table-toolbar';
 import { DeclarationPDF, generateDeclarationPDF } from '../declaration-pdf';
 
-import { useMockedUser } from 'src/auth/hooks';
+import { usePermissions } from 'src/auth/hooks';
 
-import dayjs from 'src/utils/format-time'; // Ensure this imports the correct dayjs instance
+import dayjs from 'src/utils/format-time';
+// Ensure this imports the correct dayjs instance
 dayjs.locale('fr'); // Set the default locale to French
 
 // ----------------------------------------------------------------------
@@ -83,13 +84,28 @@ export function DeclarationListView() {
   const [anchorEl, setAnchorEl] = useState(null);
   const theme = useTheme();
 
-  const { user } = useMockedUser();
+  const { can } = usePermissions();
 
-  const type_user = user?.type_code?.toLowerCase().trim();
+  const allowedTabStatuses = useMemo(() => {
+    if (can('can_view_admin_dashboard'))
+      return ['all', 'submitted', 'validated', 'billed', 'unsubmitted', 'rejected'];
+    if (can('can_view_agent_dashboard'))
+      return ['all', 'submitted', 'validated', 'unsubmitted', 'rejected'];
+    if (can('can_view_aguipe_dashboard')) return ['all', 'submitted', 'rejected'];
+    if (can('can_view_accountant_dashboard')) return ['all', 'billed', 'validated'];
+    return ['all'];
+  }, [can]);
 
-  // console.log('type_user:', type_user);
+  const allowedCardStatuses = useMemo(() => {
+    if (can('can_view_admin_dashboard')) return ['all', 'submitted', 'validated', 'billed'];
+    if (can('can_view_agent_dashboard')) return ['all', 'submitted', 'validated', 'unsubmitted'];
+    if (can('can_view_aguipe_dashboard')) return ['all', 'submitted', 'rejected'];
+    if (can('can_view_accountant_dashboard')) return ['all', 'billed', 'validated'];
+    return ['all'];
+  }, [can]);
 
   const router = useRouter();
+  const fetchRequestIdRef = useRef(0);
 
   const table = useTable({ defaultOrderBy: 'created_on' });
 
@@ -125,16 +141,19 @@ export function DeclarationListView() {
     previous: null,
   });
 
-  const filters = useSetState({
-    number: '', // mot-clé pour filtrer par numéro ou type de déclaration
-    fonction: [],
-    title: '',
-    company: '',
-    passport_number: '',
-    status: 'all',
-    starts_at: null,
-    ends_at: null,
-  });
+  const filters = useSetState(
+    {
+      number: '', // mot-clé pour filtrer par numéro ou type de déclaration
+      fonction: [],
+      title: '',
+      company: '',
+      passport_number: '',
+      status: 'all',
+      starts_at: null,
+      ends_at: null,
+    },
+    { persistByPath: true }
+  );
 
   const dateError = fIsBetween(filters.state.starts_at, filters.state.ends_at);
 
@@ -225,22 +244,6 @@ export function DeclarationListView() {
   const getPercentByCount = (number) => {
     if (!totalCount || totalCount === 0) return 0;
     return (number / totalCount) * 100;
-  };
-
-  const allowedStatusByRole = {
-    admin: ['all', 'submitted', 'validated', 'billed', 'unsubmitted', 'rejected'],
-    agent: ['all', 'submitted', 'validated', 'unsubmitted', 'rejected'],
-    aguipe: ['all', 'submitted', 'rejected'],
-    accountant: ['all', 'billed', 'validated'],
-    default: ['all'],
-  };
-
-  const allowedStatus = {
-    admin: ['all', 'submitted', 'validated', 'billed'],
-    agent: ['all', 'submitted', 'validated', 'unsubmitted'],
-    aguipe: ['all', 'submitted', 'rejected'],
-    accountant: ['all', 'billed', 'validated'],
-    default: ['all'],
   };
 
   // Mapping des statuts aux composants/cards
@@ -377,12 +380,7 @@ export function DeclarationListView() {
     },
   ];
 
-  function getTabsForUser(userType) {
-    const allowed = allowedStatusByRole[userType] || allowedStatusByRole.default;
-    return TABS.filter((tab) => allowed.includes(tab.value));
-  }
-
-  const tabs = getTabsForUser(type_user);
+  const tabs = TABS.filter((tab) => allowedTabStatuses.includes(tab.value));
 
   const handleDeleteRow = async (id) => {
     try {
@@ -747,6 +745,11 @@ export function DeclarationListView() {
   );
 
   useEffect(() => {
+    if (!filters.isHydrated) return;
+
+    const requestId = fetchRequestIdRef.current + 1;
+    fetchRequestIdRef.current = requestId;
+
     // Fonction pour récupérer les données paginées en fonction des filtres et la page courante
     const fetchDeclarations = async () => {
       setLoading(true);
@@ -783,6 +786,8 @@ export function DeclarationListView() {
         // console.log('Fetching declarations with params:', params);
         const response = await axios.get(API.listDeclarations(), { params });
 
+        if (requestId !== fetchRequestIdRef.current) return;
+
         setTableData(response.data.results);
         setCount(response.data.count);
         setPagination({
@@ -791,13 +796,17 @@ export function DeclarationListView() {
           previous: response.data.previous,
         });
       } catch (err) {
+        if (requestId !== fetchRequestIdRef.current) return;
+
         console.error('Error fetching declarations:', err);
         setError(err.message || 'Erreur lors du chargement des données.');
         const errormessage =
           err?.response?.data?.detail || err?.message || 'Une erreur est survenue';
         toast.error(errormessage);
       } finally {
-        setLoading(false);
+        if (requestId === fetchRequestIdRef.current) {
+          setLoading(false);
+        }
       }
     };
 
@@ -805,6 +814,7 @@ export function DeclarationListView() {
 
     fetchDeclarations();
   }, [
+    filters.isHydrated,
     table.page,
     table.rowsPerPage,
     filters.state.number,
@@ -835,10 +845,10 @@ export function DeclarationListView() {
   const open = Boolean(anchorEl);
   const id = open ? 'declaration-popover' : undefined;
 
-  const allowedStatuses = allowedStatus[type_user] || allowedStatus.default;
+  const allowedStatuses = allowedCardStatuses;
 
-  {
-    isLoading && toast.info('Téléchargement en cours, veuillez patienter...');
+  if (isLoading) {
+    toast.info('Téléchargement en cours, veuillez patienter...');
   }
 
   return (
@@ -852,7 +862,7 @@ export function DeclarationListView() {
             { name: 'Listes des déclarations' },
           ]}
           action={
-            type_user === 'agent' && ( //  Cache le bouton si type_user est "admin"
+            can('can_create_declaration') && (
               <Button
                 component={RouterLink}
                 href={paths.dashboard.declaration.new}
@@ -983,7 +993,7 @@ export function DeclarationListView() {
               action={
                 <Stack direction="row">
                   {/* telecharger toutes les declarations en un seul fichier */}
-                  {type_user === 'accountant' && (
+                  {can('can_invoice_declaration') && (
                     <Tooltip title="Facturer">
                       <IconButton
                         color="primary"
@@ -1092,7 +1102,6 @@ export function DeclarationListView() {
                   <TableBody>
                     {tableData.map((row) => (
                       <DeclarationTableRow
-                        user={user}
                         key={row.slug}
                         row={row}
                         selected={table.selected.includes(row.slug)}

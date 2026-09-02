@@ -66,7 +66,7 @@ export function PermitListView() {
   const [loading, setLoading] = useState(true); // État pour indiquer le chargement
   const [error, setError] = useState(null); // État pour gérer les erreurs
 
-  const filters = useSetState({ name: '', profil: [], status: 'all' });
+  const filters = useSetState({ name: '', profil: [], status: 'all' }, { persistByPath: true });
 
   const dataFiltered = applyFilter({
     inputData: tableData,
@@ -326,3 +326,4 @@ function applyFilter({ inputData, comparator, filters }) {
 
   return inputData;
 }
+

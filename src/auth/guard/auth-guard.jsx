@@ -42,6 +42,10 @@ export function AuthGuard({ children }) {
     }
 
     if (!authenticated) {
+      // Empêche le rendu du contenu protégé (et donc l'écran 403 du
+      // PermissionGuard) pendant la redirection vers la connexion.
+      setIsChecking(true);
+
       const { method } = CONFIG.auth;
 
       const signInPath = {
@@ -66,7 +70,7 @@ export function AuthGuard({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated, loading]);
 
-  if (isChecking) {
+  if (isChecking || !authenticated) {
     return <SplashScreen />;
   }
 

@@ -21,6 +21,9 @@ import { toast } from 'src/components/snackbar';
 import { useTable } from 'src/components/table';
 import { ColumnSelectorDialog } from './components/colums-selected';
 import { useLocalStorage } from 'src/hooks/use-local-storage';
+import { create } from '@mui/material/styles/createTransitions';
+import { fIsBetween } from 'src/utils/format-time';
+import dayjs from 'dayjs';
 
 const STATUS_TRANSLATIONS = {
   processing: 'En traitement',
@@ -64,8 +67,9 @@ export function ReportPermit() {
       { key: 'company', label: 'Entreprise' },
       { key: 'job', label: 'Fonction' },
       { key: 'permit_type', label: 'Permis' },
+      { key: 'created_on', label: 'Date de création', isDate: true },
+      { key: 'printed_at', label: "Date d'impression", isDate: true },
       { key: 'status', label: 'Statut', translate: STATUS_TRANSLATIONS },
-      // { key: 'created_on', label: 'Date de création', isDate: true },
     ],
     []
   );
@@ -82,23 +86,32 @@ export function ReportPermit() {
     'job',
     'permit_type',
     'status',
+    'created_on',
+    'printed_at',
   ];
 
   const [selectedColumns, setSelectedColumns] = useState(DEFAULT_COLUMNS);
 
-  const filters = useSetState({
-    card_number: '',
-    reference: '',
-    company: '',
-    declaration_number: '',
-    passport: '',
-    status: 'all',
-    job: null,
-    name: '',
-    nationality: 'all',
-    sexe: 'all',
-    permit_type: 'all',
-  });
+  const filters = useSetState(
+    {
+      card_number: '',
+      reference: '',
+      company: '',
+      declaration_number: '',
+      passport: '',
+      status: 'all',
+      job: null,
+      name: '',
+      nationality: 'all',
+      sexe: 'all',
+      permit_type: 'all',
+      created_on_before: null,
+      created_on_after: null,
+      printed_at_before: null,
+      printed_at_after: null,
+    },
+    { persistByPath: true }
+  );
 
   const fectCountries = async () => {
     try {
@@ -210,6 +223,12 @@ export function ReportPermit() {
     };
   }, []);
 
+  const dateError = fIsBetween(filters.state.created_on_after, filters.state.created_on_before);
+  const printedDateError = fIsBetween(
+    filters.state.printed_at_after,
+    filters.state.printed_at_before
+  );
+
   const buildParams = (page = 0, limit = table.rowsPerPage) => {
     const params = {
       limit,
@@ -252,7 +271,18 @@ export function ReportPermit() {
     if (filters.state.sexe !== 'all') {
       params.sexe = filters.state.sexe;
     }
-
+    if (filters.state.created_on_after && !dateError) {
+      params.created_on_after = dayjs(filters.state.created_on_after).format('YYYY-MM-DD');
+    }
+    if (filters.state.created_on_before && !dateError) {
+      params.created_on_before = dayjs(filters.state.created_on_before).format('YYYY-MM-DD');
+    }
+    if (filters.state.printed_at_after && !printedDateError) {
+      params.printed_at_after = dayjs(filters.state.printed_at_after).format('YYYY-MM-DD');
+    }
+    if (filters.state.printed_at_before && !printedDateError) {
+      params.printed_at_before = dayjs(filters.state.printed_at_before).format('YYYY-MM-DD');
+    }
     return params;
   };
 
@@ -295,6 +325,10 @@ export function ReportPermit() {
     filters.state.job,
     filters.state.nationality,
     filters.state.sexe,
+    filters.state.created_on_after,
+    filters.state.created_on_before,
+    filters.state.printed_at_after,
+    filters.state.printed_at_before,
   ]);
 
   const canReset =
@@ -308,7 +342,10 @@ export function ReportPermit() {
     !!filters.state.name ||
     !!filters.state.job ||
     filters.state.nationality !== 'all' ||
-    filters.state.sexe !== 'all';
+    filters.state.sexe !== 'all' ||
+    (!!filters.state.created_on_after && !!filters.state.created_on_before) ||
+    !!filters.state.printed_at_after ||
+    !!filters.state.printed_at_before;
 
   const notFound = !loading && permits.length === 0 && canReset;
   // Colonnes filtrées selon la sélection
@@ -403,17 +440,17 @@ export function ReportPermit() {
   };
 
   const statusOptions = [
-    { value: 'processing', label: STATUS_TRANSLATIONS['processing'] },
-    { value: 'submitted', label: STATUS_TRANSLATIONS['submitted'] },
-    { value: 'validated', label: STATUS_TRANSLATIONS['validated'] },
-    { value: 'rejected', label: STATUS_TRANSLATIONS['rejected'] },
-    { value: 'printed', label: STATUS_TRANSLATIONS['printed'] },
-    { value: 'delivered', label: STATUS_TRANSLATIONS['delivered'] },
+    { value: 'processing', label: STATUS_TRANSLATIONS.processing },
+    { value: 'submitted', label: STATUS_TRANSLATIONS.submitted },
+    { value: 'validated', label: STATUS_TRANSLATIONS.validated },
+    { value: 'rejected', label: STATUS_TRANSLATIONS.rejected },
+    { value: 'printed', label: STATUS_TRANSLATIONS.printed },
+    { value: 'delivered', label: STATUS_TRANSLATIONS.delivered },
   ];
 
   const sexeOptions = [
-    { value: 'male', label: SEXE_TRANSLATIONS['male'] },
-    { value: 'female', label: SEXE_TRANSLATIONS['female'] },
+    { value: 'male', label: SEXE_TRANSLATIONS.male },
+    { value: 'female', label: SEXE_TRANSLATIONS.female },
   ];
 
   return (
@@ -450,6 +487,8 @@ export function ReportPermit() {
         countryOptions={countries}
         permitTypeOptions={permitTypes}
         isPermit={true}
+        dateError={dateError}
+        printedDateError={printedDateError}
         loading={loadingOptions}
       />
 
@@ -464,7 +503,7 @@ export function ReportPermit() {
 
       <Grid2 size={{ xs: 12, md: 12 }}>
         <DeclarationNew
-          title="Rapports des permits"
+          title="Rapports des permis"
           tableData={permits}
           totalCount={count}
           loading={loading}

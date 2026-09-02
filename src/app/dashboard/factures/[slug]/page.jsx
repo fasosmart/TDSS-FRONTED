@@ -1,7 +1,7 @@
 
 import { CONFIG } from 'src/config-global';
 
-
+import { PermissionGuard } from 'src/auth/guard';
 
 import { FactureDetailsView } from 'src/sections/overview/factures/view';
 
@@ -12,10 +12,11 @@ export const metadata = { title: `Facture details | Dashboard - ${CONFIG.appName
 export default async function Page({ params }) {
   const { slug } = await params;
 
-
-
-  return <FactureDetailsView slug={slug} />;
-
+  return (
+    <PermissionGuard permission="can_view_facture">
+      <FactureDetailsView slug={slug} />
+    </PermissionGuard>
+  );
 }
 // ----------------------------------------------------------------------
 

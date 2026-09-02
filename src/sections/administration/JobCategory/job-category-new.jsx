@@ -106,7 +106,7 @@ export function JobCategoryNewEditForm({ currentJobCategory }) {
                                 <Field.Text name="name" label="Libellé *" fullWidth size="small" />
                             </Grid>
                             <Grid item size={{ xs: 8, md: 6 }}>
-                                <Field.Select name="permit" label="Permit *" fullWidth size="small">
+                                <Field.Select name="permit" label="Permis *" fullWidth size="small">
                                     {permits.map((permit) => (
                                         <MenuItem key={permit.slug} value={permit.slug}>
                                             {permit.name}

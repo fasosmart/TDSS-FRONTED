@@ -8,9 +8,19 @@ import { chipProps, FiltersBlock, FiltersResult } from 'src/components/filters-r
 // ----------------------------------------------------------------------
 
 export function DeclarationTableFiltersResult({ filters, totalResults, onResetPage, sx }) {
-  const handleRemoveKeyword = useCallback(() => {
+  const handleRemoveNumber = useCallback(() => {
     onResetPage();
-    filters.setState({ name: '' });
+    filters.setState({ number: '' });
+  }, [filters, onResetPage]);
+
+  const handleRemoveTitle = useCallback(() => {
+    onResetPage();
+    filters.setState({ title: '' });
+  }, [filters, onResetPage]);
+
+  const handleRemoveCompany = useCallback(() => {
+    onResetPage();
+    filters.setState({ company: '' });
   }, [filters, onResetPage]);
 
   const handleRemoveService = useCallback(
@@ -30,7 +40,7 @@ export function DeclarationTableFiltersResult({ filters, totalResults, onResetPa
 
   const handleRemoveDate = useCallback(() => {
     onResetPage();
-    filters.setState({ startDate: null, endDate: null });
+    filters.setState({ starts_at: null, ends_at: null });
   }, [filters, onResetPage]);
 
   const handleRemovePassport = useCallback(() => {
@@ -57,17 +67,25 @@ export function DeclarationTableFiltersResult({ filters, totalResults, onResetPa
 
       <FiltersBlock
         label="Date:"
-        isShow={Boolean(filters.state.startDate && filters.state.endDate)}
+        isShow={Boolean(filters.state.starts_at && filters.state.ends_at)}
       >
         <Chip
           {...chipProps}
-          label={fDateRangeShortLabel(filters.state.startDate, filters.state.endDate)}
+          label={fDateRangeShortLabel(filters.state.starts_at, filters.state.ends_at)}
           onDelete={handleRemoveDate}
         />
       </FiltersBlock>
 
-      <FiltersBlock label="Keyword:" isShow={!!filters.state.name}>
-        <Chip {...chipProps} label={filters.state.name} onDelete={handleRemoveKeyword} />
+      <FiltersBlock label="N° Déclaration:" isShow={!!filters.state.number}>
+        <Chip {...chipProps} label={filters.state.number} onDelete={handleRemoveNumber} />
+      </FiltersBlock>
+
+      <FiltersBlock label="Titre:" isShow={!!filters.state.title}>
+        <Chip {...chipProps} label={filters.state.title} onDelete={handleRemoveTitle} />
+      </FiltersBlock>
+
+      <FiltersBlock label="Entreprise:" isShow={!!filters.state.company}>
+        <Chip {...chipProps} label={filters.state.company} onDelete={handleRemoveCompany} />
       </FiltersBlock>
 
       <FiltersBlock label="Passeport:" isShow={!!filters.state.passport_number}>

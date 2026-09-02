@@ -4,6 +4,8 @@ import { useCallback, useMemo } from 'react';
 
 import { chipProps, FiltersBlock, FiltersResult } from 'src/components/filters-result';
 
+import { fDateRangeShortLabel } from 'src/utils/format-time';
+
 // ----------------------------------------------------------------------
 
 const TYPE_OPTIONS = {
@@ -18,6 +20,10 @@ const STATUS_TRANSLATIONS = {
   processing: 'En traitement',
   printed: 'Imprimé',
   delivered: 'Livré',
+  paid: 'Payé',
+  billed: 'Facturé',
+  expired: 'Expiré',
+  correction: 'En correction',
 };
 
 export function TableFiltersResult({ filters, onResetPage, totalResults, sx }) {
@@ -41,6 +47,10 @@ export function TableFiltersResult({ filters, onResetPage, totalResults, sx }) {
     handleRemoveFilter('status', 'all');
   }, [handleRemoveFilter]);
 
+  const handleRemoveDate = useCallback(() => {
+    filters?.setState({ created_on_before: null, created_on_after: null });
+  }, [filters]);
+
   const handleReset = useCallback(() => {
     onResetPage();
     filters.onResetState();
@@ -56,6 +66,11 @@ export function TableFiltersResult({ filters, onResetPage, totalResults, sx }) {
     [filters.state.status]
   );
 
+  const showDateFilter = useMemo(
+    () => Boolean(filters.state.created_on_after && filters.state.created_on_before),
+    [filters.state.created_on_after, filters.state.created_on_before]
+  );
+
   return (
     <FiltersResult totalResults={totalResults} onReset={handleReset} sx={sx}>
       <FiltersBlock label="Type:" isShow={showTypeFilter}>
@@ -63,6 +78,18 @@ export function TableFiltersResult({ filters, onResetPage, totalResults, sx }) {
           {...chipProps}
           label={TYPE_OPTIONS[filters?.state?.type]}
           onDelete={handleRemoveType}
+        />
+      </FiltersBlock>
+
+      {/* Filtre Date */}
+      <FiltersBlock label="Date:" isShow={showDateFilter}>
+        <Chip
+          {...chipProps}
+          label={fDateRangeShortLabel(
+            filters.state.created_on_after,
+            filters.state.created_on_before
+          )}
+          onDelete={handleRemoveDate}
         />
       </FiltersBlock>
 

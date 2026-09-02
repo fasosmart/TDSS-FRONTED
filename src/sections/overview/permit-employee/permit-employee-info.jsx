@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
@@ -13,12 +13,44 @@ import Button from '@mui/material/Button';
 import { Iconify } from 'src/components/iconify';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+import { useBoolean } from 'src/hooks/use-boolean';
+import { usePermissions } from 'src/auth/hooks';
+
+import { EmployeeQuickEditForm } from '../declaration/components/employe-quick-edit-form';
+
+import { ConfirmDialog } from 'src/components/custom-dialog';
+import { toast } from 'src/components/snackbar';
+
+import API from 'src/utils/api';
+import axios from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export function PermitEmloyeeInfo({ info, posts }) {
+export function PermitEmloyeeInfo({ info, onSyncSuccess }) {
   const fileRef = useRef(null);
   const router = useRouter();
+  const { can } = usePermissions();
+
+  const editOpen = useBoolean();
+
+  const syncOpen = useBoolean();
+  const [syncing, setSyncing] = useState(false);
+
+  const hasRetrievedABIS = Boolean(info?.abis_last_retrieved_at || info?.is_registered_in_abis);
+  const canSendToABIS = !hasRetrievedABIS;
+  const abisActionLabel = "Envoyer à l'enrollement";
+  const abisActionTitle = "Envoyer les données à l'enrollement";
+  const abisActionContent =
+    "Êtes-vous sûr de vouloir envoyer les données de cet employé à l'enrollement ?";
+
+  // TEMP: update flow disabled until backend issue is fixed.
+  // const abisActionLabel = hasRetrievedABIS ? 'Mise à jour des données' : "Envoyer à l'enrollement";
+  // const abisActionTitle = hasRetrievedABIS
+  //   ? 'Mettre à jour les données de l’employé'
+  //   : "Envoyer les données à l'enrollement";
+  // const abisActionContent = hasRetrievedABIS
+  //   ? "Êtes-vous sûr de vouloir mettre à jour les données de cet employé dans l'enrollement ?"
+  //   : "Êtes-vous sûr de vouloir envoyer les données de cet employé à l'enrollement ?";
 
   const handleAttach = () => {
     if (fileRef.current) {
@@ -41,6 +73,54 @@ export function PermitEmloyeeInfo({ info, posts }) {
     });
   };
 
+  const handleSync = async () => {
+    const employeeSlug = info?.employee_slug;
+
+    if (!employeeSlug) {
+      toast.error('Impossible de synchroniser: employé introuvable.');
+      return false;
+    }
+
+    if (!canSendToABIS) {
+      toast.info('Mise à jour ABIS temporairement désactivée.');
+      return false;
+    }
+
+    setSyncing(true);
+    try {
+      // TEMP: backend issue on ABIS update endpoint.
+      // const response = await axios.put(API.updateABISEmployee(employeeSlug));
+      const response = await axios.post(API.saveEmployeeToABIS(employeeSlug));
+
+      const isSuccess =
+        response?.status === 200 || response?.status === 201 || response?.data?.success;
+
+      if (isSuccess) {
+        toast.success('Synchronisation réussie avec ABIS');
+        if (onSyncSuccess) {
+          await onSyncSuccess();
+        }
+        return true;
+      }
+
+      toast.error(response?.data?.message || 'Échec de la synchronisation avec ABIS');
+      return false;
+    } catch (error) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.detail ||
+        error?.response?.data?.error ||
+        error?.response?.data?.details ||
+        error?.response?.data?.non_field_errors?.[0] ||
+        error?.message ||
+        'Erreur inconnue';
+      toast.error(`Échec de la synchronisation avec ABIS: ${errorMessage}`);
+      return false;
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const getStatusConfig = (status) => {
     const configs = {
       unenrolled: { color: 'warning', label: 'Non Enrôlé', icon: 'mdi:clock-outline' },
@@ -51,6 +131,10 @@ export function PermitEmloyeeInfo({ info, posts }) {
       printed: { color: 'info', label: 'Imprimé', icon: 'mdi:printer' },
       delivered: { color: 'primary', label: 'Délivré', icon: 'mdi:package-variant-closed' },
       submitted: { color: 'success', label: 'Soumis', icon: 'mdi:check-circle' },
+      correction: { color: 'error', label: 'Correction', icon: 'mdi:alert-circle' },
+      expired: { color: 'error', label: 'Expiré', icon: 'mdi:calendar-alert' },
+      billed: { color: 'info', label: 'Facturé', icon: 'mdi:receipt' },
+      paid: { color: 'success', label: 'Payé', icon: 'mdi:check-circle' },
     };
     return configs[status] || { color: 'default', label: status, icon: 'mdi:information' };
   };
@@ -306,6 +390,75 @@ export function PermitEmloyeeInfo({ info, posts }) {
                   },
                 }}
               />
+              <Chip
+                icon={
+                  <Iconify
+                    icon={info?.is_registered_in_abis ? 'mdi:check-circle' : 'mdi:close-circle'}
+                    width={16}
+                  />
+                }
+                label={
+                  info?.is_registered_in_abis
+                    ? "Envoyé à l'enrollement"
+                    : "Non envoyé à l'enrollement"
+                }
+                color={info?.is_registered_in_abis ? 'success' : 'error'}
+                size="small"
+                sx={{
+                  fontWeight: 600,
+                  px: 1,
+                  height: { xs: 28, sm: 32 },
+                  '& .MuiChip-icon': { ml: 0.5 },
+                  '& .MuiChip-label': {
+                    px: 1,
+                    fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                  },
+                }}
+              />
+
+              {can('can_enroll_employee_abis') &&
+                info?.status !== 'printed' &&
+                info?.status !== 'delivered' &&
+                info?.status !== 'enrolled' &&
+                canSendToABIS && (
+                  <Chip
+                    icon={<Iconify icon="solar:refresh-bold" width={18} />}
+                    label={abisActionLabel}
+                    color="default"
+                    onClick={syncOpen.onTrue}
+                    size="small"
+                    sx={{
+                      fontWeight: 600,
+                      px: 1,
+                      height: { xs: 28, sm: 32 },
+                      '& .MuiChip-icon': { ml: 0.5 },
+                      '& .MuiChip-label': {
+                        px: 1,
+                        fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                      },
+                    }}
+                  />
+                )}
+
+              {info?.status === 'correction' && can('can_edit_declaration_employee') && (
+                <Chip
+                  icon={<Iconify icon="mdi:pen" width={18} />}
+                  label="Modifier"
+                  color="default"
+                  onClick={editOpen.onTrue}
+                  size="small"
+                  sx={{
+                    fontWeight: 600,
+                    px: 1,
+                    height: { xs: 28, sm: 32 },
+                    '& .MuiChip-icon': { ml: 0.5 },
+                    '& .MuiChip-label': {
+                      px: 1,
+                      fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+                    },
+                  }}
+                />
+              )}
             </Stack>
           </Box>
 
@@ -363,9 +516,9 @@ export function PermitEmloyeeInfo({ info, posts }) {
                 <InfoItem icon="ic:baseline-email" label="Email" value={info?.email} isLink />
               )}
               {info?.address && <InfoItem icon="mdi:home" label="Adresse" value={info?.address} />}
-              {info?.residence && (
+              {/* {info?.residence && (
                 <InfoItem icon="mdi:home-city" label="Résidence" value={info?.residence} />
-              )}
+              )} */}
             </Box>
           </Box>
 
@@ -384,19 +537,28 @@ export function PermitEmloyeeInfo({ info, posts }) {
               <InfoItem
                 icon="mdi:calendar-clock"
                 label="Durée"
-                value={
-                  info?.contract_duration
-                    ? `${info?.contract_duration} an${info?.contract_duration > 1 ? 's' : ''}`
-                    : 'N/A'
-                }
+                value={info?.contract_duration ? `${info?.contract_duration} mois` : 'N/A'}
               />
-              {info?.motif_rejet && (
-                <InfoItem
-                  icon="mdi:alert-circle"
-                  label="Motif de Rejet"
-                  value={info?.motif_rejet}
-                />
-              )}
+              {info?.reject_reasons?.length > 0
+                ? info.reject_reasons.map((reason) => (
+                    <InfoItem
+                      key={reason.id || reason.slug || reason.type?.id}
+                      icon="mdi:alert-circle"
+                      label={
+                        reason?.type?.name
+                          ? `Motif de Rejet — ${reason.type.name}`
+                          : 'Motif de Rejet'
+                      }
+                      value={reason?.description}
+                    />
+                  ))
+                : info?.motif_rejet && (
+                    <InfoItem
+                      icon="mdi:alert-circle"
+                      label="Motif de Rejet"
+                      value={info?.motif_rejet}
+                    />
+                  )}
             </Box>
           </Box>
 
@@ -425,6 +587,35 @@ export function PermitEmloyeeInfo({ info, posts }) {
               </Box>
             </>
           )} */}
+
+          <EmployeeQuickEditForm
+            currentEmployee={info}
+            open={editOpen.value}
+            onClose={editOpen.onFalse}
+            isPermit={true}
+            dec_slug={info?.declaration_slug}
+          />
+
+          <ConfirmDialog
+            open={syncOpen.value}
+            onClose={syncOpen.onFalse}
+            title={abisActionTitle}
+            content={abisActionContent}
+            action={
+              <Button
+                variant="contained"
+                disabled={syncing}
+                onClick={async () => {
+                  const isSynced = await handleSync();
+                  if (isSynced) {
+                    syncOpen.onFalse();
+                  }
+                }}
+              >
+                {syncing ? 'Synchronisation...' : abisActionLabel}
+              </Button>
+            }
+          />
         </Box>
       </Card>
     </Grid>

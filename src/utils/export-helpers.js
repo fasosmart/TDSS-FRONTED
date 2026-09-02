@@ -5,7 +5,6 @@ import { autoTable } from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import { fDate } from './format-time';
 import { fGNF } from './format-number';
 
 /**
@@ -143,7 +142,7 @@ export const exportToZip = async (data, filename = 'rapport-declarations.zip') =
       ].join(';')
     ),
   ].join('\n');
-  zip.file('declarations.csv', '\uFEFF' + csvContent);
+  zip.file('declarations.csv', `\uFEFF${csvContent}`);
 
   // 2. Ajouter le fichier Excel
   const worksheetData = [
@@ -200,6 +199,27 @@ const formatAmountForPdf = (raw) => {
   return `${safe} FG`; // ou ' F G' si tu veux
 };
 
+const EMPTY_CELL = '-';
+
+// Formate une date en JJ/MM/AAAA
+const formatDateSafe = (value, fallback = EMPTY_CELL) => {
+  if (value === null || value === undefined || value === '') return fallback;
+
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime()) ? fallback : date.toLocaleDateString('fr-FR');
+};
+
+// Formate une cellule d'export à partir de la ligne brute.
+const formatExportCell = (row, col, emptyValue = EMPTY_CELL) => {
+  const raw = row[col.key];
+
+  if (col.isDate) return formatDateSafe(raw, emptyValue);
+  if (col.translate) return col.translate[raw] ?? raw ?? emptyValue;
+
+  return raw ?? emptyValue;
+};
+
 // Helper pour formater les valeurs
 const formatCellValue = (value, column) => {
   if (value === null || value === undefined) return '-';
@@ -211,11 +231,7 @@ const formatCellValue = (value, column) => {
 
   // Formater les dates
   if (column.isDate) {
-    try {
-      return new Date(value).toLocaleDateString('fr-FR');
-    } catch {
-      return value;
-    }
+    return formatDateSafe(value);
   }
 
   // Formater les montants
@@ -263,17 +279,7 @@ export const exportToCSVM = (data, columns, filename = 'export.csv') => {
     BOM +
     [
       columns.map((c) => c.label).join(';'),
-      ...data.map((row) =>
-        columns
-          .map((col) => {
-            let value = row[col.key] ?? '';
-            if (col.translate) value = col.translate[value] ?? value;
-            if (col.isDate) value = new Date(value).toLocaleDateString('fr-FR');
-
-            return value;
-          })
-          .join(';')
-      ),
+      ...data.map((row) => columns.map((col) => formatExportCell(row, col, '')).join(';')),
     ].join('\n');
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -283,14 +289,7 @@ export const exportToCSVM = (data, columns, filename = 'export.csv') => {
 export const exportToExcelM = (data, columns, filename = 'export.xlsx') => {
   const worksheetData = [
     columns.map((c) => c.label),
-    ...data.map((row) =>
-      columns.map((col) => {
-        let value = row[col.key] ?? '-';
-        if (col.translate) value = col.translate[value] ?? value;
-        if (col.isDate) value = new Date(value).toLocaleDateString('fr-FR');
-        return value;
-      })
-    ),
+    ...data.map((row) => columns.map((col) => formatExportCell(row, col))),
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(worksheetData);
@@ -308,32 +307,14 @@ export const exportToZipM = async (data, columns, filename = 'export.zip') => {
 
   // CSV
   const csvContent = [columns.map((c) => c.label).join(';')]
-    .concat(
-      data.map((row) =>
-        columns
-          .map((col) => {
-            let value = row[col.key] ?? '';
-            if (col.translate) value = col.translate[value] ?? value;
-            if (col.isDate) value = fDate(value);
-            return value;
-          })
-          .join(';')
-      )
-    )
+    .concat(data.map((row) => columns.map((col) => formatExportCell(row, col, '')).join(';')))
     .join('\n');
-  zip.file('data.csv', '\uFEFF' + csvContent);
+  zip.file('data.csv', `\uFEFF${csvContent}`);
 
   // Excel
   const worksheetData = [
     columns.map((c) => c.label),
-    ...data.map((row) =>
-      columns.map((col) => {
-        let value = row[col.key] ?? '-';
-        if (col.translate) value = col.translate[value] ?? value;
-        if (col.isDate) value = new Date(value).toLocaleDateString('fr-FR');
-        return value;
-      })
-    ),
+    ...data.map((row) => columns.map((col) => formatExportCell(row, col))),
   ];
   const ws = XLSX.utils.aoa_to_sheet(worksheetData);
   const wb = XLSX.utils.book_new();

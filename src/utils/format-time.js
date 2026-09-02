@@ -124,6 +124,23 @@ export function fToNow(date) {
 /** output: boolean
  */
 export function fIsBetween(inputDate, startDate, endDate) {
+  // Backward compatibility: some screens pass only 2 dates to validate a range.
+  // In that case, return `true` only when the range is invalid (start > end).
+  if (arguments.length === 2) {
+    if (!inputDate || !startDate) {
+      return false;
+    }
+
+    const rangeStart = fTimestamp(inputDate);
+    const rangeEnd = fTimestamp(startDate);
+
+    if (typeof rangeStart === 'number' && typeof rangeEnd === 'number') {
+      return rangeStart > rangeEnd;
+    }
+
+    return false;
+  }
+
   if (!inputDate || !startDate || !endDate) {
     return false;
   }
@@ -202,6 +219,15 @@ export function fDateRangeShortLabel(startDate, endDate, initial) {
   }
 
   return label;
+}
+
+// Plage acceptant une seule borne
+export function fDateRangeOpenLabel(startDate, endDate) {
+  if (startDate && endDate) return fDateRangeShortLabel(startDate, endDate);
+  if (startDate) return `Depuis le ${fDate(startDate)}`;
+  if (endDate) return `Jusqu'au ${fDate(endDate)}`;
+
+  return '';
 }
 
 /** output: '2024-05-28T05:55:31+00:00'

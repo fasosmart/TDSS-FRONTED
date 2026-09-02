@@ -29,6 +29,7 @@ import { ConfirmDialog } from 'src/components/custom-dialog';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { toast } from 'sonner';
 import { getDevises } from 'src/utils/options';
+import { usePermissions } from 'src/auth/hooks';
 import { DeviseSelector } from './composants/devise-selector';
 import { UploadDocument } from './composants/upload-document';
 
@@ -60,9 +61,10 @@ const Logo = styled('img')({
   width: 'auto',
 });
 
-export function PaiementDetails({ payment, user, setPayment }) {
+export function PaiementDetails({ payment, setPayment }) {
   const componentRef = useRef();
   const router = useRouter();
+  const { isAdmin } = usePermissions();
   const [selectedFacture, setSelectedFacture] = useState([]);
   const [error, setError] = useState(null);
   const [loadFac, setLoadFac] = useState(false);
@@ -316,7 +318,6 @@ export function PaiementDetails({ payment, user, setPayment }) {
         payment={payment}
         componentRef={componentRef}
         currentStatus={currentStatus}
-        user={user}
         onChangeStatus={(e) => {
           const value = typeof e === 'string' ? e : e.target.value;
           setCurrentStatus(value);
@@ -510,7 +511,7 @@ export function PaiementDetails({ payment, user, setPayment }) {
                 {payment ? formatDate(payment.created_on) : ''}
               </Typography>
 
-              {user?.type_code === 'admin' && (
+              {isAdmin && (
                 <Typography
                   variant="body2"
                   align="right"

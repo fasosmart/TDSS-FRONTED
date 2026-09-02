@@ -35,6 +35,7 @@ export function DecReportToolbar({
   countryOptions,
   permitTypeOptions,
   dateError,
+  printedDateError,
   loading,
 }) {
   // Local state pour les inputs avec debounce
@@ -162,13 +163,14 @@ export function DecReportToolbar({
   }, [filters.state]);
 
   // Cleanup des timers au démontage
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       Object.values(debounceTimers.current).forEach((timer) => {
         if (timer) clearTimeout(timer);
       });
-    };
-  }, []);
+    },
+    []
+  );
 
   // Gestion du clic en dehors pour fermer les options
   useEffect(() => {
@@ -194,7 +196,7 @@ export function DecReportToolbar({
       sx={{ p: 2.5, pr: { xs: 2.5, md: 1 } }}
     >
       {/* Filtre Statut */}
-      {!isEmployee && (
+      {!(isEmployee || isPermit) && (
         <FormControl sx={{ flexShrink: 0, width: { xs: 1, md: 150 } }}>
           <InputLabel htmlFor="invoice-filter-status-select">Statut</InputLabel>
           <Select
@@ -222,9 +224,12 @@ export function DecReportToolbar({
           jobOptions={jobOptions}
           countryOptions={countryOptions}
           sexeOptions={sexeOptions}
+          statusOptions={options}
           permitTypeOptions={permitTypeOptions}
           loading={loading}
           isPermit={isPermit}
+          dateError={dateError}
+          printedDateError={printedDateError}
         />
       )}
 

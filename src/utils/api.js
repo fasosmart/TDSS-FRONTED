@@ -1,11 +1,13 @@
 // const BASE_URL = 'http://192.168.1.152:8000/api'; // Adresse de votre backend
 
+
 const BASE_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api`; // Adresse de votre backend
 
 const API = {
   nextjsPage: () => `${BASE_URL}/nextjs/page`, // Vue Next.js
   login: () => `${BASE_URL}/auth/jwt/create/`, // api connexion
   me: () => `${BASE_URL}/users/me/`, // informations de l'utilisateur connecté
+  myAssignments: () => `${BASE_URL}/users/my-assignments/`, // permissions granulaires de l'assignment actif
   logout: () => `${BASE_URL}/auth/jwt/logout/`, // deconnexion
   resetPassword: () => `${BASE_URL}/users/reset_password/`, // reinitialisation du password
   resetPasswordConfirmation: () => `${BASE_URL}/users/reset_password_confirm/`, // reinitialisation du password
@@ -13,6 +15,8 @@ const API = {
   changeEmail: () => `${BASE_URL}/users/set_email/`, // changer l'email de l'utilisateur
 
   dashboardAdmin: () => `${BASE_URL}/declarations/dashboard-admin/`, // Dashboard admin
+
+  dashboardPrinter: () => `${BASE_URL}/declarations/dashboard-printer/`, // Dashboard imprimeur
 
   createUser: () => `${BASE_URL}/users/`, // Création d'un utilisateur
   listUsers: (params = {}) => {
@@ -39,8 +43,6 @@ const API = {
   rejetterDeclaration: (slug) => `${BASE_URL}/declarations/${slug}/reject/`, // Rejetter une déclaration
   supprimerDeclaration: (slug) => `${BASE_URL}/declarations/${slug}/`, // Supprimer une déclaration
 
-  rejetterDeclaration: (slug) => `${BASE_URL}/declarations/${slug}/reject/`, // Rejetter une déclaration
-
   retirerDeclaration: (slug) => `${BASE_URL}/factures/${slug}/remove-declaration/`, // Supprimer une déclaration dans une facture
   ajouterDeclaration: (slug) => `${BASE_URL}/factures/${slug}/add-declaration/`, // Ajouter une déclaration dans une facture
 
@@ -60,6 +62,7 @@ const API = {
   },
 
   Employe: (slug) => `${BASE_URL}/declarations/employees/?declaration=${slug}`, // Liste des employés d'une declaration
+  CreateEmployee: `${BASE_URL}/employees/create/`, // Ajouter un employé
   UpdateEmploye: (declarationSlug, employeeSlug) =>
     `${BASE_URL}/declarations/${declarationSlug}/employees/${employeeSlug}/`, // Modifier un employé d'une déclaration
   DeleteEmploye: (slug) => `${BASE_URL}/declarations/${slug}/delete-employees/`, // Supprimer un ou plusieurs employés d'une déclaration
@@ -76,6 +79,7 @@ const API = {
   statsFactures: () => `${BASE_URL}/factures/stats`,
 
   listPaiments: () => `${BASE_URL}/payments/`, // Liste des paiements
+  statsPaiements: () => `${BASE_URL}/payments/stats/`, // Agrégats (total nombre + montants)
   detailsPaiement: (slug) => `${BASE_URL}/payments/${slug}/`, // Details d'un paiement
   removePayment: (slug) => `${BASE_URL}/payments/${slug}/`, // supprimer un paiement
   updatepayment: (slug) => `${BASE_URL}/payments/${slug}/`, // modifier les informations d'un paiment
@@ -160,16 +164,26 @@ const API = {
 
   // Listes des  api pour les permis des employés
   listPermitsEmployees: () => `${BASE_URL}/declarations/employees/`,
+  listPendingPermitsEmployees: () => `${BASE_URL}/declarations/employees/pending-print/`,
+  listPrintedPermitsEmployees: () => `${BASE_URL}/declarations/employees/printed/`,
   detailPermitEmployee: (slug) => `${BASE_URL}/declarations/employees/${slug}/`,
-  printPermis: () => `${BASE_URL}/declarations/employees/print/`,
+  printPermis: () => `${BASE_URL}/declarations/employees/mark-as-print/`,
   deliverPermit: (slug) => `${BASE_URL}/declarations/employees/${slug}/deliver/`,
-  rejectPermit: (slug) => `${BASE_URL}/declarations/employees/${slug}/reject/`,
+  rejectPermit: (slug) => `${BASE_URL}/declarations/employees/${slug}/correction/`,
   submitPermit: (slug) => `${BASE_URL}/declarations/employees/${slug}/submit/`,
   unsubmitPermit: (slug) => `${BASE_URL}/declarations/employees/${slug}/unsubmit/`,
   validatePermit: (slug) => `${BASE_URL}/declarations/employees/${slug}/validate/`,
   updateFile: (slug) => `${BASE_URL}/declarations/employees/${slug}/update-file/`,
+  listRejectReasons: () => `${BASE_URL}/declarations/employees/type-reject-reason/`,
   updatePermit: (declarationSlug, employeeSlug) =>
     `${BASE_URL}/declarations/${declarationSlug}/employees/${employeeSlug}/`,
+
+  // Listes des api pour les penalités
+  listPenalties: () => `${BASE_URL}/penalties/`,
+  createPenalty: () => `${BASE_URL}/penalties/`,
+  detailsPenalty: (slug) => `${BASE_URL}/penalties/${slug}/`,
+  billPenalty: (slug) => `${BASE_URL}/penalties/${slug}/bill/`,
+  cancelPenalty: (slug) => `${BASE_URL}/penalties/${slug}/cancel/`,
 
   // Listes des api pour le plan de panafricanisation
 
@@ -184,6 +198,12 @@ const API = {
 
   documents: () => `${BASE_URL}/documents/types/`,
   updateDocument: (slug) => `${BASE_URL}/documents/${slug}/`,
+
+  // Listes des api pour les documents des entreprises
+  listCompanyDocuments: () => `${BASE_URL}/profiles/documents/`,
+  typesCompanyDocuments: () => `${BASE_URL}/profiles/documents/types/`,
+  addCompanyDocument: () => `${BASE_URL}/profiles/documents/`,
+  updateCompanyDocument: (slug) => `${BASE_URL}/profiles/documents/${slug}/`,
 
   // Tableau de bord comptable
   getDeclarationsToInvoice: (month = null) => {
@@ -204,7 +224,7 @@ const API = {
 
   // Tableau de bord AGUIP
   getAguipDashboard: (startDate = null, endDate = null) => {
-    let url = `${BASE_URL}/declarations/dashboard-aguip/`;
+    const url = `${BASE_URL}/declarations/dashboard-aguip/`;
     const params = new URLSearchParams();
 
     if (startDate) params.append('start_date', startDate);
@@ -220,6 +240,11 @@ const API = {
   reportsPaiement: () => `${BASE_URL}/reports/payments/`,
   reportsPermits: () => `${BASE_URL}/reports/permits/`,
   reportsEmployees: () => `${BASE_URL}/reports/employees/`,
+
+  // Endpoint ABIS
+  saveEmployeeToABIS: (slug) => `${BASE_URL}/abis/employees/${slug}/enroll/`,
+  getEmployeeFromABIS: (slug) => `${BASE_URL}/abis/employees/${slug}`,
+  updateABISEmployee: (slug) => `${BASE_URL}/abis/employees/${slug}/update/`,
 };
 
 export default API;

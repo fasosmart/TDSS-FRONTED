@@ -37,6 +37,7 @@ const NewPayeurSchema = z.object({
   document: z.any(),
   devise: z.string().min(1, { message: 'La devise est requise' }),
   comment: z.string().optional(),
+  payment_method: z.string().optional(),
 });
 
 export function UpdatePaiement({ paiement, open, onclose, onSuccess }) {
@@ -44,6 +45,12 @@ export function UpdatePaiement({ paiement, open, onclose, onSuccess }) {
   const [countries, setCountries] = useState([]);
   const [step, setStep] = useState(1);
   const [showPdf, setShowPdf] = useState(true);
+
+  const methodsLabels = {
+    transfer: 'Virement',
+    cheque: 'Chèque',
+    deposit: 'Espèces',
+  };
 
   // Form initialisation
   const methods = useForm({
@@ -61,6 +68,7 @@ export function UpdatePaiement({ paiement, open, onclose, onSuccess }) {
       document: null,
       devise: '',
       comment: '',
+      payment_method: '',
     },
   });
 
@@ -103,6 +111,7 @@ export function UpdatePaiement({ paiement, open, onclose, onSuccess }) {
         document: paiement?.document || null,
         devise: paiement?.devise?.slug || '',
         comment: paiement?.comment || '',
+        payment_method: paiement?.payment_method || '',
       });
     }
   }, [paiement, countries]);
@@ -124,7 +133,7 @@ export function UpdatePaiement({ paiement, open, onclose, onSuccess }) {
       // Champs simples
       formData.append('devise', data.devise);
       formData.append('comment', data.comment || '');
-
+      formData.append('payment_method', data.payment_method || '');
       // Fichier
       if (data.document instanceof File) {
         formData.append('document', data.document);
@@ -277,6 +286,16 @@ export function UpdatePaiement({ paiement, open, onclose, onSuccess }) {
                           {devises.map((d) => (
                             <MenuItem key={d.slug} value={d.slug}>
                               {d.name}
+                            </MenuItem>
+                          ))}
+                        </Field.Select>
+                      </Grid>
+
+                      <Grid item size={{ xs: 12, md: 12 }}>
+                        <Field.Select name="payment_method" label="Méthode de paiement">
+                          {Object.entries(methodsLabels).map(([value, label]) => (
+                            <MenuItem key={value} value={value}>
+                              {label}
                             </MenuItem>
                           ))}
                         </Field.Select>

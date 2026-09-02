@@ -24,6 +24,8 @@ import { Iconify } from 'src/components/iconify';
 import { toast } from 'src/components/snackbar';
 import { Label } from 'src/components/label';
 
+import { usePermissions } from 'src/auth/hooks';
+
 // ----------------------------------------------------------------------
 
 export function PaiementTableRow({
@@ -32,13 +34,12 @@ export function PaiementTableRow({
   onViewRow,
   onRemoveRow,
   onValidateRow,
-  type_user,
-  user,
 }) {
   const confirm = useBoolean();
   const removeConfirm = useBoolean();
   const router = useRouter();
   const popover = usePopover();
+  const { can } = usePermissions();
 
   const afficherMontant = (montant) => {
     if (row?.devise === 'Franc Guinéen') {
@@ -209,7 +210,7 @@ export function PaiementTableRow({
             <Iconify icon="solar:eye-bold" />
             Voir
           </MenuItem>
-          {row?.status === 'pending' && (
+          {row?.status === 'pending' && can('can_validate_payment') && (
             <MenuItem
               onClick={() => {
                 popover.onClose();
@@ -220,7 +221,7 @@ export function PaiementTableRow({
               Valider
             </MenuItem>
           )}
-          {row?.status === 'pending' && type_user === 'admin' && (
+          {row?.status === 'pending' && can('can_delete_payment') && (
             <MenuItem
               onClick={() => {
                 popover.onClose();

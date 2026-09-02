@@ -48,28 +48,11 @@ export const signInWithPassword = async ({ email, password }) => {
 
     setSession(access_token, refresh_token);
   } catch (error) {
-    // Affiche toute l'erreur pour examiner sa structure complète
-    console.error('Error during sign in:', error?.detail);
-    throw new Error(error?.detail);
-
-    // if (error.response) {
-    //   // console.error('Response from server:', error.response);
-
-    //   // Essayons d'accéder à l'erreur spécifique dans `error.response.data`
-    //   // console.error('Error response data:', error.response.data);
-
-    //   // Nous lançons l'erreur si elle existe dans la réponse du serveur
-    //   const message = error.response.data.detail || 'Authentication failed';
-   
-      
-      
-    // } else if (error.request) {
-    //   console.error('Error during sign in (no response):', error.request);
-    //   throw new Error('Aucune réponse du serveur. Veuillez réessayer plus tard.');
-    // } else {
-    //   console.error('Error during sign in (unknown error):', error);
-    //   throw new Error(error);
-    // }
+    const message =
+      typeof error === 'string'
+        ? error
+        : error?.detail || 'Erreur de connexion. Veuillez réessayer.';
+    throw new Error(message);
   }
 };
 
